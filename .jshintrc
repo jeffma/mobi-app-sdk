@@ -1,0 +1,15 @@
+{
+  "node": true,
+  "jquery": true,
+  "eqeqeq": true,
+  "eqnull": true,
+  "latedef": true,
+  "undef": true,
+  "globalstrict": true,
+  "globals": {
+    "Ember": true,
+    "App": true,
+    "module": true,
+    "console": true
+  }
+}
