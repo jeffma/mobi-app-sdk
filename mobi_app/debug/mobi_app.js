@@ -1,81 +1,82 @@
 /*!
- * jQuery JavaScript Library v2.0.3
+ * jQuery JavaScript Library v2.1.0
  * http://jquery.com/
  *
  * Includes Sizzle.js
  * http://sizzlejs.com/
  *
- * Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors
+ * Copyright 2005, 2014 jQuery Foundation, Inc. and other contributors
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2013-07-03T13:30Z
+ * Date: 2014-01-23T21:10Z
  */
-(function( window, undefined ) {
+
+(function( global, factory ) {
+
+	if ( typeof module === "object" && typeof module.exports === "object" ) {
+		// For CommonJS and CommonJS-like environments where a proper window is present,
+		// execute the factory and get jQuery
+		// For environments that do not inherently posses a window with a document
+		// (such as Node.js), expose a jQuery-making factory as module.exports
+		// This accentuates the need for the creation of a real window
+		// e.g. var jQuery = require("jquery")(window);
+		// See ticket #14549 for more info
+		module.exports = global.document ?
+			factory( global, true ) :
+			function( w ) {
+				if ( !w.document ) {
+					throw new Error( "jQuery requires a window with a document" );
+				}
+				return factory( w );
+			};
+	} else {
+		factory( global );
+	}
+
+// Pass this if window is not defined yet
+}(typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
 
 // Can't do this because several apps including ASP.NET trace
 // the stack via arguments.caller.callee and Firefox dies if
 // you try to trace through "use strict" call chains. (#13335)
 // Support: Firefox 18+
-//"use strict";
+//
+
+var arr = [];
+
+var slice = arr.slice;
+
+var concat = arr.concat;
+
+var push = arr.push;
+
+var indexOf = arr.indexOf;
+
+var class2type = {};
+
+var toString = class2type.toString;
+
+var hasOwn = class2type.hasOwnProperty;
+
+var trim = "".trim;
+
+var support = {};
+
+
+
 var
-	// A central reference to the root jQuery(document)
-	rootjQuery,
-
-	// The deferred used on DOM ready
-	readyList,
-
-	// Support: IE9
-	// For `typeof xmlNode.method` instead of `xmlNode.method !== undefined`
-	core_strundefined = typeof undefined,
-
 	// Use the correct document accordingly with window argument (sandbox)
-	location = window.location,
 	document = window.document,
-	docElem = document.documentElement,
 
-	// Map over jQuery in case of overwrite
-	_jQuery = window.jQuery,
-
-	// Map over the $ in case of overwrite
-	_$ = window.$,
-
-	// [[Class]] -> type pairs
-	class2type = {},
-
-	// List of deleted data cache ids, so we can reuse them
-	core_deletedIds = [],
-
-	core_version = "2.0.3",
-
-	// Save a reference to some core methods
-	core_concat = core_deletedIds.concat,
-	core_push = core_deletedIds.push,
-	core_slice = core_deletedIds.slice,
-	core_indexOf = core_deletedIds.indexOf,
-	core_toString = class2type.toString,
-	core_hasOwn = class2type.hasOwnProperty,
-	core_trim = core_version.trim,
+	version = "2.1.0",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
 		// The jQuery object is actually just the init constructor 'enhanced'
-		return new jQuery.fn.init( selector, context, rootjQuery );
+		// Need init if jQuery is called (just allow error to be thrown if not included)
+		return new jQuery.fn.init( selector, context );
 	},
-
-	// Used for matching numbers
-	core_pnum = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source,
-
-	// Used for splitting on whitespace
-	core_rnotwhite = /\S+/g,
-
-	// A simple way to check for HTML strings
-	// Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
-	// Strict HTML recognition (#11290: must start with <)
-	rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,
-
-	// Match a standalone tag
-	rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
 
 	// Matches dashed string for camelizing
 	rmsPrefix = /^-ms-/,
@@ -84,114 +85,13 @@ var
 	// Used by jQuery.camelCase as callback to replace()
 	fcamelCase = function( all, letter ) {
 		return letter.toUpperCase();
-	},
-
-	// The ready event handler and self cleanup method
-	completed = function() {
-		document.removeEventListener( "DOMContentLoaded", completed, false );
-		window.removeEventListener( "load", completed, false );
-		jQuery.ready();
 	};
 
 jQuery.fn = jQuery.prototype = {
 	// The current version of jQuery being used
-	jquery: core_version,
+	jquery: version,
 
 	constructor: jQuery,
-	init: function( selector, context, rootjQuery ) {
-		var match, elem;
-
-		// HANDLE: $(""), $(null), $(undefined), $(false)
-		if ( !selector ) {
-			return this;
-		}
-
-		// Handle HTML strings
-		if ( typeof selector === "string" ) {
-			if ( selector.charAt(0) === "<" && selector.charAt( selector.length - 1 ) === ">" && selector.length >= 3 ) {
-				// Assume that strings that start and end with <> are HTML and skip the regex check
-				match = [ null, selector, null ];
-
-			} else {
-				match = rquickExpr.exec( selector );
-			}
-
-			// Match html or make sure no context is specified for #id
-			if ( match && (match[1] || !context) ) {
-
-				// HANDLE: $(html) -> $(array)
-				if ( match[1] ) {
-					context = context instanceof jQuery ? context[0] : context;
-
-					// scripts is true for back-compat
-					jQuery.merge( this, jQuery.parseHTML(
-						match[1],
-						context && context.nodeType ? context.ownerDocument || context : document,
-						true
-					) );
-
-					// HANDLE: $(html, props)
-					if ( rsingleTag.test( match[1] ) && jQuery.isPlainObject( context ) ) {
-						for ( match in context ) {
-							// Properties of context are called as methods if possible
-							if ( jQuery.isFunction( this[ match ] ) ) {
-								this[ match ]( context[ match ] );
-
-							// ...and otherwise set as attributes
-							} else {
-								this.attr( match, context[ match ] );
-							}
-						}
-					}
-
-					return this;
-
-				// HANDLE: $(#id)
-				} else {
-					elem = document.getElementById( match[2] );
-
-					// Check parentNode to catch when Blackberry 4.6 returns
-					// nodes that are no longer in the document #6963
-					if ( elem && elem.parentNode ) {
-						// Inject the element directly into the jQuery object
-						this.length = 1;
-						this[0] = elem;
-					}
-
-					this.context = document;
-					this.selector = selector;
-					return this;
-				}
-
-			// HANDLE: $(expr, $(...))
-			} else if ( !context || context.jquery ) {
-				return ( context || rootjQuery ).find( selector );
-
-			// HANDLE: $(expr, context)
-			// (which is just equivalent to: $(context).find(expr)
-			} else {
-				return this.constructor( context ).find( selector );
-			}
-
-		// HANDLE: $(DOMElement)
-		} else if ( selector.nodeType ) {
-			this.context = this[0] = selector;
-			this.length = 1;
-			return this;
-
-		// HANDLE: $(function)
-		// Shortcut for document ready
-		} else if ( jQuery.isFunction( selector ) ) {
-			return rootjQuery.ready( selector );
-		}
-
-		if ( selector.selector !== undefined ) {
-			this.selector = selector.selector;
-			this.context = selector.context;
-		}
-
-		return jQuery.makeArray( selector, this );
-	},
 
 	// Start with an empty selector
 	selector: "",
@@ -200,19 +100,19 @@ jQuery.fn = jQuery.prototype = {
 	length: 0,
 
 	toArray: function() {
-		return core_slice.call( this );
+		return slice.call( this );
 	},
 
 	// Get the Nth element in the matched element set OR
 	// Get the whole matched element set as a clean array
 	get: function( num ) {
-		return num == null ?
+		return num != null ?
 
 			// Return a 'clean' array
-			this.toArray() :
+			( num < 0 ? this[ num + this.length ] : this[ num ] ) :
 
 			// Return just the object
-			( num < 0 ? this[ this.length + num ] : this[ num ] );
+			slice.call( this );
 	},
 
 	// Take an array of elements and push it onto the stack
@@ -237,15 +137,14 @@ jQuery.fn = jQuery.prototype = {
 		return jQuery.each( this, callback, args );
 	},
 
-	ready: function( fn ) {
-		// Add the callback
-		jQuery.ready.promise().done( fn );
-
-		return this;
+	map: function( callback ) {
+		return this.pushStack( jQuery.map(this, function( elem, i ) {
+			return callback.call( elem, i, elem );
+		}));
 	},
 
 	slice: function() {
-		return this.pushStack( core_slice.apply( this, arguments ) );
+		return this.pushStack( slice.apply( this, arguments ) );
 	},
 
 	first: function() {
@@ -262,25 +161,16 @@ jQuery.fn = jQuery.prototype = {
 		return this.pushStack( j >= 0 && j < len ? [ this[j] ] : [] );
 	},
 
-	map: function( callback ) {
-		return this.pushStack( jQuery.map(this, function( elem, i ) {
-			return callback.call( elem, i, elem );
-		}));
-	},
-
 	end: function() {
 		return this.prevObject || this.constructor(null);
 	},
 
 	// For internal use only.
 	// Behaves like an Array's method, not like a jQuery method.
-	push: core_push,
-	sort: [].sort,
-	splice: [].splice
+	push: push,
+	sort: arr.sort,
+	splice: arr.splice
 };
-
-// Give the init function the jQuery prototype for later instantiation
-jQuery.fn.init.prototype = jQuery.fn;
 
 jQuery.extend = jQuery.fn.extend = function() {
 	var options, name, src, copy, copyIsArray, clone,
@@ -292,9 +182,10 @@ jQuery.extend = jQuery.fn.extend = function() {
 	// Handle a deep copy situation
 	if ( typeof target === "boolean" ) {
 		deep = target;
-		target = arguments[1] || {};
+
 		// skip the boolean and the target
-		i = 2;
+		target = arguments[ i ] || {};
+		i++;
 	}
 
 	// Handle case when target is a string or something (possible in deep copy)
@@ -303,9 +194,9 @@ jQuery.extend = jQuery.fn.extend = function() {
 	}
 
 	// extend jQuery itself if only one argument is passed
-	if ( length === i ) {
+	if ( i === length ) {
 		target = this;
-		--i;
+		i--;
 	}
 
 	for ( ; i < length; i++ ) {
@@ -348,60 +239,16 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 jQuery.extend({
 	// Unique for each copy of jQuery on the page
-	expando: "jQuery" + ( core_version + Math.random() ).replace( /\D/g, "" ),
+	expando: "jQuery" + ( version + Math.random() ).replace( /\D/g, "" ),
 
-	noConflict: function( deep ) {
-		if ( window.$ === jQuery ) {
-			window.$ = _$;
-		}
+	// Assume jQuery is ready without the ready module
+	isReady: true,
 
-		if ( deep && window.jQuery === jQuery ) {
-			window.jQuery = _jQuery;
-		}
-
-		return jQuery;
+	error: function( msg ) {
+		throw new Error( msg );
 	},
 
-	// Is the DOM ready to be used? Set to true once it occurs.
-	isReady: false,
-
-	// A counter to track how many items to wait for before
-	// the ready event fires. See #6781
-	readyWait: 1,
-
-	// Hold (or release) the ready event
-	holdReady: function( hold ) {
-		if ( hold ) {
-			jQuery.readyWait++;
-		} else {
-			jQuery.ready( true );
-		}
-	},
-
-	// Handle when the DOM is ready
-	ready: function( wait ) {
-
-		// Abort if there are pending holds or we're already ready
-		if ( wait === true ? --jQuery.readyWait : jQuery.isReady ) {
-			return;
-		}
-
-		// Remember that the DOM is ready
-		jQuery.isReady = true;
-
-		// If a normal DOM Ready event fired, decrement, and wait if need be
-		if ( wait !== true && --jQuery.readyWait > 0 ) {
-			return;
-		}
-
-		// If there are functions bound, to execute
-		readyList.resolveWith( document, [ jQuery ] );
-
-		// Trigger any bound ready events
-		if ( jQuery.fn.trigger ) {
-			jQuery( document ).trigger("ready").off("ready");
-		}
-	},
+	noop: function() {},
 
 	// See test/unit/core.js for details concerning isFunction.
 	// Since version 1.3, DOM methods and functions like alert
@@ -417,17 +264,10 @@ jQuery.extend({
 	},
 
 	isNumeric: function( obj ) {
-		return !isNaN( parseFloat(obj) ) && isFinite( obj );
-	},
-
-	type: function( obj ) {
-		if ( obj == null ) {
-			return String( obj );
-		}
-		// Support: Safari <= 5.1 (functionish RegExp)
-		return typeof obj === "object" || typeof obj === "function" ?
-			class2type[ core_toString.call(obj) ] || "object" :
-			typeof obj;
+		// parseFloat NaNs numeric-cast false positives (null|true|false|"")
+		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
+		// subtraction forces infinities to NaN
+		return obj - parseFloat( obj ) >= 0;
 	},
 
 	isPlainObject: function( obj ) {
@@ -445,7 +285,7 @@ jQuery.extend({
 		// https://bugzilla.mozilla.org/show_bug.cgi?id=814622
 		try {
 			if ( obj.constructor &&
-					!core_hasOwn.call( obj.constructor.prototype, "isPrototypeOf" ) ) {
+					!hasOwn.call( obj.constructor.prototype, "isPrototypeOf" ) ) {
 				return false;
 			}
 		} catch ( e ) {
@@ -465,69 +305,20 @@ jQuery.extend({
 		return true;
 	},
 
-	error: function( msg ) {
-		throw new Error( msg );
+	type: function( obj ) {
+		if ( obj == null ) {
+			return obj + "";
+		}
+		// Support: Android < 4.0, iOS < 6 (functionish RegExp)
+		return typeof obj === "object" || typeof obj === "function" ?
+			class2type[ toString.call(obj) ] || "object" :
+			typeof obj;
 	},
-
-	// data: string of html
-	// context (optional): If specified, the fragment will be created in this context, defaults to document
-	// keepScripts (optional): If true, will include scripts passed in the html string
-	parseHTML: function( data, context, keepScripts ) {
-		if ( !data || typeof data !== "string" ) {
-			return null;
-		}
-		if ( typeof context === "boolean" ) {
-			keepScripts = context;
-			context = false;
-		}
-		context = context || document;
-
-		var parsed = rsingleTag.exec( data ),
-			scripts = !keepScripts && [];
-
-		// Single tag
-		if ( parsed ) {
-			return [ context.createElement( parsed[1] ) ];
-		}
-
-		parsed = jQuery.buildFragment( [ data ], context, scripts );
-
-		if ( scripts ) {
-			jQuery( scripts ).remove();
-		}
-
-		return jQuery.merge( [], parsed.childNodes );
-	},
-
-	parseJSON: JSON.parse,
-
-	// Cross-browser xml parsing
-	parseXML: function( data ) {
-		var xml, tmp;
-		if ( !data || typeof data !== "string" ) {
-			return null;
-		}
-
-		// Support: IE9
-		try {
-			tmp = new DOMParser();
-			xml = tmp.parseFromString( data , "text/xml" );
-		} catch ( e ) {
-			xml = undefined;
-		}
-
-		if ( !xml || xml.getElementsByTagName( "parsererror" ).length ) {
-			jQuery.error( "Invalid XML: " + data );
-		}
-		return xml;
-	},
-
-	noop: function() {},
 
 	// Evaluates a script in a global context
 	globalEval: function( code ) {
 		var script,
-				indirect = eval;
+			indirect = eval;
 
 		code = jQuery.trim( code );
 
@@ -608,7 +399,7 @@ jQuery.extend({
 	},
 
 	trim: function( text ) {
-		return text == null ? "" : core_trim.call( text );
+		return text == null ? "" : trim.call( text );
 	},
 
 	// results is for internal usage only
@@ -622,7 +413,7 @@ jQuery.extend({
 					[ arr ] : arr
 				);
 			} else {
-				core_push.call( ret, arr );
+				push.call( ret, arr );
 			}
 		}
 
@@ -630,22 +421,16 @@ jQuery.extend({
 	},
 
 	inArray: function( elem, arr, i ) {
-		return arr == null ? -1 : core_indexOf.call( arr, elem, i );
+		return arr == null ? -1 : indexOf.call( arr, elem, i );
 	},
 
 	merge: function( first, second ) {
-		var l = second.length,
-			i = first.length,
-			j = 0;
+		var len = +second.length,
+			j = 0,
+			i = first.length;
 
-		if ( typeof l === "number" ) {
-			for ( ; j < l; j++ ) {
-				first[ i++ ] = second[ j ];
-			}
-		} else {
-			while ( second[j] !== undefined ) {
-				first[ i++ ] = second[ j++ ];
-			}
+		for ( ; j < len; j++ ) {
+			first[ i++ ] = second[ j ];
 		}
 
 		first.length = i;
@@ -653,23 +438,23 @@ jQuery.extend({
 		return first;
 	},
 
-	grep: function( elems, callback, inv ) {
-		var retVal,
-			ret = [],
+	grep: function( elems, callback, invert ) {
+		var callbackInverse,
+			matches = [],
 			i = 0,
-			length = elems.length;
-		inv = !!inv;
+			length = elems.length,
+			callbackExpect = !invert;
 
 		// Go through the array, only saving the items
 		// that pass the validator function
 		for ( ; i < length; i++ ) {
-			retVal = !!callback( elems[ i ], i );
-			if ( inv !== retVal ) {
-				ret.push( elems[ i ] );
+			callbackInverse = !callback( elems[ i ], i );
+			if ( callbackInverse !== callbackExpect ) {
+				matches.push( elems[ i ] );
 			}
 		}
 
-		return ret;
+		return matches;
 	},
 
 	// arg is for internal usage only
@@ -680,13 +465,13 @@ jQuery.extend({
 			isArray = isArraylike( elems ),
 			ret = [];
 
-		// Go through the array, translating each of the items to their
+		// Go through the array, translating each of the items to their new values
 		if ( isArray ) {
 			for ( ; i < length; i++ ) {
 				value = callback( elems[ i ], i, arg );
 
 				if ( value != null ) {
-					ret[ ret.length ] = value;
+					ret.push( value );
 				}
 			}
 
@@ -696,13 +481,13 @@ jQuery.extend({
 				value = callback( elems[ i ], i, arg );
 
 				if ( value != null ) {
-					ret[ ret.length ] = value;
+					ret.push( value );
 				}
 			}
 		}
 
 		// Flatten any nested arrays
-		return core_concat.apply( [], ret );
+		return concat.apply( [], ret );
 	},
 
 	// A global GUID counter for objects
@@ -726,9 +511,9 @@ jQuery.extend({
 		}
 
 		// Simulated bind
-		args = core_slice.call( arguments, 2 );
+		args = slice.call( arguments, 2 );
 		proxy = function() {
-			return fn.apply( context || this, args.concat( core_slice.call( arguments ) ) );
+			return fn.apply( context || this, args.concat( slice.call( arguments ) ) );
 		};
 
 		// Set the guid of unique handler to the same of original handler, so it can be removed
@@ -737,108 +522,12 @@ jQuery.extend({
 		return proxy;
 	},
 
-	// Multifunctional method to get and set values of a collection
-	// The value/s can optionally be executed if it's a function
-	access: function( elems, fn, key, value, chainable, emptyGet, raw ) {
-		var i = 0,
-			length = elems.length,
-			bulk = key == null;
-
-		// Sets many values
-		if ( jQuery.type( key ) === "object" ) {
-			chainable = true;
-			for ( i in key ) {
-				jQuery.access( elems, fn, i, key[i], true, emptyGet, raw );
-			}
-
-		// Sets one value
-		} else if ( value !== undefined ) {
-			chainable = true;
-
-			if ( !jQuery.isFunction( value ) ) {
-				raw = true;
-			}
-
-			if ( bulk ) {
-				// Bulk operations run against the entire set
-				if ( raw ) {
-					fn.call( elems, value );
-					fn = null;
-
-				// ...except when executing function values
-				} else {
-					bulk = fn;
-					fn = function( elem, key, value ) {
-						return bulk.call( jQuery( elem ), value );
-					};
-				}
-			}
-
-			if ( fn ) {
-				for ( ; i < length; i++ ) {
-					fn( elems[i], key, raw ? value : value.call( elems[i], i, fn( elems[i], key ) ) );
-				}
-			}
-		}
-
-		return chainable ?
-			elems :
-
-			// Gets
-			bulk ?
-				fn.call( elems ) :
-				length ? fn( elems[0], key ) : emptyGet;
-	},
-
 	now: Date.now,
 
-	// A method for quickly swapping in/out CSS properties to get correct calculations.
-	// Note: this method belongs to the css module but it's needed here for the support module.
-	// If support gets modularized, this method should be moved back to the css module.
-	swap: function( elem, options, callback, args ) {
-		var ret, name,
-			old = {};
-
-		// Remember the old values, and insert the new ones
-		for ( name in options ) {
-			old[ name ] = elem.style[ name ];
-			elem.style[ name ] = options[ name ];
-		}
-
-		ret = callback.apply( elem, args || [] );
-
-		// Revert the old values
-		for ( name in options ) {
-			elem.style[ name ] = old[ name ];
-		}
-
-		return ret;
-	}
+	// jQuery.support is not used in Core but other projects attach their
+	// properties to it so it needs to exist.
+	support: support
 });
-
-jQuery.ready.promise = function( obj ) {
-	if ( !readyList ) {
-
-		readyList = jQuery.Deferred();
-
-		// Catch cases where $(document).ready() is called after the browser event has already occurred.
-		// we once tried to use readyState "interactive" here, but it caused issues like the one
-		// discovered by ChrisS here: http://bugs.jquery.com/ticket/12282#comment:15
-		if ( document.readyState === "complete" ) {
-			// Handle it asynchronously to allow scripts the opportunity to delay ready
-			setTimeout( jQuery.ready );
-
-		} else {
-
-			// Use the handy event callback
-			document.addEventListener( "DOMContentLoaded", completed, false );
-
-			// A fallback to window.onload, that will always work
-			window.addEventListener( "load", completed, false );
-		}
-	}
-	return readyList.promise( obj );
-};
 
 // Populate the class2type map
 jQuery.each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function(i, name) {
@@ -849,7 +538,7 @@ function isArraylike( obj ) {
 	var length = obj.length,
 		type = jQuery.type( obj );
 
-	if ( jQuery.isWindow( obj ) ) {
+	if ( type === "function" || jQuery.isWindow( obj ) ) {
 		return false;
 	}
 
@@ -857,34 +546,31 @@ function isArraylike( obj ) {
 		return true;
 	}
 
-	return type === "array" || type !== "function" &&
-		( length === 0 ||
-		typeof length === "number" && length > 0 && ( length - 1 ) in obj );
+	return type === "array" || length === 0 ||
+		typeof length === "number" && length > 0 && ( length - 1 ) in obj;
 }
-
-// All jQuery objects should point back to these
-rootjQuery = jQuery(document);
+var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v1.9.4-pre
+ * Sizzle CSS Selector Engine v1.10.16
  * http://sizzlejs.com/
  *
  * Copyright 2013 jQuery Foundation, Inc. and other contributors
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2013-06-03
+ * Date: 2014-01-13
  */
-(function( window, undefined ) {
+(function( window ) {
 
 var i,
 	support,
-	cachedruns,
 	Expr,
 	getText,
 	isXML,
 	compile,
 	outermostContext,
 	sortInput,
+	hasDuplicate,
 
 	// Local document vars
 	setDocument,
@@ -904,11 +590,9 @@ var i,
 	classCache = createCache(),
 	tokenCache = createCache(),
 	compilerCache = createCache(),
-	hasDuplicate = false,
 	sortOrder = function( a, b ) {
 		if ( a === b ) {
 			hasDuplicate = true;
-			return 0;
 		}
 		return 0;
 	},
@@ -968,8 +652,7 @@ var i,
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
 	rcombinators = new RegExp( "^" + whitespace + "*([>+~]|" + whitespace + ")" + whitespace + "*" ),
 
-	rsibling = new RegExp( whitespace + "*[+~]" ),
-	rattributeQuotes = new RegExp( "=" + whitespace + "*([^\\]'\"]*)" + whitespace + "*\\]", "g" ),
+	rattributeQuotes = new RegExp( "=" + whitespace + "*([^\\]'\"]*?)" + whitespace + "*\\]", "g" ),
 
 	rpseudo = new RegExp( pseudos ),
 	ridentifier = new RegExp( "^" + identifier + "$" ),
@@ -990,14 +673,15 @@ var i,
 			whitespace + "*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
 	},
 
+	rinputs = /^(?:input|select|textarea|button)$/i,
+	rheader = /^h\d$/i,
+
 	rnative = /^[^{]+\{\s*\[native \w/,
 
 	// Easily-parseable/retrievable ID or TAG or CLASS selectors
 	rquickExpr = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/,
 
-	rinputs = /^(?:input|select|textarea|button)$/i,
-	rheader = /^h\d$/i,
-
+	rsibling = /[+~]/,
 	rescape = /'|\\/g,
 
 	// CSS escapes http://www.w3.org/TR/CSS21/syndata.html#escaped-characters
@@ -1009,8 +693,8 @@ var i,
 		// Workaround erroneous numeric interpretation of +"0x"
 		return high !== high || escapedWhitespace ?
 			escaped :
-			// BMP codepoint
 			high < 0 ?
+				// BMP codepoint
 				String.fromCharCode( high + 0x10000 ) :
 				// Supplemental Plane codepoint (surrogate pair)
 				String.fromCharCode( high >> 10 | 0xD800, high & 0x3FF | 0xDC00 );
@@ -1074,7 +758,7 @@ function Sizzle( selector, context, results, seed ) {
 				if ( nodeType === 9 ) {
 					elem = context.getElementById( m );
 					// Check parentNode to catch when Blackberry 4.6 returns
-					// nodes that are no longer in the document #6963
+					// nodes that are no longer in the document (jQuery #6963)
 					if ( elem && elem.parentNode ) {
 						// Handle the case where IE, Opera, and Webkit return items
 						// by name instead of ID
@@ -1130,7 +814,7 @@ function Sizzle( selector, context, results, seed ) {
 				while ( i-- ) {
 					groups[i] = nid + toSelector( groups[i] );
 				}
-				newContext = rsibling.test( selector ) && context.parentNode || context;
+				newContext = rsibling.test( selector ) && testContext( context.parentNode ) || context;
 				newSelector = groups.join(",");
 			}
 
@@ -1165,11 +849,11 @@ function createCache() {
 
 	function cache( key, value ) {
 		// Use (key + " ") to avoid collision with native prototype properties (see Issue #157)
-		if ( keys.push( key += " " ) > Expr.cacheLength ) {
+		if ( keys.push( key + " " ) > Expr.cacheLength ) {
 			// Only keep the most recent entries
 			delete cache[ keys.shift() ];
 		}
-		return (cache[ key ] = value);
+		return (cache[ key + " " ] = value);
 	}
 	return cache;
 }
@@ -1292,8 +976,21 @@ function createPositionalPseudo( fn ) {
 }
 
 /**
- * Detect xml
+ * Checks a node for validity as a Sizzle context
+ * @param {Element|Object=} context
+ * @returns {Element|Object|Boolean} The input node if acceptable, otherwise a falsy value
+ */
+function testContext( context ) {
+	return context && typeof context.getElementsByTagName !== strundefined && context;
+}
+
+// Expose support vars for convenience
+support = Sizzle.support = {};
+
+/**
+ * Detects XML nodes
  * @param {Element|Object} elem An element or a document
+ * @returns {Boolean} True iff elem is a non-HTML XML node
  */
 isXML = Sizzle.isXML = function( elem ) {
 	// documentElement is verified for cases where it doesn't yet exist
@@ -1302,16 +999,14 @@ isXML = Sizzle.isXML = function( elem ) {
 	return documentElement ? documentElement.nodeName !== "HTML" : false;
 };
 
-// Expose support vars for convenience
-support = Sizzle.support = {};
-
 /**
  * Sets document-related variables once based on the current document
  * @param {Element|Object} [doc] An element or document object to use to set the document
  * @returns {Object} Returns the current document
  */
 setDocument = Sizzle.setDocument = function( node ) {
-	var doc = node ? node.ownerDocument || node : preferredDoc,
+	var hasCompare,
+		doc = node ? node.ownerDocument || node : preferredDoc,
 		parent = doc.defaultView;
 
 	// If no document and documentElement is available, return
@@ -1330,10 +1025,17 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// If iframe document is assigned to "document" variable and if iframe has been reloaded,
 	// IE will throw "permission denied" error when accessing "document" variable, see jQuery #13936
 	// IE6-8 do not support the defaultView property so parent will be undefined
-	if ( parent && parent.attachEvent && parent !== parent.top ) {
-		parent.attachEvent( "onbeforeunload", function() {
-			setDocument();
-		});
+	if ( parent && parent !== parent.top ) {
+		// IE11 does not have attachEvent, so all must suffer
+		if ( parent.addEventListener ) {
+			parent.addEventListener( "unload", function() {
+				setDocument();
+			}, false );
+		} else if ( parent.attachEvent ) {
+			parent.attachEvent( "onunload", function() {
+				setDocument();
+			});
+		}
 	}
 
 	/* Attributes
@@ -1356,7 +1058,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	});
 
 	// Check if getElementsByClassName can be trusted
-	support.getElementsByClassName = assert(function( div ) {
+	support.getElementsByClassName = rnative.test( doc.getElementsByClassName ) && assert(function( div ) {
 		div.innerHTML = "<div class='a'></div><div class='a i'></div>";
 
 		// Support: Safari<4
@@ -1463,7 +1165,13 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// setting a boolean content attribute,
 			// since its presence should be enough
 			// http://bugs.jquery.com/ticket/12359
-			div.innerHTML = "<select><option selected=''></option></select>";
+			div.innerHTML = "<select t=''><option selected=''></option></select>";
+
+			// Support: IE8, Opera 10-12
+			// Nothing should be selected when empty strings follow ^= or $= or *=
+			if ( div.querySelectorAll("[t^='']").length ) {
+				rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
+			}
 
 			// Support: IE8
 			// Boolean attributes and "value" are not treated correctly
@@ -1480,18 +1188,16 @@ setDocument = Sizzle.setDocument = function( node ) {
 		});
 
 		assert(function( div ) {
-
-			// Support: Opera 10-12/IE8
-			// ^= $= *= and empty values
-			// Should not select anything
 			// Support: Windows 8 Native Apps
-			// The type attribute is restricted during .innerHTML assignment
+			// The type and name attributes are restricted during .innerHTML assignment
 			var input = doc.createElement("input");
 			input.setAttribute( "type", "hidden" );
-			div.appendChild( input ).setAttribute( "t", "" );
+			div.appendChild( input ).setAttribute( "name", "D" );
 
-			if ( div.querySelectorAll("[t^='']").length ) {
-				rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
+			// Support: IE8
+			// Enforce case-sensitivity of name attribute
+			if ( div.querySelectorAll("[name=d]").length ) {
+				rbuggyQSA.push( "name" + whitespace + "*[*^$|!~]?=" );
 			}
 
 			// FF 3.5 - :enabled/:disabled and hidden elements (hidden elements are still enabled)
@@ -1528,11 +1234,12 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 	/* Contains
 	---------------------------------------------------------------------- */
+	hasCompare = rnative.test( docElem.compareDocumentPosition );
 
 	// Element contains another
 	// Purposefully does not implement inclusive descendent
 	// As in, an element does not contain itself
-	contains = rnative.test( docElem.contains ) || docElem.compareDocumentPosition ?
+	contains = hasCompare || rnative.test( docElem.contains ) ?
 		function( a, b ) {
 			var adown = a.nodeType === 9 ? a.documentElement : a,
 				bup = b && b.parentNode;
@@ -1557,7 +1264,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	---------------------------------------------------------------------- */
 
 	// Document order sorting
-	sortOrder = docElem.compareDocumentPosition ?
+	sortOrder = hasCompare ?
 	function( a, b ) {
 
 		// Flag for duplicate removal
@@ -1566,34 +1273,46 @@ setDocument = Sizzle.setDocument = function( node ) {
 			return 0;
 		}
 
-		var compare = b.compareDocumentPosition && a.compareDocumentPosition && a.compareDocumentPosition( b );
-
+		// Sort on method existence if only one input has compareDocumentPosition
+		var compare = !a.compareDocumentPosition - !b.compareDocumentPosition;
 		if ( compare ) {
-			// Disconnected nodes
-			if ( compare & 1 ||
-				(!support.sortDetached && b.compareDocumentPosition( a ) === compare) ) {
-
-				// Choose the first element that is related to our preferred document
-				if ( a === doc || contains(preferredDoc, a) ) {
-					return -1;
-				}
-				if ( b === doc || contains(preferredDoc, b) ) {
-					return 1;
-				}
-
-				// Maintain original order
-				return sortInput ?
-					( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
-					0;
-			}
-
-			return compare & 4 ? -1 : 1;
+			return compare;
 		}
 
-		// Not directly comparable, sort on existence of method
-		return a.compareDocumentPosition ? -1 : 1;
+		// Calculate position if both inputs belong to the same document
+		compare = ( a.ownerDocument || a ) === ( b.ownerDocument || b ) ?
+			a.compareDocumentPosition( b ) :
+
+			// Otherwise we know they are disconnected
+			1;
+
+		// Disconnected nodes
+		if ( compare & 1 ||
+			(!support.sortDetached && b.compareDocumentPosition( a ) === compare) ) {
+
+			// Choose the first element that is related to our preferred document
+			if ( a === doc || a.ownerDocument === preferredDoc && contains(preferredDoc, a) ) {
+				return -1;
+			}
+			if ( b === doc || b.ownerDocument === preferredDoc && contains(preferredDoc, b) ) {
+				return 1;
+			}
+
+			// Maintain original order
+			return sortInput ?
+				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				0;
+		}
+
+		return compare & 4 ? -1 : 1;
 	} :
 	function( a, b ) {
+		// Exit early if the nodes are identical
+		if ( a === b ) {
+			hasDuplicate = true;
+			return 0;
+		}
+
 		var cur,
 			i = 0,
 			aup = a.parentNode,
@@ -1601,13 +1320,8 @@ setDocument = Sizzle.setDocument = function( node ) {
 			ap = [ a ],
 			bp = [ b ];
 
-		// Exit early if the nodes are identical
-		if ( a === b ) {
-			hasDuplicate = true;
-			return 0;
-
 		// Parentless nodes are either documents or disconnected
-		} else if ( !aup || !bup ) {
+		if ( !aup || !bup ) {
 			return a === doc ? -1 :
 				b === doc ? 1 :
 				aup ? -1 :
@@ -1702,13 +1416,13 @@ Sizzle.attr = function( elem, name ) {
 			fn( elem, name, !documentIsHTML ) :
 			undefined;
 
-	return val === undefined ?
+	return val !== undefined ?
+		val :
 		support.attributes || !documentIsHTML ?
 			elem.getAttribute( name ) :
 			(val = elem.getAttributeNode(name)) && val.specified ?
 				val.value :
-				null :
-		val;
+				null;
 };
 
 Sizzle.error = function( msg ) {
@@ -1741,6 +1455,10 @@ Sizzle.uniqueSort = function( results ) {
 		}
 	}
 
+	// Clear input after sorting to release objects
+	// See https://github.com/jquery/sizzle/pull/225
+	sortInput = null;
+
 	return results;
 };
 
@@ -1756,13 +1474,13 @@ getText = Sizzle.getText = function( elem ) {
 
 	if ( !nodeType ) {
 		// If no nodeType, this is expected to be an array
-		for ( ; (node = elem[i]); i++ ) {
+		while ( (node = elem[i++]) ) {
 			// Do not traverse comment nodes
 			ret += getText( node );
 		}
 	} else if ( nodeType === 1 || nodeType === 9 || nodeType === 11 ) {
 		// Use textContent for elements
-		// innerText usage removed for consistency of new lines (see #11153)
+		// innerText usage removed for consistency of new lines (jQuery #11153)
 		if ( typeof elem.textContent === "string" ) {
 			return elem.textContent;
 		} else {
@@ -2159,12 +1877,11 @@ Expr = Sizzle.selectors = {
 		// Contents
 		"empty": function( elem ) {
 			// http://www.w3.org/TR/selectors/#empty-pseudo
-			// :empty is only affected by element nodes and content nodes(including text(3), cdata(4)),
-			//   not comment, processing instructions, or others
-			// Thanks to Diego Perini for the nodeName shortcut
-			//   Greater than "@" means alpha characters (specifically not starting with "#" or "?")
+			// :empty is negated by element (1) or content nodes (text: 3; cdata: 4; entity ref: 5),
+			//   but not by others (comment: 8; processing instruction: 7; etc.)
+			// nodeType < 6 works because attributes (2) do not appear as children
 			for ( elem = elem.firstChild; elem; elem = elem.nextSibling ) {
-				if ( elem.nodeName > "@" || elem.nodeType === 3 || elem.nodeType === 4 ) {
+				if ( elem.nodeType < 6 ) {
 					return false;
 				}
 			}
@@ -2191,11 +1908,12 @@ Expr = Sizzle.selectors = {
 
 		"text": function( elem ) {
 			var attr;
-			// IE6 and 7 will map elem.type to 'text' for new HTML5 types (search, etc)
-			// use getAttribute instead to test this case
 			return elem.nodeName.toLowerCase() === "input" &&
 				elem.type === "text" &&
-				( (attr = elem.getAttribute("type")) == null || attr.toLowerCase() === elem.type );
+
+				// Support: IE<8
+				// New HTML5 attribute values (e.g., "search") appear with elem.type === "text"
+				( (attr = elem.getAttribute("type")) == null || attr.toLowerCase() === "text" );
 		},
 
 		// Position-in-collection
@@ -2281,7 +1999,7 @@ function tokenize( selector, parseOnly ) {
 				// Don't consume trailing commas as valid
 				soFar = soFar.slice( match[0].length ) || soFar;
 			}
-			groups.push( tokens = [] );
+			groups.push( (tokens = []) );
 		}
 
 		matched = false;
@@ -2354,8 +2072,8 @@ function addCombinator( matcher, combinator, base ) {
 
 		// Check against all ancestor/preceding elements
 		function( elem, context, xml ) {
-			var data, cache, outerCache,
-				dirkey = dirruns + " " + doneName;
+			var oldCache, outerCache,
+				newCache = [ dirruns, doneName ];
 
 			// We can't set arbitrary data on XML nodes, so they don't benefit from dir caching
 			if ( xml ) {
@@ -2370,14 +2088,17 @@ function addCombinator( matcher, combinator, base ) {
 				while ( (elem = elem[ dir ]) ) {
 					if ( elem.nodeType === 1 || checkNonElements ) {
 						outerCache = elem[ expando ] || (elem[ expando ] = {});
-						if ( (cache = outerCache[ dir ]) && cache[0] === dirkey ) {
-							if ( (data = cache[1]) === true || data === cachedruns ) {
-								return data === true;
-							}
+						if ( (oldCache = outerCache[ dir ]) &&
+							oldCache[ 0 ] === dirruns && oldCache[ 1 ] === doneName ) {
+
+							// Assign to newCache so results back-propagate to previous elements
+							return (newCache[ 2 ] = oldCache[ 2 ]);
 						} else {
-							cache = outerCache[ dir ] = [ dirkey ];
-							cache[1] = matcher( elem, context, xml ) || cachedruns;
-							if ( cache[1] === true ) {
+							// Reuse newcache so results back-propagate to previous elements
+							outerCache[ dir ] = newCache;
+
+							// A match means we're done; a fail means we have to keep checking
+							if ( (newCache[ 2 ] = matcher( elem, context, xml )) ) {
 								return true;
 							}
 						}
@@ -2571,31 +2292,30 @@ function matcherFromTokens( tokens ) {
 }
 
 function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
-	// A counter to specify which element is currently being matched
-	var matcherCachedRuns = 0,
-		bySet = setMatchers.length > 0,
+	var bySet = setMatchers.length > 0,
 		byElement = elementMatchers.length > 0,
-		superMatcher = function( seed, context, xml, results, expandContext ) {
+		superMatcher = function( seed, context, xml, results, outermost ) {
 			var elem, j, matcher,
-				setMatched = [],
 				matchedCount = 0,
 				i = "0",
 				unmatched = seed && [],
-				outermost = expandContext != null,
+				setMatched = [],
 				contextBackup = outermostContext,
-				// We must always have either seed elements or context
-				elems = seed || byElement && Expr.find["TAG"]( "*", expandContext && context.parentNode || context ),
+				// We must always have either seed elements or outermost context
+				elems = seed || byElement && Expr.find["TAG"]( "*", outermost ),
 				// Use integer dirruns iff this is the outermost matcher
-				dirrunsUnique = (dirruns += contextBackup == null ? 1 : Math.random() || 0.1);
+				dirrunsUnique = (dirruns += contextBackup == null ? 1 : Math.random() || 0.1),
+				len = elems.length;
 
 			if ( outermost ) {
 				outermostContext = context !== document && context;
-				cachedruns = matcherCachedRuns;
 			}
 
 			// Add elements passing elementMatchers directly to results
 			// Keep `i` a string if there are no elements so `matchedCount` will be "00" below
-			for ( ; (elem = elems[i]) != null; i++ ) {
+			// Support: IE<9, Safari
+			// Tolerate NodeList properties (IE: "length"; Safari: <number>) matching elements by id
+			for ( ; i !== len && (elem = elems[i]) != null; i++ ) {
 				if ( byElement && elem ) {
 					j = 0;
 					while ( (matcher = elementMatchers[j++]) ) {
@@ -2606,7 +2326,6 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 					}
 					if ( outermost ) {
 						dirruns = dirrunsUnique;
-						cachedruns = ++matcherCachedRuns;
 					}
 				}
 
@@ -2741,7 +2460,7 @@ function select( selector, context, results, seed ) {
 					// Search, expanding context for leading sibling combinators
 					if ( (seed = find(
 						token.matches[0].replace( runescape, funescape ),
-						rsibling.test( tokens[0].type ) && context.parentNode || context
+						rsibling.test( tokens[0].type ) && testContext( context.parentNode ) || context
 					)) ) {
 
 						// If seed is empty or no tokens remain, we can return early
@@ -2766,7 +2485,7 @@ function select( selector, context, results, seed ) {
 		context,
 		!documentIsHTML,
 		results,
-		rsibling.test( selector )
+		rsibling.test( selector ) && testContext( context.parentNode ) || context
 	);
 	return results;
 }
@@ -2778,7 +2497,7 @@ support.sortStable = expando.split("").sort( sortOrder ).join("") === expando;
 
 // Support: Chrome<14
 // Always assume duplicates if they aren't passed to the comparison function
-support.detectDuplicates = hasDuplicate;
+support.detectDuplicates = !!hasDuplicate;
 
 // Initialize against the default document
 setDocument();
@@ -2826,12 +2545,19 @@ if ( !assert(function( div ) {
 	addHandle( booleans, function( elem, name, isXML ) {
 		var val;
 		if ( !isXML ) {
-			return (val = elem.getAttributeNode( name )) && val.specified ?
-				val.value :
-				elem[ name ] === true ? name.toLowerCase() : null;
+			return elem[ name ] === true ? name.toLowerCase() :
+					(val = elem.getAttributeNode( name )) && val.specified ?
+					val.value :
+				null;
 		}
 	});
 }
+
+return Sizzle;
+
+})( window );
+
+
 
 jQuery.find = Sizzle;
 jQuery.expr = Sizzle.selectors;
@@ -2842,14 +2568,422 @@ jQuery.isXMLDoc = Sizzle.isXML;
 jQuery.contains = Sizzle.contains;
 
 
-})( window );
+
+var rneedsContext = jQuery.expr.match.needsContext;
+
+var rsingleTag = (/^<(\w+)\s*\/?>(?:<\/\1>|)$/);
+
+
+
+var risSimple = /^.[^:#\[\.,]*$/;
+
+// Implement the identical functionality for filter and not
+function winnow( elements, qualifier, not ) {
+	if ( jQuery.isFunction( qualifier ) ) {
+		return jQuery.grep( elements, function( elem, i ) {
+			/* jshint -W018 */
+			return !!qualifier.call( elem, i, elem ) !== not;
+		});
+
+	}
+
+	if ( qualifier.nodeType ) {
+		return jQuery.grep( elements, function( elem ) {
+			return ( elem === qualifier ) !== not;
+		});
+
+	}
+
+	if ( typeof qualifier === "string" ) {
+		if ( risSimple.test( qualifier ) ) {
+			return jQuery.filter( qualifier, elements, not );
+		}
+
+		qualifier = jQuery.filter( qualifier, elements );
+	}
+
+	return jQuery.grep( elements, function( elem ) {
+		return ( indexOf.call( qualifier, elem ) >= 0 ) !== not;
+	});
+}
+
+jQuery.filter = function( expr, elems, not ) {
+	var elem = elems[ 0 ];
+
+	if ( not ) {
+		expr = ":not(" + expr + ")";
+	}
+
+	return elems.length === 1 && elem.nodeType === 1 ?
+		jQuery.find.matchesSelector( elem, expr ) ? [ elem ] : [] :
+		jQuery.find.matches( expr, jQuery.grep( elems, function( elem ) {
+			return elem.nodeType === 1;
+		}));
+};
+
+jQuery.fn.extend({
+	find: function( selector ) {
+		var i,
+			len = this.length,
+			ret = [],
+			self = this;
+
+		if ( typeof selector !== "string" ) {
+			return this.pushStack( jQuery( selector ).filter(function() {
+				for ( i = 0; i < len; i++ ) {
+					if ( jQuery.contains( self[ i ], this ) ) {
+						return true;
+					}
+				}
+			}) );
+		}
+
+		for ( i = 0; i < len; i++ ) {
+			jQuery.find( selector, self[ i ], ret );
+		}
+
+		// Needed because $( selector, context ) becomes $( context ).find( selector )
+		ret = this.pushStack( len > 1 ? jQuery.unique( ret ) : ret );
+		ret.selector = this.selector ? this.selector + " " + selector : selector;
+		return ret;
+	},
+	filter: function( selector ) {
+		return this.pushStack( winnow(this, selector || [], false) );
+	},
+	not: function( selector ) {
+		return this.pushStack( winnow(this, selector || [], true) );
+	},
+	is: function( selector ) {
+		return !!winnow(
+			this,
+
+			// If this is a positional/relative selector, check membership in the returned set
+			// so $("p:first").is("p:last") won't return true for a doc with two "p".
+			typeof selector === "string" && rneedsContext.test( selector ) ?
+				jQuery( selector ) :
+				selector || [],
+			false
+		).length;
+	}
+});
+
+
+// Initialize a jQuery object
+
+
+// A central reference to the root jQuery(document)
+var rootjQuery,
+
+	// A simple way to check for HTML strings
+	// Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
+	// Strict HTML recognition (#11290: must start with <)
+	rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,
+
+	init = jQuery.fn.init = function( selector, context ) {
+		var match, elem;
+
+		// HANDLE: $(""), $(null), $(undefined), $(false)
+		if ( !selector ) {
+			return this;
+		}
+
+		// Handle HTML strings
+		if ( typeof selector === "string" ) {
+			if ( selector[0] === "<" && selector[ selector.length - 1 ] === ">" && selector.length >= 3 ) {
+				// Assume that strings that start and end with <> are HTML and skip the regex check
+				match = [ null, selector, null ];
+
+			} else {
+				match = rquickExpr.exec( selector );
+			}
+
+			// Match html or make sure no context is specified for #id
+			if ( match && (match[1] || !context) ) {
+
+				// HANDLE: $(html) -> $(array)
+				if ( match[1] ) {
+					context = context instanceof jQuery ? context[0] : context;
+
+					// scripts is true for back-compat
+					// Intentionally let the error be thrown if parseHTML is not present
+					jQuery.merge( this, jQuery.parseHTML(
+						match[1],
+						context && context.nodeType ? context.ownerDocument || context : document,
+						true
+					) );
+
+					// HANDLE: $(html, props)
+					if ( rsingleTag.test( match[1] ) && jQuery.isPlainObject( context ) ) {
+						for ( match in context ) {
+							// Properties of context are called as methods if possible
+							if ( jQuery.isFunction( this[ match ] ) ) {
+								this[ match ]( context[ match ] );
+
+							// ...and otherwise set as attributes
+							} else {
+								this.attr( match, context[ match ] );
+							}
+						}
+					}
+
+					return this;
+
+				// HANDLE: $(#id)
+				} else {
+					elem = document.getElementById( match[2] );
+
+					// Check parentNode to catch when Blackberry 4.6 returns
+					// nodes that are no longer in the document #6963
+					if ( elem && elem.parentNode ) {
+						// Inject the element directly into the jQuery object
+						this.length = 1;
+						this[0] = elem;
+					}
+
+					this.context = document;
+					this.selector = selector;
+					return this;
+				}
+
+			// HANDLE: $(expr, $(...))
+			} else if ( !context || context.jquery ) {
+				return ( context || rootjQuery ).find( selector );
+
+			// HANDLE: $(expr, context)
+			// (which is just equivalent to: $(context).find(expr)
+			} else {
+				return this.constructor( context ).find( selector );
+			}
+
+		// HANDLE: $(DOMElement)
+		} else if ( selector.nodeType ) {
+			this.context = this[0] = selector;
+			this.length = 1;
+			return this;
+
+		// HANDLE: $(function)
+		// Shortcut for document ready
+		} else if ( jQuery.isFunction( selector ) ) {
+			return typeof rootjQuery.ready !== "undefined" ?
+				rootjQuery.ready( selector ) :
+				// Execute immediately if ready is not present
+				selector( jQuery );
+		}
+
+		if ( selector.selector !== undefined ) {
+			this.selector = selector.selector;
+			this.context = selector.context;
+		}
+
+		return jQuery.makeArray( selector, this );
+	};
+
+// Give the init function the jQuery prototype for later instantiation
+init.prototype = jQuery.fn;
+
+// Initialize central reference
+rootjQuery = jQuery( document );
+
+
+var rparentsprev = /^(?:parents|prev(?:Until|All))/,
+	// methods guaranteed to produce a unique set when starting from a unique set
+	guaranteedUnique = {
+		children: true,
+		contents: true,
+		next: true,
+		prev: true
+	};
+
+jQuery.extend({
+	dir: function( elem, dir, until ) {
+		var matched = [],
+			truncate = until !== undefined;
+
+		while ( (elem = elem[ dir ]) && elem.nodeType !== 9 ) {
+			if ( elem.nodeType === 1 ) {
+				if ( truncate && jQuery( elem ).is( until ) ) {
+					break;
+				}
+				matched.push( elem );
+			}
+		}
+		return matched;
+	},
+
+	sibling: function( n, elem ) {
+		var matched = [];
+
+		for ( ; n; n = n.nextSibling ) {
+			if ( n.nodeType === 1 && n !== elem ) {
+				matched.push( n );
+			}
+		}
+
+		return matched;
+	}
+});
+
+jQuery.fn.extend({
+	has: function( target ) {
+		var targets = jQuery( target, this ),
+			l = targets.length;
+
+		return this.filter(function() {
+			var i = 0;
+			for ( ; i < l; i++ ) {
+				if ( jQuery.contains( this, targets[i] ) ) {
+					return true;
+				}
+			}
+		});
+	},
+
+	closest: function( selectors, context ) {
+		var cur,
+			i = 0,
+			l = this.length,
+			matched = [],
+			pos = rneedsContext.test( selectors ) || typeof selectors !== "string" ?
+				jQuery( selectors, context || this.context ) :
+				0;
+
+		for ( ; i < l; i++ ) {
+			for ( cur = this[i]; cur && cur !== context; cur = cur.parentNode ) {
+				// Always skip document fragments
+				if ( cur.nodeType < 11 && (pos ?
+					pos.index(cur) > -1 :
+
+					// Don't pass non-elements to Sizzle
+					cur.nodeType === 1 &&
+						jQuery.find.matchesSelector(cur, selectors)) ) {
+
+					matched.push( cur );
+					break;
+				}
+			}
+		}
+
+		return this.pushStack( matched.length > 1 ? jQuery.unique( matched ) : matched );
+	},
+
+	// Determine the position of an element within
+	// the matched set of elements
+	index: function( elem ) {
+
+		// No argument, return index in parent
+		if ( !elem ) {
+			return ( this[ 0 ] && this[ 0 ].parentNode ) ? this.first().prevAll().length : -1;
+		}
+
+		// index in selector
+		if ( typeof elem === "string" ) {
+			return indexOf.call( jQuery( elem ), this[ 0 ] );
+		}
+
+		// Locate the position of the desired element
+		return indexOf.call( this,
+
+			// If it receives a jQuery object, the first element is used
+			elem.jquery ? elem[ 0 ] : elem
+		);
+	},
+
+	add: function( selector, context ) {
+		return this.pushStack(
+			jQuery.unique(
+				jQuery.merge( this.get(), jQuery( selector, context ) )
+			)
+		);
+	},
+
+	addBack: function( selector ) {
+		return this.add( selector == null ?
+			this.prevObject : this.prevObject.filter(selector)
+		);
+	}
+});
+
+function sibling( cur, dir ) {
+	while ( (cur = cur[dir]) && cur.nodeType !== 1 ) {}
+	return cur;
+}
+
+jQuery.each({
+	parent: function( elem ) {
+		var parent = elem.parentNode;
+		return parent && parent.nodeType !== 11 ? parent : null;
+	},
+	parents: function( elem ) {
+		return jQuery.dir( elem, "parentNode" );
+	},
+	parentsUntil: function( elem, i, until ) {
+		return jQuery.dir( elem, "parentNode", until );
+	},
+	next: function( elem ) {
+		return sibling( elem, "nextSibling" );
+	},
+	prev: function( elem ) {
+		return sibling( elem, "previousSibling" );
+	},
+	nextAll: function( elem ) {
+		return jQuery.dir( elem, "nextSibling" );
+	},
+	prevAll: function( elem ) {
+		return jQuery.dir( elem, "previousSibling" );
+	},
+	nextUntil: function( elem, i, until ) {
+		return jQuery.dir( elem, "nextSibling", until );
+	},
+	prevUntil: function( elem, i, until ) {
+		return jQuery.dir( elem, "previousSibling", until );
+	},
+	siblings: function( elem ) {
+		return jQuery.sibling( ( elem.parentNode || {} ).firstChild, elem );
+	},
+	children: function( elem ) {
+		return jQuery.sibling( elem.firstChild );
+	},
+	contents: function( elem ) {
+		return elem.contentDocument || jQuery.merge( [], elem.childNodes );
+	}
+}, function( name, fn ) {
+	jQuery.fn[ name ] = function( until, selector ) {
+		var matched = jQuery.map( this, fn, until );
+
+		if ( name.slice( -5 ) !== "Until" ) {
+			selector = until;
+		}
+
+		if ( selector && typeof selector === "string" ) {
+			matched = jQuery.filter( selector, matched );
+		}
+
+		if ( this.length > 1 ) {
+			// Remove duplicates
+			if ( !guaranteedUnique[ name ] ) {
+				jQuery.unique( matched );
+			}
+
+			// Reverse order for parents* and prev-derivatives
+			if ( rparentsprev.test( name ) ) {
+				matched.reverse();
+			}
+		}
+
+		return this.pushStack( matched );
+	};
+});
+var rnotwhite = (/\S+/g);
+
+
+
 // String to Object options format cache
 var optionsCache = {};
 
 // Convert String-formatted options into Object-formatted ones and store in cache
 function createOptions( options ) {
 	var object = optionsCache[ options ] = {};
-	jQuery.each( options.match( core_rnotwhite ) || [], function( _, flag ) {
+	jQuery.each( options.match( rnotwhite ) || [], function( _, flag ) {
 		object[ flag ] = true;
 	});
 	return object;
@@ -2966,7 +3100,7 @@ jQuery.Callbacks = function( options ) {
 				if ( list ) {
 					jQuery.each( arguments, function( _, arg ) {
 						var index;
-						while( ( index = jQuery.inArray( arg, list, index ) ) > -1 ) {
+						while ( ( index = jQuery.inArray( arg, list, index ) ) > -1 ) {
 							list.splice( index, 1 );
 							// Handle firing indexes
 							if ( firing ) {
@@ -3040,6 +3174,8 @@ jQuery.Callbacks = function( options ) {
 
 	return self;
 };
+
+
 jQuery.extend({
 
 	Deferred: function( func ) {
@@ -3062,8 +3198,7 @@ jQuery.extend({
 					var fns = arguments;
 					return jQuery.Deferred(function( newDefer ) {
 						jQuery.each( tuples, function( i, tuple ) {
-							var action = tuple[ 0 ],
-								fn = jQuery.isFunction( fns[ i ] ) && fns[ i ];
+							var fn = jQuery.isFunction( fns[ i ] ) && fns[ i ];
 							// deferred[ done | fail | progress ] for forwarding actions to newDefer
 							deferred[ tuple[1] ](function() {
 								var returned = fn && fn.apply( this, arguments );
@@ -3073,7 +3208,7 @@ jQuery.extend({
 										.fail( newDefer.reject )
 										.progress( newDefer.notify );
 								} else {
-									newDefer[ action + "With" ]( this === promise ? newDefer.promise() : this, fn ? [ returned ] : arguments );
+									newDefer[ tuple[ 0 ] + "With" ]( this === promise ? newDefer.promise() : this, fn ? [ returned ] : arguments );
 								}
 							});
 						});
@@ -3132,7 +3267,7 @@ jQuery.extend({
 	// Deferred helper
 	when: function( subordinate /* , ..., subordinateN */ ) {
 		var i = 0,
-			resolveValues = core_slice.call( arguments ),
+			resolveValues = slice.call( arguments ),
 			length = resolveValues.length,
 
 			// the count of uncompleted subordinates
@@ -3145,8 +3280,8 @@ jQuery.extend({
 			updateFunc = function( i, contexts, values ) {
 				return function( value ) {
 					contexts[ i ] = this;
-					values[ i ] = arguments.length > 1 ? core_slice.call( arguments ) : value;
-					if( values === progressValues ) {
+					values[ i ] = arguments.length > 1 ? slice.call( arguments ) : value;
+					if ( values === progressValues ) {
 						deferred.notifyWith( contexts, values );
 					} else if ( !( --remaining ) ) {
 						deferred.resolveWith( contexts, values );
@@ -3181,133 +3316,168 @@ jQuery.extend({
 		return deferred.promise();
 	}
 });
-jQuery.support = (function( support ) {
-	var input = document.createElement("input"),
-		fragment = document.createDocumentFragment(),
-		div = document.createElement("div"),
-		select = document.createElement("select"),
-		opt = select.appendChild( document.createElement("option") );
 
-	// Finish early in limited environments
-	if ( !input.type ) {
-		return support;
-	}
 
-	input.type = "checkbox";
+// The deferred used on DOM ready
+var readyList;
 
-	// Support: Safari 5.1, iOS 5.1, Android 4.x, Android 2.3
-	// Check the default checkbox/radio value ("" on old WebKit; "on" elsewhere)
-	support.checkOn = input.value !== "";
+jQuery.fn.ready = function( fn ) {
+	// Add the callback
+	jQuery.ready.promise().done( fn );
 
-	// Must access the parent to make an option select properly
-	// Support: IE9, IE10
-	support.optSelected = opt.selected;
+	return this;
+};
 
-	// Will be defined later
-	support.reliableMarginRight = true;
-	support.boxSizingReliable = true;
-	support.pixelPosition = false;
+jQuery.extend({
+	// Is the DOM ready to be used? Set to true once it occurs.
+	isReady: false,
 
-	// Make sure checked status is properly cloned
-	// Support: IE9, IE10
-	input.checked = true;
-	support.noCloneChecked = input.cloneNode( true ).checked;
+	// A counter to track how many items to wait for before
+	// the ready event fires. See #6781
+	readyWait: 1,
 
-	// Make sure that the options inside disabled selects aren't marked as disabled
-	// (WebKit marks them as disabled)
-	select.disabled = true;
-	support.optDisabled = !opt.disabled;
+	// Hold (or release) the ready event
+	holdReady: function( hold ) {
+		if ( hold ) {
+			jQuery.readyWait++;
+		} else {
+			jQuery.ready( true );
+		}
+	},
 
-	// Check if an input maintains its value after becoming a radio
-	// Support: IE9, IE10
-	input = document.createElement("input");
-	input.value = "t";
-	input.type = "radio";
-	support.radioValue = input.value === "t";
+	// Handle when the DOM is ready
+	ready: function( wait ) {
 
-	// #11217 - WebKit loses check when the name is after the checked attribute
-	input.setAttribute( "checked", "t" );
-	input.setAttribute( "name", "t" );
-
-	fragment.appendChild( input );
-
-	// Support: Safari 5.1, Android 4.x, Android 2.3
-	// old WebKit doesn't clone checked state correctly in fragments
-	support.checkClone = fragment.cloneNode( true ).cloneNode( true ).lastChild.checked;
-
-	// Support: Firefox, Chrome, Safari
-	// Beware of CSP restrictions (https://developer.mozilla.org/en/Security/CSP)
-	support.focusinBubbles = "onfocusin" in window;
-
-	div.style.backgroundClip = "content-box";
-	div.cloneNode( true ).style.backgroundClip = "";
-	support.clearCloneStyle = div.style.backgroundClip === "content-box";
-
-	// Run tests that need a body at doc ready
-	jQuery(function() {
-		var container, marginDiv,
-			// Support: Firefox, Android 2.3 (Prefixed box-sizing versions).
-			divReset = "padding:0;margin:0;border:0;display:block;-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box",
-			body = document.getElementsByTagName("body")[ 0 ];
-
-		if ( !body ) {
-			// Return for frameset docs that don't have a body
+		// Abort if there are pending holds or we're already ready
+		if ( wait === true ? --jQuery.readyWait : jQuery.isReady ) {
 			return;
 		}
 
-		container = document.createElement("div");
-		container.style.cssText = "border:0;width:0;height:0;position:absolute;top:0;left:-9999px;margin-top:1px";
+		// Remember that the DOM is ready
+		jQuery.isReady = true;
 
-		// Check box-sizing and margin behavior.
-		body.appendChild( container ).appendChild( div );
-		div.innerHTML = "";
-		// Support: Firefox, Android 2.3 (Prefixed box-sizing versions).
-		div.style.cssText = "-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;padding:1px;border:1px;display:block;width:4px;margin-top:1%;position:absolute;top:1%";
-
-		// Workaround failing boxSizing test due to offsetWidth returning wrong value
-		// with some non-1 values of body zoom, ticket #13543
-		jQuery.swap( body, body.style.zoom != null ? { zoom: 1 } : {}, function() {
-			support.boxSizing = div.offsetWidth === 4;
-		});
-
-		// Use window.getComputedStyle because jsdom on node.js will break without it.
-		if ( window.getComputedStyle ) {
-			support.pixelPosition = ( window.getComputedStyle( div, null ) || {} ).top !== "1%";
-			support.boxSizingReliable = ( window.getComputedStyle( div, null ) || { width: "4px" } ).width === "4px";
-
-			// Support: Android 2.3
-			// Check if div with explicit width and no margin-right incorrectly
-			// gets computed margin-right based on width of container. (#3333)
-			// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
-			marginDiv = div.appendChild( document.createElement("div") );
-			marginDiv.style.cssText = div.style.cssText = divReset;
-			marginDiv.style.marginRight = marginDiv.style.width = "0";
-			div.style.width = "1px";
-
-			support.reliableMarginRight =
-				!parseFloat( ( window.getComputedStyle( marginDiv, null ) || {} ).marginRight );
+		// If a normal DOM Ready event fired, decrement, and wait if need be
+		if ( wait !== true && --jQuery.readyWait > 0 ) {
+			return;
 		}
 
-		body.removeChild( container );
-	});
+		// If there are functions bound, to execute
+		readyList.resolveWith( document, [ jQuery ] );
 
-	return support;
-})( {} );
+		// Trigger any bound ready events
+		if ( jQuery.fn.trigger ) {
+			jQuery( document ).trigger("ready").off("ready");
+		}
+	}
+});
 
-/*
-	Implementation Summary
+/**
+ * The ready event handler and self cleanup method
+ */
+function completed() {
+	document.removeEventListener( "DOMContentLoaded", completed, false );
+	window.removeEventListener( "load", completed, false );
+	jQuery.ready();
+}
 
-	1. Enforce API surface and semantic compatibility with 1.9.x branch
-	2. Improve the module's maintainability by reducing the storage
-		paths to a single mechanism.
-	3. Use the same single mechanism to support "private" and "user" data.
-	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
-	5. Avoid exposing implementation details on user objects (eg. expando properties)
-	6. Provide a clear path for implementation upgrade to WeakMap in 2014
-*/
-var data_user, data_priv,
-	rbrace = /(?:\{[\s\S]*\}|\[[\s\S]*\])$/,
-	rmultiDash = /([A-Z])/g;
+jQuery.ready.promise = function( obj ) {
+	if ( !readyList ) {
+
+		readyList = jQuery.Deferred();
+
+		// Catch cases where $(document).ready() is called after the browser event has already occurred.
+		// we once tried to use readyState "interactive" here, but it caused issues like the one
+		// discovered by ChrisS here: http://bugs.jquery.com/ticket/12282#comment:15
+		if ( document.readyState === "complete" ) {
+			// Handle it asynchronously to allow scripts the opportunity to delay ready
+			setTimeout( jQuery.ready );
+
+		} else {
+
+			// Use the handy event callback
+			document.addEventListener( "DOMContentLoaded", completed, false );
+
+			// A fallback to window.onload, that will always work
+			window.addEventListener( "load", completed, false );
+		}
+	}
+	return readyList.promise( obj );
+};
+
+// Kick off the DOM ready check even if the user does not
+jQuery.ready.promise();
+
+
+
+
+// Multifunctional method to get and set values of a collection
+// The value/s can optionally be executed if it's a function
+var access = jQuery.access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
+	var i = 0,
+		len = elems.length,
+		bulk = key == null;
+
+	// Sets many values
+	if ( jQuery.type( key ) === "object" ) {
+		chainable = true;
+		for ( i in key ) {
+			jQuery.access( elems, fn, i, key[i], true, emptyGet, raw );
+		}
+
+	// Sets one value
+	} else if ( value !== undefined ) {
+		chainable = true;
+
+		if ( !jQuery.isFunction( value ) ) {
+			raw = true;
+		}
+
+		if ( bulk ) {
+			// Bulk operations run against the entire set
+			if ( raw ) {
+				fn.call( elems, value );
+				fn = null;
+
+			// ...except when executing function values
+			} else {
+				bulk = fn;
+				fn = function( elem, key, value ) {
+					return bulk.call( jQuery( elem ), value );
+				};
+			}
+		}
+
+		if ( fn ) {
+			for ( ; i < len; i++ ) {
+				fn( elems[i], key, raw ? value : value.call( elems[i], i, fn( elems[i], key ) ) );
+			}
+		}
+	}
+
+	return chainable ?
+		elems :
+
+		// Gets
+		bulk ?
+			fn.call( elems ) :
+			len ? fn( elems[0], key ) : emptyGet;
+};
+
+
+/**
+ * Determines whether an object can have data
+ */
+jQuery.acceptData = function( owner ) {
+	// Accepts only:
+	//  - Node
+	//    - Node.ELEMENT_NODE
+	//    - Node.DOCUMENT_NODE
+	//  - Object
+	//    - Any
+	/* jshint -W018 */
+	return owner.nodeType === 1 || owner.nodeType === 9 || !( +owner.nodeType );
+};
+
 
 function Data() {
 	// Support: Android < 4,
@@ -3323,17 +3493,7 @@ function Data() {
 }
 
 Data.uid = 1;
-
-Data.accepts = function( owner ) {
-	// Accepts only:
-	//  - Node
-	//    - Node.ELEMENT_NODE
-	//    - Node.DOCUMENT_NODE
-	//  - Object
-	//    - Any
-	return owner.nodeType ?
-		owner.nodeType === 1 || owner.nodeType === 9 : true;
-};
+Data.accepts = jQuery.acceptData;
 
 Data.prototype = {
 	key: function( owner ) {
@@ -3470,7 +3630,7 @@ Data.prototype = {
 					// Otherwise, create an array by matching non-whitespace
 					name = camel;
 					name = name in cache ?
-						[ name ] : ( name.match( core_rnotwhite ) || [] );
+						[ name ] : ( name.match( rnotwhite ) || [] );
 				}
 			}
 
@@ -3491,15 +3651,56 @@ Data.prototype = {
 		}
 	}
 };
+var data_priv = new Data();
 
-// These may be used throughout the jQuery core codebase
-data_user = new Data();
-data_priv = new Data();
+var data_user = new Data();
 
+
+
+/*
+	Implementation Summary
+
+	1. Enforce API surface and semantic compatibility with 1.9.x branch
+	2. Improve the module's maintainability by reducing the storage
+		paths to a single mechanism.
+	3. Use the same single mechanism to support "private" and "user" data.
+	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
+	5. Avoid exposing implementation details on user objects (eg. expando properties)
+	6. Provide a clear path for implementation upgrade to WeakMap in 2014
+*/
+var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
+	rmultiDash = /([A-Z])/g;
+
+function dataAttr( elem, key, data ) {
+	var name;
+
+	// If nothing was found internally, try to fetch any
+	// data from the HTML5 data-* attribute
+	if ( data === undefined && elem.nodeType === 1 ) {
+		name = "data-" + key.replace( rmultiDash, "-$1" ).toLowerCase();
+		data = elem.getAttribute( name );
+
+		if ( typeof data === "string" ) {
+			try {
+				data = data === "true" ? true :
+					data === "false" ? false :
+					data === "null" ? null :
+					// Only convert to a number if it doesn't change the string
+					+data + "" === data ? +data :
+					rbrace.test( data ) ? jQuery.parseJSON( data ) :
+					data;
+			} catch( e ) {}
+
+			// Make sure we set the data so it isn't changed later
+			data_user.set( elem, key, data );
+		} else {
+			data = undefined;
+		}
+	}
+	return data;
+}
 
 jQuery.extend({
-	acceptData: Data.accepts,
-
 	hasData: function( elem ) {
 		return data_user.hasData( elem ) || data_priv.hasData( elem );
 	},
@@ -3525,10 +3726,9 @@ jQuery.extend({
 
 jQuery.fn.extend({
 	data: function( key, value ) {
-		var attrs, name,
+		var i, name, data,
 			elem = this[ 0 ],
-			i = 0,
-			data = null;
+			attrs = elem && elem.attributes;
 
 		// Gets all values
 		if ( key === undefined ) {
@@ -3536,8 +3736,8 @@ jQuery.fn.extend({
 				data = data_user.get( elem );
 
 				if ( elem.nodeType === 1 && !data_priv.get( elem, "hasDataAttrs" ) ) {
-					attrs = elem.attributes;
-					for ( ; i < attrs.length; i++ ) {
+					i = attrs.length;
+					while ( i-- ) {
 						name = attrs[ i ].name;
 
 						if ( name.indexOf( "data-" ) === 0 ) {
@@ -3559,7 +3759,7 @@ jQuery.fn.extend({
 			});
 		}
 
-		return jQuery.access( this, function( value ) {
+		return access( this, function( value ) {
 			var data,
 				camelKey = jQuery.camelCase( key );
 
@@ -3622,34 +3822,7 @@ jQuery.fn.extend({
 	}
 });
 
-function dataAttr( elem, key, data ) {
-	var name;
 
-	// If nothing was found internally, try to fetch any
-	// data from the HTML5 data-* attribute
-	if ( data === undefined && elem.nodeType === 1 ) {
-		name = "data-" + key.replace( rmultiDash, "-$1" ).toLowerCase();
-		data = elem.getAttribute( name );
-
-		if ( typeof data === "string" ) {
-			try {
-				data = data === "true" ? true :
-					data === "false" ? false :
-					data === "null" ? null :
-					// Only convert to a number if it doesn't change the string
-					+data + "" === data ? +data :
-					rbrace.test( data ) ? JSON.parse( data ) :
-					data;
-			} catch( e ) {}
-
-			// Make sure we set the data so it isn't changed later
-			data_user.set( elem, key, data );
-		} else {
-			data = undefined;
-		}
-	}
-	return data;
-}
 jQuery.extend({
 	queue: function( elem, type, data ) {
 		var queue;
@@ -3748,19 +3921,6 @@ jQuery.fn.extend({
 			jQuery.dequeue( this, type );
 		});
 	},
-	// Based off of the plugin by Clint Helfers, with permission.
-	// http://blindsignals.com/index.php/2009/07/jquery-delay/
-	delay: function( time, type ) {
-		time = jQuery.fx ? jQuery.fx.speeds[ time ] || time : time;
-		type = type || "fx";
-
-		return this.queue( type, function( next, hooks ) {
-			var timeout = setTimeout( next, time );
-			hooks.stop = function() {
-				clearTimeout( timeout );
-			};
-		});
-	},
 	clearQueue: function( type ) {
 		return this.queue( type || "fx", [] );
 	},
@@ -3784,7 +3944,7 @@ jQuery.fn.extend({
 		}
 		type = type || "fx";
 
-		while( i-- ) {
+		while ( i-- ) {
 			tmp = data_priv.get( elements[ i ], type + "queueHooks" );
 			if ( tmp && tmp.empty ) {
 				count++;
@@ -3795,509 +3955,46 @@ jQuery.fn.extend({
 		return defer.promise( obj );
 	}
 });
-var nodeHook, boolHook,
-	rclass = /[\t\r\n\f]/g,
-	rreturn = /\r/g,
-	rfocusable = /^(?:input|select|textarea|button)$/i;
-
-jQuery.fn.extend({
-	attr: function( name, value ) {
-		return jQuery.access( this, jQuery.attr, name, value, arguments.length > 1 );
-	},
-
-	removeAttr: function( name ) {
-		return this.each(function() {
-			jQuery.removeAttr( this, name );
-		});
-	},
-
-	prop: function( name, value ) {
-		return jQuery.access( this, jQuery.prop, name, value, arguments.length > 1 );
-	},
-
-	removeProp: function( name ) {
-		return this.each(function() {
-			delete this[ jQuery.propFix[ name ] || name ];
-		});
-	},
-
-	addClass: function( value ) {
-		var classes, elem, cur, clazz, j,
-			i = 0,
-			len = this.length,
-			proceed = typeof value === "string" && value;
-
-		if ( jQuery.isFunction( value ) ) {
-			return this.each(function( j ) {
-				jQuery( this ).addClass( value.call( this, j, this.className ) );
-			});
-		}
-
-		if ( proceed ) {
-			// The disjunction here is for better compressibility (see removeClass)
-			classes = ( value || "" ).match( core_rnotwhite ) || [];
-
-			for ( ; i < len; i++ ) {
-				elem = this[ i ];
-				cur = elem.nodeType === 1 && ( elem.className ?
-					( " " + elem.className + " " ).replace( rclass, " " ) :
-					" "
-				);
-
-				if ( cur ) {
-					j = 0;
-					while ( (clazz = classes[j++]) ) {
-						if ( cur.indexOf( " " + clazz + " " ) < 0 ) {
-							cur += clazz + " ";
-						}
-					}
-					elem.className = jQuery.trim( cur );
-
-				}
-			}
-		}
-
-		return this;
-	},
-
-	removeClass: function( value ) {
-		var classes, elem, cur, clazz, j,
-			i = 0,
-			len = this.length,
-			proceed = arguments.length === 0 || typeof value === "string" && value;
-
-		if ( jQuery.isFunction( value ) ) {
-			return this.each(function( j ) {
-				jQuery( this ).removeClass( value.call( this, j, this.className ) );
-			});
-		}
-		if ( proceed ) {
-			classes = ( value || "" ).match( core_rnotwhite ) || [];
-
-			for ( ; i < len; i++ ) {
-				elem = this[ i ];
-				// This expression is here for better compressibility (see addClass)
-				cur = elem.nodeType === 1 && ( elem.className ?
-					( " " + elem.className + " " ).replace( rclass, " " ) :
-					""
-				);
-
-				if ( cur ) {
-					j = 0;
-					while ( (clazz = classes[j++]) ) {
-						// Remove *all* instances
-						while ( cur.indexOf( " " + clazz + " " ) >= 0 ) {
-							cur = cur.replace( " " + clazz + " ", " " );
-						}
-					}
-					elem.className = value ? jQuery.trim( cur ) : "";
-				}
-			}
-		}
-
-		return this;
-	},
-
-	toggleClass: function( value, stateVal ) {
-		var type = typeof value;
-
-		if ( typeof stateVal === "boolean" && type === "string" ) {
-			return stateVal ? this.addClass( value ) : this.removeClass( value );
-		}
-
-		if ( jQuery.isFunction( value ) ) {
-			return this.each(function( i ) {
-				jQuery( this ).toggleClass( value.call(this, i, this.className, stateVal), stateVal );
-			});
-		}
-
-		return this.each(function() {
-			if ( type === "string" ) {
-				// toggle individual class names
-				var className,
-					i = 0,
-					self = jQuery( this ),
-					classNames = value.match( core_rnotwhite ) || [];
-
-				while ( (className = classNames[ i++ ]) ) {
-					// check each className given, space separated list
-					if ( self.hasClass( className ) ) {
-						self.removeClass( className );
-					} else {
-						self.addClass( className );
-					}
-				}
-
-			// Toggle whole class name
-			} else if ( type === core_strundefined || type === "boolean" ) {
-				if ( this.className ) {
-					// store className if set
-					data_priv.set( this, "__className__", this.className );
-				}
-
-				// If the element has a class name or if we're passed "false",
-				// then remove the whole classname (if there was one, the above saved it).
-				// Otherwise bring back whatever was previously saved (if anything),
-				// falling back to the empty string if nothing was stored.
-				this.className = this.className || value === false ? "" : data_priv.get( this, "__className__" ) || "";
-			}
-		});
-	},
-
-	hasClass: function( selector ) {
-		var className = " " + selector + " ",
-			i = 0,
-			l = this.length;
-		for ( ; i < l; i++ ) {
-			if ( this[i].nodeType === 1 && (" " + this[i].className + " ").replace(rclass, " ").indexOf( className ) >= 0 ) {
-				return true;
-			}
-		}
-
-		return false;
-	},
-
-	val: function( value ) {
-		var hooks, ret, isFunction,
-			elem = this[0];
-
-		if ( !arguments.length ) {
-			if ( elem ) {
-				hooks = jQuery.valHooks[ elem.type ] || jQuery.valHooks[ elem.nodeName.toLowerCase() ];
-
-				if ( hooks && "get" in hooks && (ret = hooks.get( elem, "value" )) !== undefined ) {
-					return ret;
-				}
-
-				ret = elem.value;
-
-				return typeof ret === "string" ?
-					// handle most common string cases
-					ret.replace(rreturn, "") :
-					// handle cases where value is null/undef or number
-					ret == null ? "" : ret;
-			}
-
-			return;
-		}
-
-		isFunction = jQuery.isFunction( value );
-
-		return this.each(function( i ) {
-			var val;
-
-			if ( this.nodeType !== 1 ) {
-				return;
-			}
-
-			if ( isFunction ) {
-				val = value.call( this, i, jQuery( this ).val() );
-			} else {
-				val = value;
-			}
-
-			// Treat null/undefined as ""; convert numbers to string
-			if ( val == null ) {
-				val = "";
-			} else if ( typeof val === "number" ) {
-				val += "";
-			} else if ( jQuery.isArray( val ) ) {
-				val = jQuery.map(val, function ( value ) {
-					return value == null ? "" : value + "";
-				});
-			}
-
-			hooks = jQuery.valHooks[ this.type ] || jQuery.valHooks[ this.nodeName.toLowerCase() ];
-
-			// If set returns undefined, fall back to normal setting
-			if ( !hooks || !("set" in hooks) || hooks.set( this, val, "value" ) === undefined ) {
-				this.value = val;
-			}
-		});
-	}
-});
-
-jQuery.extend({
-	valHooks: {
-		option: {
-			get: function( elem ) {
-				// attributes.value is undefined in Blackberry 4.7 but
-				// uses .value. See #6932
-				var val = elem.attributes.value;
-				return !val || val.specified ? elem.value : elem.text;
-			}
-		},
-		select: {
-			get: function( elem ) {
-				var value, option,
-					options = elem.options,
-					index = elem.selectedIndex,
-					one = elem.type === "select-one" || index < 0,
-					values = one ? null : [],
-					max = one ? index + 1 : options.length,
-					i = index < 0 ?
-						max :
-						one ? index : 0;
-
-				// Loop through all the selected options
-				for ( ; i < max; i++ ) {
-					option = options[ i ];
-
-					// IE6-9 doesn't update selected after form reset (#2551)
-					if ( ( option.selected || i === index ) &&
-							// Don't return options that are disabled or in a disabled optgroup
-							( jQuery.support.optDisabled ? !option.disabled : option.getAttribute("disabled") === null ) &&
-							( !option.parentNode.disabled || !jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
-
-						// Get the specific value for the option
-						value = jQuery( option ).val();
-
-						// We don't need an array for one selects
-						if ( one ) {
-							return value;
-						}
-
-						// Multi-Selects return an array
-						values.push( value );
-					}
-				}
-
-				return values;
-			},
-
-			set: function( elem, value ) {
-				var optionSet, option,
-					options = elem.options,
-					values = jQuery.makeArray( value ),
-					i = options.length;
-
-				while ( i-- ) {
-					option = options[ i ];
-					if ( (option.selected = jQuery.inArray( jQuery(option).val(), values ) >= 0) ) {
-						optionSet = true;
-					}
-				}
-
-				// force browsers to behave consistently when non-matching value is set
-				if ( !optionSet ) {
-					elem.selectedIndex = -1;
-				}
-				return values;
-			}
-		}
-	},
-
-	attr: function( elem, name, value ) {
-		var hooks, ret,
-			nType = elem.nodeType;
-
-		// don't get/set attributes on text, comment and attribute nodes
-		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
-			return;
-		}
-
-		// Fallback to prop when attributes are not supported
-		if ( typeof elem.getAttribute === core_strundefined ) {
-			return jQuery.prop( elem, name, value );
-		}
-
-		// All attributes are lowercase
-		// Grab necessary hook if one is defined
-		if ( nType !== 1 || !jQuery.isXMLDoc( elem ) ) {
-			name = name.toLowerCase();
-			hooks = jQuery.attrHooks[ name ] ||
-				( jQuery.expr.match.bool.test( name ) ? boolHook : nodeHook );
-		}
-
-		if ( value !== undefined ) {
-
-			if ( value === null ) {
-				jQuery.removeAttr( elem, name );
-
-			} else if ( hooks && "set" in hooks && (ret = hooks.set( elem, value, name )) !== undefined ) {
-				return ret;
-
-			} else {
-				elem.setAttribute( name, value + "" );
-				return value;
-			}
-
-		} else if ( hooks && "get" in hooks && (ret = hooks.get( elem, name )) !== null ) {
-			return ret;
-
-		} else {
-			ret = jQuery.find.attr( elem, name );
-
-			// Non-existent attributes return null, we normalize to undefined
-			return ret == null ?
-				undefined :
-				ret;
-		}
-	},
-
-	removeAttr: function( elem, value ) {
-		var name, propName,
-			i = 0,
-			attrNames = value && value.match( core_rnotwhite );
-
-		if ( attrNames && elem.nodeType === 1 ) {
-			while ( (name = attrNames[i++]) ) {
-				propName = jQuery.propFix[ name ] || name;
-
-				// Boolean attributes get special treatment (#10870)
-				if ( jQuery.expr.match.bool.test( name ) ) {
-					// Set corresponding property to false
-					elem[ propName ] = false;
-				}
-
-				elem.removeAttribute( name );
-			}
-		}
-	},
-
-	attrHooks: {
-		type: {
-			set: function( elem, value ) {
-				if ( !jQuery.support.radioValue && value === "radio" && jQuery.nodeName(elem, "input") ) {
-					// Setting the type on a radio button after the value resets the value in IE6-9
-					// Reset value to default in case type is set after value during creation
-					var val = elem.value;
-					elem.setAttribute( "type", value );
-					if ( val ) {
-						elem.value = val;
-					}
-					return value;
-				}
-			}
-		}
-	},
-
-	propFix: {
-		"for": "htmlFor",
-		"class": "className"
-	},
-
-	prop: function( elem, name, value ) {
-		var ret, hooks, notxml,
-			nType = elem.nodeType;
-
-		// don't get/set properties on text, comment and attribute nodes
-		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
-			return;
-		}
-
-		notxml = nType !== 1 || !jQuery.isXMLDoc( elem );
-
-		if ( notxml ) {
-			// Fix name and attach hooks
-			name = jQuery.propFix[ name ] || name;
-			hooks = jQuery.propHooks[ name ];
-		}
-
-		if ( value !== undefined ) {
-			return hooks && "set" in hooks && (ret = hooks.set( elem, value, name )) !== undefined ?
-				ret :
-				( elem[ name ] = value );
-
-		} else {
-			return hooks && "get" in hooks && (ret = hooks.get( elem, name )) !== null ?
-				ret :
-				elem[ name ];
-		}
-	},
-
-	propHooks: {
-		tabIndex: {
-			get: function( elem ) {
-				return elem.hasAttribute( "tabindex" ) || rfocusable.test( elem.nodeName ) || elem.href ?
-					elem.tabIndex :
-					-1;
-			}
-		}
-	}
-});
-
-// Hooks for boolean attributes
-boolHook = {
-	set: function( elem, value, name ) {
-		if ( value === false ) {
-			// Remove boolean attributes when set to false
-			jQuery.removeAttr( elem, name );
-		} else {
-			elem.setAttribute( name, name );
-		}
-		return name;
-	}
-};
-jQuery.each( jQuery.expr.match.bool.source.match( /\w+/g ), function( i, name ) {
-	var getter = jQuery.expr.attrHandle[ name ] || jQuery.find.attr;
-
-	jQuery.expr.attrHandle[ name ] = function( elem, name, isXML ) {
-		var fn = jQuery.expr.attrHandle[ name ],
-			ret = isXML ?
-				undefined :
-				/* jshint eqeqeq: false */
-				// Temporarily disable this handler to check existence
-				(jQuery.expr.attrHandle[ name ] = undefined) !=
-					getter( elem, name, isXML ) ?
-
-					name.toLowerCase() :
-					null;
-
-		// Restore handler
-		jQuery.expr.attrHandle[ name ] = fn;
-
-		return ret;
+var pnum = (/[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/).source;
+
+var cssExpand = [ "Top", "Right", "Bottom", "Left" ];
+
+var isHidden = function( elem, el ) {
+		// isHidden might be called from jQuery#filter function;
+		// in that case, element will be second argument
+		elem = el || elem;
+		return jQuery.css( elem, "display" ) === "none" || !jQuery.contains( elem.ownerDocument, elem );
 	};
-});
 
-// Support: IE9+
-// Selectedness for an option in an optgroup can be inaccurate
-if ( !jQuery.support.optSelected ) {
-	jQuery.propHooks.selected = {
-		get: function( elem ) {
-			var parent = elem.parentNode;
-			if ( parent && parent.parentNode ) {
-				parent.parentNode.selectedIndex;
-			}
-			return null;
-		}
-	};
-}
+var rcheckableType = (/^(?:checkbox|radio)$/i);
 
-jQuery.each([
-	"tabIndex",
-	"readOnly",
-	"maxLength",
-	"cellSpacing",
-	"cellPadding",
-	"rowSpan",
-	"colSpan",
-	"useMap",
-	"frameBorder",
-	"contentEditable"
-], function() {
-	jQuery.propFix[ this.toLowerCase() ] = this;
-});
 
-// Radios and checkboxes getter/setter
-jQuery.each([ "radio", "checkbox" ], function() {
-	jQuery.valHooks[ this ] = {
-		set: function( elem, value ) {
-			if ( jQuery.isArray( value ) ) {
-				return ( elem.checked = jQuery.inArray( jQuery(elem).val(), value ) >= 0 );
-			}
-		}
-	};
-	if ( !jQuery.support.checkOn ) {
-		jQuery.valHooks[ this ].get = function( elem ) {
-			// Support: Webkit
-			// "" is returned instead of "on" if a value isn't specified
-			return elem.getAttribute("value") === null ? "on" : elem.value;
-		};
-	}
-});
-var rkeyEvent = /^key/,
+
+(function() {
+	var fragment = document.createDocumentFragment(),
+		div = fragment.appendChild( document.createElement( "div" ) );
+
+	// #11217 - WebKit loses check when the name is after the checked attribute
+	div.innerHTML = "<input type='radio' checked='checked' name='t'/>";
+
+	// Support: Safari 5.1, iOS 5.1, Android 4.x, Android 2.3
+	// old WebKit doesn't clone checked state correctly in fragments
+	support.checkClone = div.cloneNode( true ).cloneNode( true ).lastChild.checked;
+
+	// Make sure textarea (and checkbox) defaultValue is properly cloned
+	// Support: IE9-IE11+
+	div.innerHTML = "<textarea>x</textarea>";
+	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
+})();
+var strundefined = typeof undefined;
+
+
+
+support.focusinBubbles = "onfocusin" in window;
+
+
+var
+	rkeyEvent = /^key/,
 	rmouseEvent = /^(?:mouse|contextmenu)|click/,
 	rfocusMorph = /^(?:focusinfocus|focusoutblur)$/,
 	rtypenamespace = /^([^.]*)(?:\.(.+)|)$/;
@@ -4356,16 +4053,13 @@ jQuery.event = {
 			eventHandle = elemData.handle = function( e ) {
 				// Discard the second event of a jQuery.event.trigger() and
 				// when an event is called after a page has unloaded
-				return typeof jQuery !== core_strundefined && (!e || jQuery.event.triggered !== e.type) ?
-					jQuery.event.dispatch.apply( eventHandle.elem, arguments ) :
-					undefined;
+				return typeof jQuery !== strundefined && jQuery.event.triggered !== e.type ?
+					jQuery.event.dispatch.apply( elem, arguments ) : undefined;
 			};
-			// Add elem as a property of the handle fn to prevent a memory leak with IE non-native events
-			eventHandle.elem = elem;
 		}
 
 		// Handle multiple events separated by a space
-		types = ( types || "" ).match( core_rnotwhite ) || [""];
+		types = ( types || "" ).match( rnotwhite ) || [ "" ];
 		t = types.length;
 		while ( t-- ) {
 			tmp = rtypenamespace.exec( types[t] ) || [];
@@ -4430,8 +4124,6 @@ jQuery.event = {
 			jQuery.event.global[ type ] = true;
 		}
 
-		// Nullify elem to prevent memory leaks in IE
-		elem = null;
 	},
 
 	// Detach an event or set of events from an element
@@ -4447,7 +4139,7 @@ jQuery.event = {
 		}
 
 		// Once for each type.namespace in types; type may be omitted
-		types = ( types || "" ).match( core_rnotwhite ) || [""];
+		types = ( types || "" ).match( rnotwhite ) || [ "" ];
 		t = types.length;
 		while ( t-- ) {
 			tmp = rtypenamespace.exec( types[t] ) || [];
@@ -4509,8 +4201,8 @@ jQuery.event = {
 
 		var i, cur, tmp, bubbleType, ontype, handle, special,
 			eventPath = [ elem || document ],
-			type = core_hasOwn.call( event, "type" ) ? event.type : event,
-			namespaces = core_hasOwn.call( event, "namespace" ) ? event.namespace.split(".") : [];
+			type = hasOwn.call( event, "type" ) ? event.type : event,
+			namespaces = hasOwn.call( event, "namespace" ) ? event.namespace.split(".") : [];
 
 		cur = tmp = elem = elem || document;
 
@@ -4596,8 +4288,11 @@ jQuery.event = {
 
 			// Native handler
 			handle = ontype && cur[ ontype ];
-			if ( handle && jQuery.acceptData( cur ) && handle.apply && handle.apply( cur, data ) === false ) {
-				event.preventDefault();
+			if ( handle && handle.apply && jQuery.acceptData( cur ) ) {
+				event.result = handle.apply( cur, data );
+				if ( event.result === false ) {
+					event.preventDefault();
+				}
 			}
 		}
 		event.type = type;
@@ -4641,7 +4336,7 @@ jQuery.event = {
 
 		var i, j, ret, matched, handleObj,
 			handlerQueue = [],
-			args = core_slice.call( arguments ),
+			args = slice.call( arguments ),
 			handlers = ( data_priv.get( this, "events" ) || {} )[ event.type ] || [],
 			special = jQuery.event.special[ event.type ] || {};
 
@@ -4822,7 +4517,7 @@ jQuery.event = {
 			event.target = event.target.parentNode;
 		}
 
-		return fixHook.filter? fixHook.filter( event, originalEvent ) : event;
+		return fixHook.filter ? fixHook.filter( event, originalEvent ) : event;
 	},
 
 	special: {
@@ -4919,8 +4614,12 @@ jQuery.Event = function( src, props ) {
 
 		// Events bubbling up the document may have been marked as prevented
 		// by a handler lower down the tree; reflect the correct value.
-		this.isDefaultPrevented = ( src.defaultPrevented ||
-			src.getPreventDefault && src.getPreventDefault() ) ? returnTrue : returnFalse;
+		this.isDefaultPrevented = src.defaultPrevented ||
+				// Support: Android < 4.0
+				src.defaultPrevented === undefined &&
+				src.getPreventDefault && src.getPreventDefault() ?
+			returnTrue :
+			returnFalse;
 
 	// Event type
 	} else {
@@ -5000,24 +4699,34 @@ jQuery.each({
 
 // Create "bubbling" focus and blur events
 // Support: Firefox, Chrome, Safari
-if ( !jQuery.support.focusinBubbles ) {
+if ( !support.focusinBubbles ) {
 	jQuery.each({ focus: "focusin", blur: "focusout" }, function( orig, fix ) {
 
-		// Attach a single capturing handler while someone wants focusin/focusout
-		var attaches = 0,
-			handler = function( event ) {
+		// Attach a single capturing handler on the document while someone wants focusin/focusout
+		var handler = function( event ) {
 				jQuery.event.simulate( fix, event.target, jQuery.event.fix( event ), true );
 			};
 
 		jQuery.event.special[ fix ] = {
 			setup: function() {
-				if ( attaches++ === 0 ) {
-					document.addEventListener( orig, handler, true );
+				var doc = this.ownerDocument || this,
+					attaches = data_priv.access( doc, fix );
+
+				if ( !attaches ) {
+					doc.addEventListener( orig, handler, true );
 				}
+				data_priv.access( doc, fix, ( attaches || 0 ) + 1 );
 			},
 			teardown: function() {
-				if ( --attaches === 0 ) {
-					document.removeEventListener( orig, handler, true );
+				var doc = this.ownerDocument || this,
+					attaches = data_priv.access( doc, fix ) - 1;
+
+				if ( !attaches ) {
+					doc.removeEventListener( orig, handler, true );
+					data_priv.remove( doc, fix );
+
+				} else {
+					data_priv.access( doc, fix, attaches );
 				}
 			}
 		};
@@ -5126,294 +4835,13 @@ jQuery.fn.extend({
 		}
 	}
 });
-var isSimple = /^.[^:#\[\.,]*$/,
-	rparentsprev = /^(?:parents|prev(?:Until|All))/,
-	rneedsContext = jQuery.expr.match.needsContext,
-	// methods guaranteed to produce a unique set when starting from a unique set
-	guaranteedUnique = {
-		children: true,
-		contents: true,
-		next: true,
-		prev: true
-	};
 
-jQuery.fn.extend({
-	find: function( selector ) {
-		var i,
-			ret = [],
-			self = this,
-			len = self.length;
 
-		if ( typeof selector !== "string" ) {
-			return this.pushStack( jQuery( selector ).filter(function() {
-				for ( i = 0; i < len; i++ ) {
-					if ( jQuery.contains( self[ i ], this ) ) {
-						return true;
-					}
-				}
-			}) );
-		}
-
-		for ( i = 0; i < len; i++ ) {
-			jQuery.find( selector, self[ i ], ret );
-		}
-
-		// Needed because $( selector, context ) becomes $( context ).find( selector )
-		ret = this.pushStack( len > 1 ? jQuery.unique( ret ) : ret );
-		ret.selector = this.selector ? this.selector + " " + selector : selector;
-		return ret;
-	},
-
-	has: function( target ) {
-		var targets = jQuery( target, this ),
-			l = targets.length;
-
-		return this.filter(function() {
-			var i = 0;
-			for ( ; i < l; i++ ) {
-				if ( jQuery.contains( this, targets[i] ) ) {
-					return true;
-				}
-			}
-		});
-	},
-
-	not: function( selector ) {
-		return this.pushStack( winnow(this, selector || [], true) );
-	},
-
-	filter: function( selector ) {
-		return this.pushStack( winnow(this, selector || [], false) );
-	},
-
-	is: function( selector ) {
-		return !!winnow(
-			this,
-
-			// If this is a positional/relative selector, check membership in the returned set
-			// so $("p:first").is("p:last") won't return true for a doc with two "p".
-			typeof selector === "string" && rneedsContext.test( selector ) ?
-				jQuery( selector ) :
-				selector || [],
-			false
-		).length;
-	},
-
-	closest: function( selectors, context ) {
-		var cur,
-			i = 0,
-			l = this.length,
-			matched = [],
-			pos = ( rneedsContext.test( selectors ) || typeof selectors !== "string" ) ?
-				jQuery( selectors, context || this.context ) :
-				0;
-
-		for ( ; i < l; i++ ) {
-			for ( cur = this[i]; cur && cur !== context; cur = cur.parentNode ) {
-				// Always skip document fragments
-				if ( cur.nodeType < 11 && (pos ?
-					pos.index(cur) > -1 :
-
-					// Don't pass non-elements to Sizzle
-					cur.nodeType === 1 &&
-						jQuery.find.matchesSelector(cur, selectors)) ) {
-
-					cur = matched.push( cur );
-					break;
-				}
-			}
-		}
-
-		return this.pushStack( matched.length > 1 ? jQuery.unique( matched ) : matched );
-	},
-
-	// Determine the position of an element within
-	// the matched set of elements
-	index: function( elem ) {
-
-		// No argument, return index in parent
-		if ( !elem ) {
-			return ( this[ 0 ] && this[ 0 ].parentNode ) ? this.first().prevAll().length : -1;
-		}
-
-		// index in selector
-		if ( typeof elem === "string" ) {
-			return core_indexOf.call( jQuery( elem ), this[ 0 ] );
-		}
-
-		// Locate the position of the desired element
-		return core_indexOf.call( this,
-
-			// If it receives a jQuery object, the first element is used
-			elem.jquery ? elem[ 0 ] : elem
-		);
-	},
-
-	add: function( selector, context ) {
-		var set = typeof selector === "string" ?
-				jQuery( selector, context ) :
-				jQuery.makeArray( selector && selector.nodeType ? [ selector ] : selector ),
-			all = jQuery.merge( this.get(), set );
-
-		return this.pushStack( jQuery.unique(all) );
-	},
-
-	addBack: function( selector ) {
-		return this.add( selector == null ?
-			this.prevObject : this.prevObject.filter(selector)
-		);
-	}
-});
-
-function sibling( cur, dir ) {
-	while ( (cur = cur[dir]) && cur.nodeType !== 1 ) {}
-
-	return cur;
-}
-
-jQuery.each({
-	parent: function( elem ) {
-		var parent = elem.parentNode;
-		return parent && parent.nodeType !== 11 ? parent : null;
-	},
-	parents: function( elem ) {
-		return jQuery.dir( elem, "parentNode" );
-	},
-	parentsUntil: function( elem, i, until ) {
-		return jQuery.dir( elem, "parentNode", until );
-	},
-	next: function( elem ) {
-		return sibling( elem, "nextSibling" );
-	},
-	prev: function( elem ) {
-		return sibling( elem, "previousSibling" );
-	},
-	nextAll: function( elem ) {
-		return jQuery.dir( elem, "nextSibling" );
-	},
-	prevAll: function( elem ) {
-		return jQuery.dir( elem, "previousSibling" );
-	},
-	nextUntil: function( elem, i, until ) {
-		return jQuery.dir( elem, "nextSibling", until );
-	},
-	prevUntil: function( elem, i, until ) {
-		return jQuery.dir( elem, "previousSibling", until );
-	},
-	siblings: function( elem ) {
-		return jQuery.sibling( ( elem.parentNode || {} ).firstChild, elem );
-	},
-	children: function( elem ) {
-		return jQuery.sibling( elem.firstChild );
-	},
-	contents: function( elem ) {
-		return elem.contentDocument || jQuery.merge( [], elem.childNodes );
-	}
-}, function( name, fn ) {
-	jQuery.fn[ name ] = function( until, selector ) {
-		var matched = jQuery.map( this, fn, until );
-
-		if ( name.slice( -5 ) !== "Until" ) {
-			selector = until;
-		}
-
-		if ( selector && typeof selector === "string" ) {
-			matched = jQuery.filter( selector, matched );
-		}
-
-		if ( this.length > 1 ) {
-			// Remove duplicates
-			if ( !guaranteedUnique[ name ] ) {
-				jQuery.unique( matched );
-			}
-
-			// Reverse order for parents* and prev-derivatives
-			if ( rparentsprev.test( name ) ) {
-				matched.reverse();
-			}
-		}
-
-		return this.pushStack( matched );
-	};
-});
-
-jQuery.extend({
-	filter: function( expr, elems, not ) {
-		var elem = elems[ 0 ];
-
-		if ( not ) {
-			expr = ":not(" + expr + ")";
-		}
-
-		return elems.length === 1 && elem.nodeType === 1 ?
-			jQuery.find.matchesSelector( elem, expr ) ? [ elem ] : [] :
-			jQuery.find.matches( expr, jQuery.grep( elems, function( elem ) {
-				return elem.nodeType === 1;
-			}));
-	},
-
-	dir: function( elem, dir, until ) {
-		var matched = [],
-			truncate = until !== undefined;
-
-		while ( (elem = elem[ dir ]) && elem.nodeType !== 9 ) {
-			if ( elem.nodeType === 1 ) {
-				if ( truncate && jQuery( elem ).is( until ) ) {
-					break;
-				}
-				matched.push( elem );
-			}
-		}
-		return matched;
-	},
-
-	sibling: function( n, elem ) {
-		var matched = [];
-
-		for ( ; n; n = n.nextSibling ) {
-			if ( n.nodeType === 1 && n !== elem ) {
-				matched.push( n );
-			}
-		}
-
-		return matched;
-	}
-});
-
-// Implement the identical functionality for filter and not
-function winnow( elements, qualifier, not ) {
-	if ( jQuery.isFunction( qualifier ) ) {
-		return jQuery.grep( elements, function( elem, i ) {
-			/* jshint -W018 */
-			return !!qualifier.call( elem, i, elem ) !== not;
-		});
-
-	}
-
-	if ( qualifier.nodeType ) {
-		return jQuery.grep( elements, function( elem ) {
-			return ( elem === qualifier ) !== not;
-		});
-
-	}
-
-	if ( typeof qualifier === "string" ) {
-		if ( isSimple.test( qualifier ) ) {
-			return jQuery.filter( qualifier, elements, not );
-		}
-
-		qualifier = jQuery.filter( qualifier, elements );
-	}
-
-	return jQuery.grep( elements, function( elem ) {
-		return ( core_indexOf.call( qualifier, elem ) >= 0 ) !== not;
-	});
-}
-var rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/gi,
+var
+	rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/gi,
 	rtagName = /<([\w:]+)/,
 	rhtml = /<|&#?\w+;/,
 	rnoInnerhtml = /<(?:script|style|link)/i,
-	manipulation_rcheckableType = /^(?:checkbox|radio)$/i,
 	// checked="checked" or checked
 	rchecked = /checked\s*(?:[^=]|=\s*.checked.)/i,
 	rscriptType = /^$|\/(?:java|ecma)script/i,
@@ -5440,278 +4868,103 @@ wrapMap.optgroup = wrapMap.option;
 wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
 wrapMap.th = wrapMap.td;
 
-jQuery.fn.extend({
-	text: function( value ) {
-		return jQuery.access( this, function( value ) {
-			return value === undefined ?
-				jQuery.text( this ) :
-				this.empty().append( ( this[ 0 ] && this[ 0 ].ownerDocument || document ).createTextNode( value ) );
-		}, null, value, arguments.length );
-	},
+// Support: 1.x compatibility
+// Manipulating tables requires a tbody
+function manipulationTarget( elem, content ) {
+	return jQuery.nodeName( elem, "table" ) &&
+		jQuery.nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ?
 
-	append: function() {
-		return this.domManip( arguments, function( elem ) {
-			if ( this.nodeType === 1 || this.nodeType === 11 || this.nodeType === 9 ) {
-				var target = manipulationTarget( this, elem );
-				target.appendChild( elem );
-			}
-		});
-	},
+		elem.getElementsByTagName("tbody")[0] ||
+			elem.appendChild( elem.ownerDocument.createElement("tbody") ) :
+		elem;
+}
 
-	prepend: function() {
-		return this.domManip( arguments, function( elem ) {
-			if ( this.nodeType === 1 || this.nodeType === 11 || this.nodeType === 9 ) {
-				var target = manipulationTarget( this, elem );
-				target.insertBefore( elem, target.firstChild );
-			}
-		});
-	},
+// Replace/restore the type attribute of script elements for safe DOM manipulation
+function disableScript( elem ) {
+	elem.type = (elem.getAttribute("type") !== null) + "/" + elem.type;
+	return elem;
+}
+function restoreScript( elem ) {
+	var match = rscriptTypeMasked.exec( elem.type );
 
-	before: function() {
-		return this.domManip( arguments, function( elem ) {
-			if ( this.parentNode ) {
-				this.parentNode.insertBefore( elem, this );
-			}
-		});
-	},
-
-	after: function() {
-		return this.domManip( arguments, function( elem ) {
-			if ( this.parentNode ) {
-				this.parentNode.insertBefore( elem, this.nextSibling );
-			}
-		});
-	},
-
-	// keepData is for internal use only--do not document
-	remove: function( selector, keepData ) {
-		var elem,
-			elems = selector ? jQuery.filter( selector, this ) : this,
-			i = 0;
-
-		for ( ; (elem = elems[i]) != null; i++ ) {
-			if ( !keepData && elem.nodeType === 1 ) {
-				jQuery.cleanData( getAll( elem ) );
-			}
-
-			if ( elem.parentNode ) {
-				if ( keepData && jQuery.contains( elem.ownerDocument, elem ) ) {
-					setGlobalEval( getAll( elem, "script" ) );
-				}
-				elem.parentNode.removeChild( elem );
-			}
-		}
-
-		return this;
-	},
-
-	empty: function() {
-		var elem,
-			i = 0;
-
-		for ( ; (elem = this[i]) != null; i++ ) {
-			if ( elem.nodeType === 1 ) {
-
-				// Prevent memory leaks
-				jQuery.cleanData( getAll( elem, false ) );
-
-				// Remove any remaining nodes
-				elem.textContent = "";
-			}
-		}
-
-		return this;
-	},
-
-	clone: function( dataAndEvents, deepDataAndEvents ) {
-		dataAndEvents = dataAndEvents == null ? false : dataAndEvents;
-		deepDataAndEvents = deepDataAndEvents == null ? dataAndEvents : deepDataAndEvents;
-
-		return this.map( function () {
-			return jQuery.clone( this, dataAndEvents, deepDataAndEvents );
-		});
-	},
-
-	html: function( value ) {
-		return jQuery.access( this, function( value ) {
-			var elem = this[ 0 ] || {},
-				i = 0,
-				l = this.length;
-
-			if ( value === undefined && elem.nodeType === 1 ) {
-				return elem.innerHTML;
-			}
-
-			// See if we can take a shortcut and just use innerHTML
-			if ( typeof value === "string" && !rnoInnerhtml.test( value ) &&
-				!wrapMap[ ( rtagName.exec( value ) || [ "", "" ] )[ 1 ].toLowerCase() ] ) {
-
-				value = value.replace( rxhtmlTag, "<$1></$2>" );
-
-				try {
-					for ( ; i < l; i++ ) {
-						elem = this[ i ] || {};
-
-						// Remove element nodes and prevent memory leaks
-						if ( elem.nodeType === 1 ) {
-							jQuery.cleanData( getAll( elem, false ) );
-							elem.innerHTML = value;
-						}
-					}
-
-					elem = 0;
-
-				// If using innerHTML throws an exception, use the fallback method
-				} catch( e ) {}
-			}
-
-			if ( elem ) {
-				this.empty().append( value );
-			}
-		}, null, value, arguments.length );
-	},
-
-	replaceWith: function() {
-		var
-			// Snapshot the DOM in case .domManip sweeps something relevant into its fragment
-			args = jQuery.map( this, function( elem ) {
-				return [ elem.nextSibling, elem.parentNode ];
-			}),
-			i = 0;
-
-		// Make the changes, replacing each context element with the new content
-		this.domManip( arguments, function( elem ) {
-			var next = args[ i++ ],
-				parent = args[ i++ ];
-
-			if ( parent ) {
-				// Don't use the snapshot next if it has moved (#13810)
-				if ( next && next.parentNode !== parent ) {
-					next = this.nextSibling;
-				}
-				jQuery( this ).remove();
-				parent.insertBefore( elem, next );
-			}
-		// Allow new content to include elements from the context set
-		}, true );
-
-		// Force removal if there was no new content (e.g., from empty arguments)
-		return i ? this : this.remove();
-	},
-
-	detach: function( selector ) {
-		return this.remove( selector, true );
-	},
-
-	domManip: function( args, callback, allowIntersection ) {
-
-		// Flatten any nested arrays
-		args = core_concat.apply( [], args );
-
-		var fragment, first, scripts, hasScripts, node, doc,
-			i = 0,
-			l = this.length,
-			set = this,
-			iNoClone = l - 1,
-			value = args[ 0 ],
-			isFunction = jQuery.isFunction( value );
-
-		// We can't cloneNode fragments that contain checked, in WebKit
-		if ( isFunction || !( l <= 1 || typeof value !== "string" || jQuery.support.checkClone || !rchecked.test( value ) ) ) {
-			return this.each(function( index ) {
-				var self = set.eq( index );
-				if ( isFunction ) {
-					args[ 0 ] = value.call( this, index, self.html() );
-				}
-				self.domManip( args, callback, allowIntersection );
-			});
-		}
-
-		if ( l ) {
-			fragment = jQuery.buildFragment( args, this[ 0 ].ownerDocument, false, !allowIntersection && this );
-			first = fragment.firstChild;
-
-			if ( fragment.childNodes.length === 1 ) {
-				fragment = first;
-			}
-
-			if ( first ) {
-				scripts = jQuery.map( getAll( fragment, "script" ), disableScript );
-				hasScripts = scripts.length;
-
-				// Use the original fragment for the last item instead of the first because it can end up
-				// being emptied incorrectly in certain situations (#8070).
-				for ( ; i < l; i++ ) {
-					node = fragment;
-
-					if ( i !== iNoClone ) {
-						node = jQuery.clone( node, true, true );
-
-						// Keep references to cloned scripts for later restoration
-						if ( hasScripts ) {
-							// Support: QtWebKit
-							// jQuery.merge because core_push.apply(_, arraylike) throws
-							jQuery.merge( scripts, getAll( node, "script" ) );
-						}
-					}
-
-					callback.call( this[ i ], node, i );
-				}
-
-				if ( hasScripts ) {
-					doc = scripts[ scripts.length - 1 ].ownerDocument;
-
-					// Reenable scripts
-					jQuery.map( scripts, restoreScript );
-
-					// Evaluate executable scripts on first document insertion
-					for ( i = 0; i < hasScripts; i++ ) {
-						node = scripts[ i ];
-						if ( rscriptType.test( node.type || "" ) &&
-							!data_priv.access( node, "globalEval" ) && jQuery.contains( doc, node ) ) {
-
-							if ( node.src ) {
-								// Hope ajax is available...
-								jQuery._evalUrl( node.src );
-							} else {
-								jQuery.globalEval( node.textContent.replace( rcleanScript, "" ) );
-							}
-						}
-					}
-				}
-			}
-		}
-
-		return this;
+	if ( match ) {
+		elem.type = match[ 1 ];
+	} else {
+		elem.removeAttribute("type");
 	}
-});
 
-jQuery.each({
-	appendTo: "append",
-	prependTo: "prepend",
-	insertBefore: "before",
-	insertAfter: "after",
-	replaceAll: "replaceWith"
-}, function( name, original ) {
-	jQuery.fn[ name ] = function( selector ) {
-		var elems,
-			ret = [],
-			insert = jQuery( selector ),
-			last = insert.length - 1,
-			i = 0;
+	return elem;
+}
 
-		for ( ; i <= last; i++ ) {
-			elems = i === last ? this : this.clone( true );
-			jQuery( insert[ i ] )[ original ]( elems );
+// Mark scripts as having already been evaluated
+function setGlobalEval( elems, refElements ) {
+	var i = 0,
+		l = elems.length;
 
-			// Support: QtWebKit
-			// .get() because core_push.apply(_, arraylike) throws
-			core_push.apply( ret, elems.get() );
+	for ( ; i < l; i++ ) {
+		data_priv.set(
+			elems[ i ], "globalEval", !refElements || data_priv.get( refElements[ i ], "globalEval" )
+		);
+	}
+}
+
+function cloneCopyEvent( src, dest ) {
+	var i, l, type, pdataOld, pdataCur, udataOld, udataCur, events;
+
+	if ( dest.nodeType !== 1 ) {
+		return;
+	}
+
+	// 1. Copy private data: events, handlers, etc.
+	if ( data_priv.hasData( src ) ) {
+		pdataOld = data_priv.access( src );
+		pdataCur = data_priv.set( dest, pdataOld );
+		events = pdataOld.events;
+
+		if ( events ) {
+			delete pdataCur.handle;
+			pdataCur.events = {};
+
+			for ( type in events ) {
+				for ( i = 0, l = events[ type ].length; i < l; i++ ) {
+					jQuery.event.add( dest, type, events[ type ][ i ] );
+				}
+			}
 		}
+	}
 
-		return this.pushStack( ret );
-	};
-});
+	// 2. Copy user data
+	if ( data_user.hasData( src ) ) {
+		udataOld = data_user.access( src );
+		udataCur = jQuery.extend( {}, udataOld );
+
+		data_user.set( dest, udataCur );
+	}
+}
+
+function getAll( context, tag ) {
+	var ret = context.getElementsByTagName ? context.getElementsByTagName( tag || "*" ) :
+			context.querySelectorAll ? context.querySelectorAll( tag || "*" ) :
+			[];
+
+	return tag === undefined || tag && jQuery.nodeName( context, tag ) ?
+		jQuery.merge( [ context ], ret ) :
+		ret;
+}
+
+// Support: IE >= 9
+function fixInput( src, dest ) {
+	var nodeName = dest.nodeName.toLowerCase();
+
+	// Fails to persist the checked state of a cloned checkbox or radio button.
+	if ( nodeName === "input" && rcheckableType.test( src.type ) ) {
+		dest.checked = src.checked;
+
+	// Fails to return the selected option to the default selected state when cloning options
+	} else if ( nodeName === "input" || nodeName === "textarea" ) {
+		dest.defaultValue = src.defaultValue;
+	}
+}
 
 jQuery.extend({
 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
@@ -5721,7 +4974,8 @@ jQuery.extend({
 
 		// Support: IE >= 9
 		// Fix Cloning issues
-		if ( !jQuery.support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) && !jQuery.isXMLDoc( elem ) ) {
+		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
+				!jQuery.isXMLDoc( elem ) ) {
 
 			// We eschew Sizzle here for performance reasons: http://jsperf.com/getall-vs-sizzle/2
 			destElements = getAll( clone );
@@ -5758,10 +5012,10 @@ jQuery.extend({
 
 	buildFragment: function( elems, context, scripts, selection ) {
 		var elem, tmp, tag, wrap, contains, j,
-			i = 0,
-			l = elems.length,
 			fragment = context.createDocumentFragment(),
-			nodes = [];
+			nodes = [],
+			i = 0,
+			l = elems.length;
 
 		for ( ; i < l; i++ ) {
 			elem = elems[ i ];
@@ -5771,7 +5025,7 @@ jQuery.extend({
 				// Add nodes directly
 				if ( jQuery.type( elem ) === "object" ) {
 					// Support: QtWebKit
-					// jQuery.merge because core_push.apply(_, arraylike) throws
+					// jQuery.merge because push.apply(_, arraylike) throws
 					jQuery.merge( nodes, elem.nodeType ? [ elem ] : elem );
 
 				// Convert non-html into a text node
@@ -5783,7 +5037,7 @@ jQuery.extend({
 					tmp = tmp || fragment.appendChild( context.createElement("div") );
 
 					// Deserialize a standard representation
-					tag = ( rtagName.exec( elem ) || ["", ""] )[ 1 ].toLowerCase();
+					tag = ( rtagName.exec( elem ) || [ "", "" ] )[ 1 ].toLowerCase();
 					wrap = wrapMap[ tag ] || wrapMap._default;
 					tmp.innerHTML = wrap[ 1 ] + elem.replace( rxhtmlTag, "<$1></$2>" ) + wrap[ 2 ];
 
@@ -5794,7 +5048,7 @@ jQuery.extend({
 					}
 
 					// Support: QtWebKit
-					// jQuery.merge because core_push.apply(_, arraylike) throws
+					// jQuery.merge because push.apply(_, arraylike) throws
 					jQuery.merge( nodes, tmp.childNodes );
 
 					// Remember the top-level container
@@ -5849,7 +5103,7 @@ jQuery.extend({
 			i = 0;
 
 		for ( ; (elem = elems[ i ]) !== undefined; i++ ) {
-			if ( Data.accepts( elem ) ) {
+			if ( jQuery.acceptData( elem ) ) {
 				key = elem[ data_priv.expando ];
 
 				if ( key && (data = data_priv.cache[ key ]) ) {
@@ -5874,196 +5128,522 @@ jQuery.extend({
 			// Discard any remaining `user` data
 			delete data_user.cache[ elem[ data_user.expando ] ];
 		}
-	},
-
-	_evalUrl: function( url ) {
-		return jQuery.ajax({
-			url: url,
-			type: "GET",
-			dataType: "script",
-			async: false,
-			global: false,
-			"throws": true
-		});
 	}
 });
 
-// Support: 1.x compatibility
-// Manipulating tables requires a tbody
-function manipulationTarget( elem, content ) {
-	return jQuery.nodeName( elem, "table" ) &&
-		jQuery.nodeName( content.nodeType === 1 ? content : content.firstChild, "tr" ) ?
-
-		elem.getElementsByTagName("tbody")[0] ||
-			elem.appendChild( elem.ownerDocument.createElement("tbody") ) :
-		elem;
-}
-
-// Replace/restore the type attribute of script elements for safe DOM manipulation
-function disableScript( elem ) {
-	elem.type = (elem.getAttribute("type") !== null) + "/" + elem.type;
-	return elem;
-}
-function restoreScript( elem ) {
-	var match = rscriptTypeMasked.exec( elem.type );
-
-	if ( match ) {
-		elem.type = match[ 1 ];
-	} else {
-		elem.removeAttribute("type");
-	}
-
-	return elem;
-}
-
-// Mark scripts as having already been evaluated
-function setGlobalEval( elems, refElements ) {
-	var l = elems.length,
-		i = 0;
-
-	for ( ; i < l; i++ ) {
-		data_priv.set(
-			elems[ i ], "globalEval", !refElements || data_priv.get( refElements[ i ], "globalEval" )
-		);
-	}
-}
-
-function cloneCopyEvent( src, dest ) {
-	var i, l, type, pdataOld, pdataCur, udataOld, udataCur, events;
-
-	if ( dest.nodeType !== 1 ) {
-		return;
-	}
-
-	// 1. Copy private data: events, handlers, etc.
-	if ( data_priv.hasData( src ) ) {
-		pdataOld = data_priv.access( src );
-		pdataCur = data_priv.set( dest, pdataOld );
-		events = pdataOld.events;
-
-		if ( events ) {
-			delete pdataCur.handle;
-			pdataCur.events = {};
-
-			for ( type in events ) {
-				for ( i = 0, l = events[ type ].length; i < l; i++ ) {
-					jQuery.event.add( dest, type, events[ type ][ i ] );
-				}
-			}
-		}
-	}
-
-	// 2. Copy user data
-	if ( data_user.hasData( src ) ) {
-		udataOld = data_user.access( src );
-		udataCur = jQuery.extend( {}, udataOld );
-
-		data_user.set( dest, udataCur );
-	}
-}
-
-
-function getAll( context, tag ) {
-	var ret = context.getElementsByTagName ? context.getElementsByTagName( tag || "*" ) :
-			context.querySelectorAll ? context.querySelectorAll( tag || "*" ) :
-			[];
-
-	return tag === undefined || tag && jQuery.nodeName( context, tag ) ?
-		jQuery.merge( [ context ], ret ) :
-		ret;
-}
-
-// Support: IE >= 9
-function fixInput( src, dest ) {
-	var nodeName = dest.nodeName.toLowerCase();
-
-	// Fails to persist the checked state of a cloned checkbox or radio button.
-	if ( nodeName === "input" && manipulation_rcheckableType.test( src.type ) ) {
-		dest.checked = src.checked;
-
-	// Fails to return the selected option to the default selected state when cloning options
-	} else if ( nodeName === "input" || nodeName === "textarea" ) {
-		dest.defaultValue = src.defaultValue;
-	}
-}
 jQuery.fn.extend({
-	wrapAll: function( html ) {
-		var wrap;
+	text: function( value ) {
+		return access( this, function( value ) {
+			return value === undefined ?
+				jQuery.text( this ) :
+				this.empty().each(function() {
+					if ( this.nodeType === 1 || this.nodeType === 11 || this.nodeType === 9 ) {
+						this.textContent = value;
+					}
+				});
+		}, null, value, arguments.length );
+	},
 
-		if ( jQuery.isFunction( html ) ) {
-			return this.each(function( i ) {
-				jQuery( this ).wrapAll( html.call(this, i) );
-			});
-		}
+	append: function() {
+		return this.domManip( arguments, function( elem ) {
+			if ( this.nodeType === 1 || this.nodeType === 11 || this.nodeType === 9 ) {
+				var target = manipulationTarget( this, elem );
+				target.appendChild( elem );
+			}
+		});
+	},
 
-		if ( this[ 0 ] ) {
+	prepend: function() {
+		return this.domManip( arguments, function( elem ) {
+			if ( this.nodeType === 1 || this.nodeType === 11 || this.nodeType === 9 ) {
+				var target = manipulationTarget( this, elem );
+				target.insertBefore( elem, target.firstChild );
+			}
+		});
+	},
 
-			// The elements to wrap the target around
-			wrap = jQuery( html, this[ 0 ].ownerDocument ).eq( 0 ).clone( true );
+	before: function() {
+		return this.domManip( arguments, function( elem ) {
+			if ( this.parentNode ) {
+				this.parentNode.insertBefore( elem, this );
+			}
+		});
+	},
 
-			if ( this[ 0 ].parentNode ) {
-				wrap.insertBefore( this[ 0 ] );
+	after: function() {
+		return this.domManip( arguments, function( elem ) {
+			if ( this.parentNode ) {
+				this.parentNode.insertBefore( elem, this.nextSibling );
+			}
+		});
+	},
+
+	remove: function( selector, keepData /* Internal Use Only */ ) {
+		var elem,
+			elems = selector ? jQuery.filter( selector, this ) : this,
+			i = 0;
+
+		for ( ; (elem = elems[i]) != null; i++ ) {
+			if ( !keepData && elem.nodeType === 1 ) {
+				jQuery.cleanData( getAll( elem ) );
 			}
 
-			wrap.map(function() {
-				var elem = this;
-
-				while ( elem.firstElementChild ) {
-					elem = elem.firstElementChild;
+			if ( elem.parentNode ) {
+				if ( keepData && jQuery.contains( elem.ownerDocument, elem ) ) {
+					setGlobalEval( getAll( elem, "script" ) );
 				}
-
-				return elem;
-			}).append( this );
+				elem.parentNode.removeChild( elem );
+			}
 		}
 
 		return this;
 	},
 
-	wrapInner: function( html ) {
-		if ( jQuery.isFunction( html ) ) {
-			return this.each(function( i ) {
-				jQuery( this ).wrapInner( html.call(this, i) );
+	empty: function() {
+		var elem,
+			i = 0;
+
+		for ( ; (elem = this[i]) != null; i++ ) {
+			if ( elem.nodeType === 1 ) {
+
+				// Prevent memory leaks
+				jQuery.cleanData( getAll( elem, false ) );
+
+				// Remove any remaining nodes
+				elem.textContent = "";
+			}
+		}
+
+		return this;
+	},
+
+	clone: function( dataAndEvents, deepDataAndEvents ) {
+		dataAndEvents = dataAndEvents == null ? false : dataAndEvents;
+		deepDataAndEvents = deepDataAndEvents == null ? dataAndEvents : deepDataAndEvents;
+
+		return this.map(function() {
+			return jQuery.clone( this, dataAndEvents, deepDataAndEvents );
+		});
+	},
+
+	html: function( value ) {
+		return access( this, function( value ) {
+			var elem = this[ 0 ] || {},
+				i = 0,
+				l = this.length;
+
+			if ( value === undefined && elem.nodeType === 1 ) {
+				return elem.innerHTML;
+			}
+
+			// See if we can take a shortcut and just use innerHTML
+			if ( typeof value === "string" && !rnoInnerhtml.test( value ) &&
+				!wrapMap[ ( rtagName.exec( value ) || [ "", "" ] )[ 1 ].toLowerCase() ] ) {
+
+				value = value.replace( rxhtmlTag, "<$1></$2>" );
+
+				try {
+					for ( ; i < l; i++ ) {
+						elem = this[ i ] || {};
+
+						// Remove element nodes and prevent memory leaks
+						if ( elem.nodeType === 1 ) {
+							jQuery.cleanData( getAll( elem, false ) );
+							elem.innerHTML = value;
+						}
+					}
+
+					elem = 0;
+
+				// If using innerHTML throws an exception, use the fallback method
+				} catch( e ) {}
+			}
+
+			if ( elem ) {
+				this.empty().append( value );
+			}
+		}, null, value, arguments.length );
+	},
+
+	replaceWith: function() {
+		var arg = arguments[ 0 ];
+
+		// Make the changes, replacing each context element with the new content
+		this.domManip( arguments, function( elem ) {
+			arg = this.parentNode;
+
+			jQuery.cleanData( getAll( this ) );
+
+			if ( arg ) {
+				arg.replaceChild( elem, this );
+			}
+		});
+
+		// Force removal if there was no new content (e.g., from empty arguments)
+		return arg && (arg.length || arg.nodeType) ? this : this.remove();
+	},
+
+	detach: function( selector ) {
+		return this.remove( selector, true );
+	},
+
+	domManip: function( args, callback ) {
+
+		// Flatten any nested arrays
+		args = concat.apply( [], args );
+
+		var fragment, first, scripts, hasScripts, node, doc,
+			i = 0,
+			l = this.length,
+			set = this,
+			iNoClone = l - 1,
+			value = args[ 0 ],
+			isFunction = jQuery.isFunction( value );
+
+		// We can't cloneNode fragments that contain checked, in WebKit
+		if ( isFunction ||
+				( l > 1 && typeof value === "string" &&
+					!support.checkClone && rchecked.test( value ) ) ) {
+			return this.each(function( index ) {
+				var self = set.eq( index );
+				if ( isFunction ) {
+					args[ 0 ] = value.call( this, index, self.html() );
+				}
+				self.domManip( args, callback );
 			});
 		}
 
-		return this.each(function() {
-			var self = jQuery( this ),
-				contents = self.contents();
+		if ( l ) {
+			fragment = jQuery.buildFragment( args, this[ 0 ].ownerDocument, false, this );
+			first = fragment.firstChild;
 
-			if ( contents.length ) {
-				contents.wrapAll( html );
-
-			} else {
-				self.append( html );
+			if ( fragment.childNodes.length === 1 ) {
+				fragment = first;
 			}
-		});
-	},
 
-	wrap: function( html ) {
-		var isFunction = jQuery.isFunction( html );
+			if ( first ) {
+				scripts = jQuery.map( getAll( fragment, "script" ), disableScript );
+				hasScripts = scripts.length;
 
-		return this.each(function( i ) {
-			jQuery( this ).wrapAll( isFunction ? html.call(this, i) : html );
-		});
-	},
+				// Use the original fragment for the last item instead of the first because it can end up
+				// being emptied incorrectly in certain situations (#8070).
+				for ( ; i < l; i++ ) {
+					node = fragment;
 
-	unwrap: function() {
-		return this.parent().each(function() {
-			if ( !jQuery.nodeName( this, "body" ) ) {
-				jQuery( this ).replaceWith( this.childNodes );
+					if ( i !== iNoClone ) {
+						node = jQuery.clone( node, true, true );
+
+						// Keep references to cloned scripts for later restoration
+						if ( hasScripts ) {
+							// Support: QtWebKit
+							// jQuery.merge because push.apply(_, arraylike) throws
+							jQuery.merge( scripts, getAll( node, "script" ) );
+						}
+					}
+
+					callback.call( this[ i ], node, i );
+				}
+
+				if ( hasScripts ) {
+					doc = scripts[ scripts.length - 1 ].ownerDocument;
+
+					// Reenable scripts
+					jQuery.map( scripts, restoreScript );
+
+					// Evaluate executable scripts on first document insertion
+					for ( i = 0; i < hasScripts; i++ ) {
+						node = scripts[ i ];
+						if ( rscriptType.test( node.type || "" ) &&
+							!data_priv.access( node, "globalEval" ) && jQuery.contains( doc, node ) ) {
+
+							if ( node.src ) {
+								// Optional AJAX dependency, but won't run scripts if not present
+								if ( jQuery._evalUrl ) {
+									jQuery._evalUrl( node.src );
+								}
+							} else {
+								jQuery.globalEval( node.textContent.replace( rcleanScript, "" ) );
+							}
+						}
+					}
+				}
 			}
-		}).end();
+		}
+
+		return this;
 	}
 });
-var curCSS, iframe,
+
+jQuery.each({
+	appendTo: "append",
+	prependTo: "prepend",
+	insertBefore: "before",
+	insertAfter: "after",
+	replaceAll: "replaceWith"
+}, function( name, original ) {
+	jQuery.fn[ name ] = function( selector ) {
+		var elems,
+			ret = [],
+			insert = jQuery( selector ),
+			last = insert.length - 1,
+			i = 0;
+
+		for ( ; i <= last; i++ ) {
+			elems = i === last ? this : this.clone( true );
+			jQuery( insert[ i ] )[ original ]( elems );
+
+			// Support: QtWebKit
+			// .get() because push.apply(_, arraylike) throws
+			push.apply( ret, elems.get() );
+		}
+
+		return this.pushStack( ret );
+	};
+});
+
+
+var iframe,
+	elemdisplay = {};
+
+/**
+ * Retrieve the actual display of a element
+ * @param {String} name nodeName of the element
+ * @param {Object} doc Document object
+ */
+// Called only from within defaultDisplay
+function actualDisplay( name, doc ) {
+	var elem = jQuery( doc.createElement( name ) ).appendTo( doc.body ),
+
+		// getDefaultComputedStyle might be reliably used only on attached element
+		display = window.getDefaultComputedStyle ?
+
+			// Use of this method is a temporary fix (more like optmization) until something better comes along,
+			// since it was removed from specification and supported only in FF
+			window.getDefaultComputedStyle( elem[ 0 ] ).display : jQuery.css( elem[ 0 ], "display" );
+
+	// We don't have any data stored on the element,
+	// so use "detach" method as fast way to get rid of the element
+	elem.detach();
+
+	return display;
+}
+
+/**
+ * Try to determine the default display value of an element
+ * @param {String} nodeName
+ */
+function defaultDisplay( nodeName ) {
+	var doc = document,
+		display = elemdisplay[ nodeName ];
+
+	if ( !display ) {
+		display = actualDisplay( nodeName, doc );
+
+		// If the simple way fails, read from inside an iframe
+		if ( display === "none" || !display ) {
+
+			// Use the already-created iframe if possible
+			iframe = (iframe || jQuery( "<iframe frameborder='0' width='0' height='0'/>" )).appendTo( doc.documentElement );
+
+			// Always write a new HTML skeleton so Webkit and Firefox don't choke on reuse
+			doc = iframe[ 0 ].contentDocument;
+
+			// Support: IE
+			doc.write();
+			doc.close();
+
+			display = actualDisplay( nodeName, doc );
+			iframe.detach();
+		}
+
+		// Store the correct default display
+		elemdisplay[ nodeName ] = display;
+	}
+
+	return display;
+}
+var rmargin = (/^margin/);
+
+var rnumnonpx = new RegExp( "^(" + pnum + ")(?!px)[a-z%]+$", "i" );
+
+var getStyles = function( elem ) {
+		return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+	};
+
+
+
+function curCSS( elem, name, computed ) {
+	var width, minWidth, maxWidth, ret,
+		style = elem.style;
+
+	computed = computed || getStyles( elem );
+
+	// Support: IE9
+	// getPropertyValue is only needed for .css('filter') in IE9, see #12537
+	if ( computed ) {
+		ret = computed.getPropertyValue( name ) || computed[ name ];
+	}
+
+	if ( computed ) {
+
+		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
+			ret = jQuery.style( elem, name );
+		}
+
+		// Support: iOS < 6
+		// A tribute to the "awesome hack by Dean Edwards"
+		// iOS < 6 (at least) returns percentage for a larger set of values, but width seems to be reliably pixels
+		// this is against the CSSOM draft spec: http://dev.w3.org/csswg/cssom/#resolved-values
+		if ( rnumnonpx.test( ret ) && rmargin.test( name ) ) {
+
+			// Remember the original values
+			width = style.width;
+			minWidth = style.minWidth;
+			maxWidth = style.maxWidth;
+
+			// Put in the new values to get a computed value out
+			style.minWidth = style.maxWidth = style.width = ret;
+			ret = computed.width;
+
+			// Revert the changed values
+			style.width = width;
+			style.minWidth = minWidth;
+			style.maxWidth = maxWidth;
+		}
+	}
+
+	return ret !== undefined ?
+		// Support: IE
+		// IE returns zIndex value as an integer.
+		ret + "" :
+		ret;
+}
+
+
+function addGetHookIf( conditionFn, hookFn ) {
+	// Define the hook, we'll check on the first run if it's really needed.
+	return {
+		get: function() {
+			if ( conditionFn() ) {
+				// Hook not needed (or it's not possible to use it due to missing dependency),
+				// remove it.
+				// Since there are no other hooks for marginRight, remove the whole object.
+				delete this.get;
+				return;
+			}
+
+			// Hook needed; redefine it so that the support test is not executed again.
+
+			return (this.get = hookFn).apply( this, arguments );
+		}
+	};
+}
+
+
+(function() {
+	var pixelPositionVal, boxSizingReliableVal,
+		// Support: Firefox, Android 2.3 (Prefixed box-sizing versions).
+		divReset = "padding:0;margin:0;border:0;display:block;-webkit-box-sizing:content-box;" +
+			"-moz-box-sizing:content-box;box-sizing:content-box",
+		docElem = document.documentElement,
+		container = document.createElement( "div" ),
+		div = document.createElement( "div" );
+
+	div.style.backgroundClip = "content-box";
+	div.cloneNode( true ).style.backgroundClip = "";
+	support.clearCloneStyle = div.style.backgroundClip === "content-box";
+
+	container.style.cssText = "border:0;width:0;height:0;position:absolute;top:0;left:-9999px;" +
+		"margin-top:1px";
+	container.appendChild( div );
+
+	// Executing both pixelPosition & boxSizingReliable tests require only one layout
+	// so they're executed at the same time to save the second computation.
+	function computePixelPositionAndBoxSizingReliable() {
+		// Support: Firefox, Android 2.3 (Prefixed box-sizing versions).
+		div.style.cssText = "-webkit-box-sizing:border-box;-moz-box-sizing:border-box;" +
+			"box-sizing:border-box;padding:1px;border:1px;display:block;width:4px;margin-top:1%;" +
+			"position:absolute;top:1%";
+		docElem.appendChild( container );
+
+		var divStyle = window.getComputedStyle( div, null );
+		pixelPositionVal = divStyle.top !== "1%";
+		boxSizingReliableVal = divStyle.width === "4px";
+
+		docElem.removeChild( container );
+	}
+
+	// Use window.getComputedStyle because jsdom on node.js will break without it.
+	if ( window.getComputedStyle ) {
+		jQuery.extend(support, {
+			pixelPosition: function() {
+				// This test is executed only once but we still do memoizing
+				// since we can use the boxSizingReliable pre-computing.
+				// No need to check if the test was already performed, though.
+				computePixelPositionAndBoxSizingReliable();
+				return pixelPositionVal;
+			},
+			boxSizingReliable: function() {
+				if ( boxSizingReliableVal == null ) {
+					computePixelPositionAndBoxSizingReliable();
+				}
+				return boxSizingReliableVal;
+			},
+			reliableMarginRight: function() {
+				// Support: Android 2.3
+				// Check if div with explicit width and no margin-right incorrectly
+				// gets computed margin-right based on width of container. (#3333)
+				// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
+				// This support function is only executed once so no memoizing is needed.
+				var ret,
+					marginDiv = div.appendChild( document.createElement( "div" ) );
+				marginDiv.style.cssText = div.style.cssText = divReset;
+				marginDiv.style.marginRight = marginDiv.style.width = "0";
+				div.style.width = "1px";
+				docElem.appendChild( container );
+
+				ret = !parseFloat( window.getComputedStyle( marginDiv, null ).marginRight );
+
+				docElem.removeChild( container );
+
+				// Clean up the div for other support tests.
+				div.innerHTML = "";
+
+				return ret;
+			}
+		});
+	}
+})();
+
+
+// A method for quickly swapping in/out CSS properties to get correct calculations.
+jQuery.swap = function( elem, options, callback, args ) {
+	var ret, name,
+		old = {};
+
+	// Remember the old values, and insert the new ones
+	for ( name in options ) {
+		old[ name ] = elem.style[ name ];
+		elem.style[ name ] = options[ name ];
+	}
+
+	ret = callback.apply( elem, args || [] );
+
+	// Revert the old values
+	for ( name in options ) {
+		elem.style[ name ] = old[ name ];
+	}
+
+	return ret;
+};
+
+
+var
 	// swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
 	// see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
 	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
-	rmargin = /^margin/,
-	rnumsplit = new RegExp( "^(" + core_pnum + ")(.*)$", "i" ),
-	rnumnonpx = new RegExp( "^(" + core_pnum + ")(?!px)[a-z%]+$", "i" ),
-	rrelNum = new RegExp( "^([+-])=(" + core_pnum + ")", "i" ),
-	elemdisplay = { BODY: "block" },
+	rnumsplit = new RegExp( "^(" + pnum + ")(.*)$", "i" ),
+	rrelNum = new RegExp( "^([+-])=(" + pnum + ")", "i" ),
 
 	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
 	cssNormalTransform = {
@@ -6071,7 +5651,6 @@ var curCSS, iframe,
 		fontWeight: 400
 	},
 
-	cssExpand = [ "Top", "Right", "Bottom", "Left" ],
 	cssPrefixes = [ "Webkit", "O", "Moz", "ms" ];
 
 // return a css property mapped to a potentially vendor prefixed property
@@ -6083,7 +5662,7 @@ function vendorPropName( style, name ) {
 	}
 
 	// check for vendor prefixed names
-	var capName = name.charAt(0).toUpperCase() + name.slice(1),
+	var capName = name[0].toUpperCase() + name.slice(1),
 		origName = name,
 		i = cssPrefixes.length;
 
@@ -6097,17 +5676,95 @@ function vendorPropName( style, name ) {
 	return origName;
 }
 
-function isHidden( elem, el ) {
-	// isHidden might be called from jQuery#filter function;
-	// in that case, element will be second argument
-	elem = el || elem;
-	return jQuery.css( elem, "display" ) === "none" || !jQuery.contains( elem.ownerDocument, elem );
+function setPositiveNumber( elem, value, subtract ) {
+	var matches = rnumsplit.exec( value );
+	return matches ?
+		// Guard against undefined "subtract", e.g., when used as in cssHooks
+		Math.max( 0, matches[ 1 ] - ( subtract || 0 ) ) + ( matches[ 2 ] || "px" ) :
+		value;
 }
 
-// NOTE: we've included the "window" in window.getComputedStyle
-// because jsdom on node.js will break without it.
-function getStyles( elem ) {
-	return window.getComputedStyle( elem, null );
+function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
+	var i = extra === ( isBorderBox ? "border" : "content" ) ?
+		// If we already have the right measurement, avoid augmentation
+		4 :
+		// Otherwise initialize for horizontal or vertical properties
+		name === "width" ? 1 : 0,
+
+		val = 0;
+
+	for ( ; i < 4; i += 2 ) {
+		// both box models exclude margin, so add it if we want it
+		if ( extra === "margin" ) {
+			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
+		}
+
+		if ( isBorderBox ) {
+			// border-box includes padding, so remove it if we want content
+			if ( extra === "content" ) {
+				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			}
+
+			// at this point, extra isn't border nor margin, so remove border
+			if ( extra !== "margin" ) {
+				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
+			}
+		} else {
+			// at this point, extra isn't content, so add padding
+			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+
+			// at this point, extra isn't content nor padding, so add border
+			if ( extra !== "padding" ) {
+				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
+			}
+		}
+	}
+
+	return val;
+}
+
+function getWidthOrHeight( elem, name, extra ) {
+
+	// Start with offset property, which is equivalent to the border-box value
+	var valueIsBorderBox = true,
+		val = name === "width" ? elem.offsetWidth : elem.offsetHeight,
+		styles = getStyles( elem ),
+		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
+
+	// some non-html elements return undefined for offsetWidth, so check for null/undefined
+	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
+	// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
+	if ( val <= 0 || val == null ) {
+		// Fall back to computed then uncomputed css if necessary
+		val = curCSS( elem, name, styles );
+		if ( val < 0 || val == null ) {
+			val = elem.style[ name ];
+		}
+
+		// Computed unit is not pixels. Stop here and return.
+		if ( rnumnonpx.test(val) ) {
+			return val;
+		}
+
+		// we need the check for style in case a browser which returns unreliable values
+		// for getComputedStyle silently falls back to the reliable elem.style
+		valueIsBorderBox = isBorderBox &&
+			( support.boxSizingReliable() || val === elem.style[ name ] );
+
+		// Normalize "", auto, and prepare for extra
+		val = parseFloat( val ) || 0;
+	}
+
+	// use the active box-sizing model to add/subtract irrelevant styles
+	return ( val +
+		augmentWidthOrHeight(
+			elem,
+			name,
+			extra || ( isBorderBox ? "border" : "content" ),
+			valueIsBorderBox,
+			styles
+		)
+	) + "px";
 }
 
 function showHide( elements, show ) {
@@ -6135,7 +5792,7 @@ function showHide( elements, show ) {
 			// in a stylesheet to whatever the default browser style is
 			// for such an element
 			if ( elem.style.display === "" && isHidden( elem ) ) {
-				values[ index ] = data_priv.access( elem, "olddisplay", css_defaultDisplay(elem.nodeName) );
+				values[ index ] = data_priv.access( elem, "olddisplay", defaultDisplay(elem.nodeName) );
 			}
 		} else {
 
@@ -6163,50 +5820,6 @@ function showHide( elements, show ) {
 
 	return elements;
 }
-
-jQuery.fn.extend({
-	css: function( name, value ) {
-		return jQuery.access( this, function( elem, name, value ) {
-			var styles, len,
-				map = {},
-				i = 0;
-
-			if ( jQuery.isArray( name ) ) {
-				styles = getStyles( elem );
-				len = name.length;
-
-				for ( ; i < len; i++ ) {
-					map[ name[ i ] ] = jQuery.css( elem, name[ i ], false, styles );
-				}
-
-				return map;
-			}
-
-			return value !== undefined ?
-				jQuery.style( elem, name, value ) :
-				jQuery.css( elem, name );
-		}, name, value, arguments.length > 1 );
-	},
-	show: function() {
-		return showHide( this, true );
-	},
-	hide: function() {
-		return showHide( this );
-	},
-	toggle: function( state ) {
-		if ( typeof state === "boolean" ) {
-			return state ? this.show() : this.hide();
-		}
-
-		return this.each(function() {
-			if ( isHidden( this ) ) {
-				jQuery( this ).show();
-			} else {
-				jQuery( this ).hide();
-			}
-		});
-	}
-});
 
 jQuery.extend({
 	// Add in style property hooks for overriding the default
@@ -6273,8 +5886,8 @@ jQuery.extend({
 				type = "number";
 			}
 
-			// Make sure that NaN and null values aren't set. See: #7116
-			if ( value == null || type === "number" && isNaN( value ) ) {
+			// Make sure that null and NaN values aren't set. See: #7116
+			if ( value == null || value !== value ) {
 				return;
 			}
 
@@ -6285,12 +5898,15 @@ jQuery.extend({
 
 			// Fixes #8908, it can be done more correctly by specifying setters in cssHooks,
 			// but it would mean to define eight (for every problematic property) identical functions
-			if ( !jQuery.support.clearCloneStyle && value === "" && name.indexOf("background") === 0 ) {
+			if ( !support.clearCloneStyle && value === "" && name.indexOf( "background" ) === 0 ) {
 				style[ name ] = "inherit";
 			}
 
 			// If a hook was provided, use that value, otherwise just set the specified value
 			if ( !hooks || !("set" in hooks) || (value = hooks.set( elem, value, extra )) !== undefined ) {
+				// Support: Chrome, Safari
+				// Setting style to blank string required to delete "style: x !important;"
+				style[ name ] = "";
 				style[ name ] = value;
 			}
 
@@ -6340,177 +5956,6 @@ jQuery.extend({
 	}
 });
 
-curCSS = function( elem, name, _computed ) {
-	var width, minWidth, maxWidth,
-		computed = _computed || getStyles( elem ),
-
-		// Support: IE9
-		// getPropertyValue is only needed for .css('filter') in IE9, see #12537
-		ret = computed ? computed.getPropertyValue( name ) || computed[ name ] : undefined,
-		style = elem.style;
-
-	if ( computed ) {
-
-		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
-			ret = jQuery.style( elem, name );
-		}
-
-		// Support: Safari 5.1
-		// A tribute to the "awesome hack by Dean Edwards"
-		// Safari 5.1.7 (at least) returns percentage for a larger set of values, but width seems to be reliably pixels
-		// this is against the CSSOM draft spec: http://dev.w3.org/csswg/cssom/#resolved-values
-		if ( rnumnonpx.test( ret ) && rmargin.test( name ) ) {
-
-			// Remember the original values
-			width = style.width;
-			minWidth = style.minWidth;
-			maxWidth = style.maxWidth;
-
-			// Put in the new values to get a computed value out
-			style.minWidth = style.maxWidth = style.width = ret;
-			ret = computed.width;
-
-			// Revert the changed values
-			style.width = width;
-			style.minWidth = minWidth;
-			style.maxWidth = maxWidth;
-		}
-	}
-
-	return ret;
-};
-
-
-function setPositiveNumber( elem, value, subtract ) {
-	var matches = rnumsplit.exec( value );
-	return matches ?
-		// Guard against undefined "subtract", e.g., when used as in cssHooks
-		Math.max( 0, matches[ 1 ] - ( subtract || 0 ) ) + ( matches[ 2 ] || "px" ) :
-		value;
-}
-
-function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
-	var i = extra === ( isBorderBox ? "border" : "content" ) ?
-		// If we already have the right measurement, avoid augmentation
-		4 :
-		// Otherwise initialize for horizontal or vertical properties
-		name === "width" ? 1 : 0,
-
-		val = 0;
-
-	for ( ; i < 4; i += 2 ) {
-		// both box models exclude margin, so add it if we want it
-		if ( extra === "margin" ) {
-			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
-		}
-
-		if ( isBorderBox ) {
-			// border-box includes padding, so remove it if we want content
-			if ( extra === "content" ) {
-				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
-			}
-
-			// at this point, extra isn't border nor margin, so remove border
-			if ( extra !== "margin" ) {
-				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
-			}
-		} else {
-			// at this point, extra isn't content, so add padding
-			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
-
-			// at this point, extra isn't content nor padding, so add border
-			if ( extra !== "padding" ) {
-				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
-			}
-		}
-	}
-
-	return val;
-}
-
-function getWidthOrHeight( elem, name, extra ) {
-
-	// Start with offset property, which is equivalent to the border-box value
-	var valueIsBorderBox = true,
-		val = name === "width" ? elem.offsetWidth : elem.offsetHeight,
-		styles = getStyles( elem ),
-		isBorderBox = jQuery.support.boxSizing && jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
-
-	// some non-html elements return undefined for offsetWidth, so check for null/undefined
-	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
-	// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
-	if ( val <= 0 || val == null ) {
-		// Fall back to computed then uncomputed css if necessary
-		val = curCSS( elem, name, styles );
-		if ( val < 0 || val == null ) {
-			val = elem.style[ name ];
-		}
-
-		// Computed unit is not pixels. Stop here and return.
-		if ( rnumnonpx.test(val) ) {
-			return val;
-		}
-
-		// we need the check for style in case a browser which returns unreliable values
-		// for getComputedStyle silently falls back to the reliable elem.style
-		valueIsBorderBox = isBorderBox && ( jQuery.support.boxSizingReliable || val === elem.style[ name ] );
-
-		// Normalize "", auto, and prepare for extra
-		val = parseFloat( val ) || 0;
-	}
-
-	// use the active box-sizing model to add/subtract irrelevant styles
-	return ( val +
-		augmentWidthOrHeight(
-			elem,
-			name,
-			extra || ( isBorderBox ? "border" : "content" ),
-			valueIsBorderBox,
-			styles
-		)
-	) + "px";
-}
-
-// Try to determine the default display value of an element
-function css_defaultDisplay( nodeName ) {
-	var doc = document,
-		display = elemdisplay[ nodeName ];
-
-	if ( !display ) {
-		display = actualDisplay( nodeName, doc );
-
-		// If the simple way fails, read from inside an iframe
-		if ( display === "none" || !display ) {
-			// Use the already-created iframe if possible
-			iframe = ( iframe ||
-				jQuery("<iframe frameborder='0' width='0' height='0'/>")
-				.css( "cssText", "display:block !important" )
-			).appendTo( doc.documentElement );
-
-			// Always write a new HTML skeleton so Webkit and Firefox don't choke on reuse
-			doc = ( iframe[0].contentWindow || iframe[0].contentDocument ).document;
-			doc.write("<!doctype html><html><body>");
-			doc.close();
-
-			display = actualDisplay( nodeName, doc );
-			iframe.detach();
-		}
-
-		// Store the correct default display
-		elemdisplay[ nodeName ] = display;
-	}
-
-	return display;
-}
-
-// Called ONLY from within css_defaultDisplay
-function actualDisplay( name, doc ) {
-	var elem = jQuery( doc.createElement( name ) ).appendTo( doc.body ),
-		display = jQuery.css( elem[0], "display" );
-	elem.remove();
-	return display;
-}
-
 jQuery.each([ "height", "width" ], function( i, name ) {
 	jQuery.cssHooks[ name ] = {
 		get: function( elem, computed, extra ) {
@@ -6532,7 +5977,7 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 					elem,
 					name,
 					extra,
-					jQuery.support.boxSizing && jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+					jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
 					styles
 				) : 0
 			);
@@ -6540,56 +5985,17 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 	};
 });
 
-// These hooks cannot be added until DOM ready because the support test
-// for it is not run until after DOM ready
-jQuery(function() {
-	// Support: Android 2.3
-	if ( !jQuery.support.reliableMarginRight ) {
-		jQuery.cssHooks.marginRight = {
-			get: function( elem, computed ) {
-				if ( computed ) {
-					// Support: Android 2.3
-					// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
-					// Work around by temporarily setting element display to inline-block
-					return jQuery.swap( elem, { "display": "inline-block" },
-						curCSS, [ elem, "marginRight" ] );
-				}
-			}
-		};
+// Support: Android 2.3
+jQuery.cssHooks.marginRight = addGetHookIf( support.reliableMarginRight,
+	function( elem, computed ) {
+		if ( computed ) {
+			// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
+			// Work around by temporarily setting element display to inline-block
+			return jQuery.swap( elem, { "display": "inline-block" },
+				curCSS, [ elem, "marginRight" ] );
+		}
 	}
-
-	// Webkit bug: https://bugs.webkit.org/show_bug.cgi?id=29084
-	// getComputedStyle returns percent when specified for top/left/bottom/right
-	// rather than make the css module depend on the offset module, we just check for it here
-	if ( !jQuery.support.pixelPosition && jQuery.fn.position ) {
-		jQuery.each( [ "top", "left" ], function( i, prop ) {
-			jQuery.cssHooks[ prop ] = {
-				get: function( elem, computed ) {
-					if ( computed ) {
-						computed = curCSS( elem, prop );
-						// if curCSS returns percentage, fallback to offset
-						return rnumnonpx.test( computed ) ?
-							jQuery( elem ).position()[ prop ] + "px" :
-							computed;
-					}
-				}
-			};
-		});
-	}
-
-});
-
-if ( jQuery.expr && jQuery.expr.filters ) {
-	jQuery.expr.filters.hidden = function( elem ) {
-		// Support: Opera <= 12.12
-		// Opera reports offsetWidths and offsetHeights less than zero on some elements
-		return elem.offsetWidth <= 0 && elem.offsetHeight <= 0;
-	};
-
-	jQuery.expr.filters.visible = function( elem ) {
-		return !jQuery.expr.filters.hidden( elem );
-	};
-}
+);
 
 // These hooks are used by animate to expand properties
 jQuery.each({
@@ -6618,105 +6024,1364 @@ jQuery.each({
 		jQuery.cssHooks[ prefix + suffix ].set = setPositiveNumber;
 	}
 });
-var r20 = /%20/g,
-	rbracket = /\[\]$/,
-	rCRLF = /\r?\n/g,
-	rsubmitterTypes = /^(?:submit|button|image|reset|file)$/i,
-	rsubmittable = /^(?:input|select|textarea|keygen)/i;
 
 jQuery.fn.extend({
-	serialize: function() {
-		return jQuery.param( this.serializeArray() );
-	},
-	serializeArray: function() {
-		return this.map(function(){
-			// Can add propHook for "elements" to filter or add form elements
-			var elements = jQuery.prop( this, "elements" );
-			return elements ? jQuery.makeArray( elements ) : this;
-		})
-		.filter(function(){
-			var type = this.type;
-			// Use .is(":disabled") so that fieldset[disabled] works
-			return this.name && !jQuery( this ).is( ":disabled" ) &&
-				rsubmittable.test( this.nodeName ) && !rsubmitterTypes.test( type ) &&
-				( this.checked || !manipulation_rcheckableType.test( type ) );
-		})
-		.map(function( i, elem ){
-			var val = jQuery( this ).val();
+	css: function( name, value ) {
+		return access( this, function( elem, name, value ) {
+			var styles, len,
+				map = {},
+				i = 0;
 
-			return val == null ?
-				null :
-				jQuery.isArray( val ) ?
-					jQuery.map( val, function( val ){
-						return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
-					}) :
-					{ name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
-		}).get();
+			if ( jQuery.isArray( name ) ) {
+				styles = getStyles( elem );
+				len = name.length;
+
+				for ( ; i < len; i++ ) {
+					map[ name[ i ] ] = jQuery.css( elem, name[ i ], false, styles );
+				}
+
+				return map;
+			}
+
+			return value !== undefined ?
+				jQuery.style( elem, name, value ) :
+				jQuery.css( elem, name );
+		}, name, value, arguments.length > 1 );
+	},
+	show: function() {
+		return showHide( this, true );
+	},
+	hide: function() {
+		return showHide( this );
+	},
+	toggle: function( state ) {
+		if ( typeof state === "boolean" ) {
+			return state ? this.show() : this.hide();
+		}
+
+		return this.each(function() {
+			if ( isHidden( this ) ) {
+				jQuery( this ).show();
+			} else {
+				jQuery( this ).hide();
+			}
+		});
 	}
 });
 
-//Serialize an array of form elements or a set of
-//key/values into a query string
-jQuery.param = function( a, traditional ) {
-	var prefix,
-		s = [],
-		add = function( key, value ) {
-			// If value is a function, invoke it and return its value
-			value = jQuery.isFunction( value ) ? value() : ( value == null ? "" : value );
-			s[ s.length ] = encodeURIComponent( key ) + "=" + encodeURIComponent( value );
-		};
 
-	// Set traditional to true for jQuery <= 1.3.2 behavior.
-	if ( traditional === undefined ) {
-		traditional = jQuery.ajaxSettings && jQuery.ajaxSettings.traditional;
-	}
+function Tween( elem, options, prop, end, easing ) {
+	return new Tween.prototype.init( elem, options, prop, end, easing );
+}
+jQuery.Tween = Tween;
 
-	// If an array was passed in, assume that it is an array of form elements.
-	if ( jQuery.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
-		// Serialize the form elements
-		jQuery.each( a, function() {
-			add( this.name, this.value );
-		});
+Tween.prototype = {
+	constructor: Tween,
+	init: function( elem, options, prop, end, easing, unit ) {
+		this.elem = elem;
+		this.prop = prop;
+		this.easing = easing || "swing";
+		this.options = options;
+		this.start = this.now = this.cur();
+		this.end = end;
+		this.unit = unit || ( jQuery.cssNumber[ prop ] ? "" : "px" );
+	},
+	cur: function() {
+		var hooks = Tween.propHooks[ this.prop ];
 
-	} else {
-		// If traditional, encode the "old" way (the way 1.3.2 or older
-		// did it), otherwise encode params recursively.
-		for ( prefix in a ) {
-			buildParams( prefix, a[ prefix ], traditional, add );
+		return hooks && hooks.get ?
+			hooks.get( this ) :
+			Tween.propHooks._default.get( this );
+	},
+	run: function( percent ) {
+		var eased,
+			hooks = Tween.propHooks[ this.prop ];
+
+		if ( this.options.duration ) {
+			this.pos = eased = jQuery.easing[ this.easing ](
+				percent, this.options.duration * percent, 0, 1, this.options.duration
+			);
+		} else {
+			this.pos = eased = percent;
 		}
-	}
+		this.now = ( this.end - this.start ) * eased + this.start;
 
-	// Return the resulting serialization
-	return s.join( "&" ).replace( r20, "+" );
+		if ( this.options.step ) {
+			this.options.step.call( this.elem, this.now, this );
+		}
+
+		if ( hooks && hooks.set ) {
+			hooks.set( this );
+		} else {
+			Tween.propHooks._default.set( this );
+		}
+		return this;
+	}
 };
 
-function buildParams( prefix, obj, traditional, add ) {
-	var name;
+Tween.prototype.init.prototype = Tween.prototype;
 
-	if ( jQuery.isArray( obj ) ) {
-		// Serialize array item.
-		jQuery.each( obj, function( i, v ) {
-			if ( traditional || rbracket.test( prefix ) ) {
-				// Treat each array item as a scalar.
-				add( prefix, v );
+Tween.propHooks = {
+	_default: {
+		get: function( tween ) {
+			var result;
 
-			} else {
-				// Item is non-scalar (array or object), encode its numeric index.
-				buildParams( prefix + "[" + ( typeof v === "object" ? i : "" ) + "]", v, traditional, add );
+			if ( tween.elem[ tween.prop ] != null &&
+				(!tween.elem.style || tween.elem.style[ tween.prop ] == null) ) {
+				return tween.elem[ tween.prop ];
 			}
-		});
 
-	} else if ( !traditional && jQuery.type( obj ) === "object" ) {
-		// Serialize object item.
-		for ( name in obj ) {
-			buildParams( prefix + "[" + name + "]", obj[ name ], traditional, add );
+			// passing an empty string as a 3rd parameter to .css will automatically
+			// attempt a parseFloat and fallback to a string if the parse fails
+			// so, simple values such as "10px" are parsed to Float.
+			// complex values such as "rotate(1rad)" are returned as is.
+			result = jQuery.css( tween.elem, tween.prop, "" );
+			// Empty strings, null, undefined and "auto" are converted to 0.
+			return !result || result === "auto" ? 0 : result;
+		},
+		set: function( tween ) {
+			// use step hook for back compat - use cssHook if its there - use .style if its
+			// available and use plain properties where available
+			if ( jQuery.fx.step[ tween.prop ] ) {
+				jQuery.fx.step[ tween.prop ]( tween );
+			} else if ( tween.elem.style && ( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null || jQuery.cssHooks[ tween.prop ] ) ) {
+				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
+			} else {
+				tween.elem[ tween.prop ] = tween.now;
+			}
 		}
+	}
+};
 
-	} else {
-		// Serialize scalar item.
-		add( prefix, obj );
+// Support: IE9
+// Panic based approach to setting things on disconnected nodes
+
+Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
+	set: function( tween ) {
+		if ( tween.elem.nodeType && tween.elem.parentNode ) {
+			tween.elem[ tween.prop ] = tween.now;
+		}
+	}
+};
+
+jQuery.easing = {
+	linear: function( p ) {
+		return p;
+	},
+	swing: function( p ) {
+		return 0.5 - Math.cos( p * Math.PI ) / 2;
+	}
+};
+
+jQuery.fx = Tween.prototype.init;
+
+// Back Compat <1.8 extension point
+jQuery.fx.step = {};
+
+
+
+
+var
+	fxNow, timerId,
+	rfxtypes = /^(?:toggle|show|hide)$/,
+	rfxnum = new RegExp( "^(?:([+-])=|)(" + pnum + ")([a-z%]*)$", "i" ),
+	rrun = /queueHooks$/,
+	animationPrefilters = [ defaultPrefilter ],
+	tweeners = {
+		"*": [ function( prop, value ) {
+			var tween = this.createTween( prop, value ),
+				target = tween.cur(),
+				parts = rfxnum.exec( value ),
+				unit = parts && parts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
+
+				// Starting value computation is required for potential unit mismatches
+				start = ( jQuery.cssNumber[ prop ] || unit !== "px" && +target ) &&
+					rfxnum.exec( jQuery.css( tween.elem, prop ) ),
+				scale = 1,
+				maxIterations = 20;
+
+			if ( start && start[ 3 ] !== unit ) {
+				// Trust units reported by jQuery.css
+				unit = unit || start[ 3 ];
+
+				// Make sure we update the tween properties later on
+				parts = parts || [];
+
+				// Iteratively approximate from a nonzero starting point
+				start = +target || 1;
+
+				do {
+					// If previous iteration zeroed out, double until we get *something*
+					// Use a string for doubling factor so we don't accidentally see scale as unchanged below
+					scale = scale || ".5";
+
+					// Adjust and apply
+					start = start / scale;
+					jQuery.style( tween.elem, prop, start + unit );
+
+				// Update scale, tolerating zero or NaN from tween.cur()
+				// And breaking the loop if scale is unchanged or perfect, or if we've just had enough
+				} while ( scale !== (scale = tween.cur() / target) && scale !== 1 && --maxIterations );
+			}
+
+			// Update tween properties
+			if ( parts ) {
+				start = tween.start = +start || +target || 0;
+				tween.unit = unit;
+				// If a +=/-= token was provided, we're doing a relative animation
+				tween.end = parts[ 1 ] ?
+					start + ( parts[ 1 ] + 1 ) * parts[ 2 ] :
+					+parts[ 2 ];
+			}
+
+			return tween;
+		} ]
+	};
+
+// Animations created synchronously will run synchronously
+function createFxNow() {
+	setTimeout(function() {
+		fxNow = undefined;
+	});
+	return ( fxNow = jQuery.now() );
+}
+
+// Generate parameters to create a standard animation
+function genFx( type, includeWidth ) {
+	var which,
+		i = 0,
+		attrs = { height: type };
+
+	// if we include width, step value is 1 to do all cssExpand values,
+	// if we don't include width, step value is 2 to skip over Left and Right
+	includeWidth = includeWidth ? 1 : 0;
+	for ( ; i < 4 ; i += 2 - includeWidth ) {
+		which = cssExpand[ i ];
+		attrs[ "margin" + which ] = attrs[ "padding" + which ] = type;
+	}
+
+	if ( includeWidth ) {
+		attrs.opacity = attrs.width = type;
+	}
+
+	return attrs;
+}
+
+function createTween( value, prop, animation ) {
+	var tween,
+		collection = ( tweeners[ prop ] || [] ).concat( tweeners[ "*" ] ),
+		index = 0,
+		length = collection.length;
+	for ( ; index < length; index++ ) {
+		if ( (tween = collection[ index ].call( animation, prop, value )) ) {
+
+			// we're done with this property
+			return tween;
+		}
 	}
 }
+
+function defaultPrefilter( elem, props, opts ) {
+	/* jshint validthis: true */
+	var prop, value, toggle, tween, hooks, oldfire, display,
+		anim = this,
+		orig = {},
+		style = elem.style,
+		hidden = elem.nodeType && isHidden( elem ),
+		dataShow = data_priv.get( elem, "fxshow" );
+
+	// handle queue: false promises
+	if ( !opts.queue ) {
+		hooks = jQuery._queueHooks( elem, "fx" );
+		if ( hooks.unqueued == null ) {
+			hooks.unqueued = 0;
+			oldfire = hooks.empty.fire;
+			hooks.empty.fire = function() {
+				if ( !hooks.unqueued ) {
+					oldfire();
+				}
+			};
+		}
+		hooks.unqueued++;
+
+		anim.always(function() {
+			// doing this makes sure that the complete handler will be called
+			// before this completes
+			anim.always(function() {
+				hooks.unqueued--;
+				if ( !jQuery.queue( elem, "fx" ).length ) {
+					hooks.empty.fire();
+				}
+			});
+		});
+	}
+
+	// height/width overflow pass
+	if ( elem.nodeType === 1 && ( "height" in props || "width" in props ) ) {
+		// Make sure that nothing sneaks out
+		// Record all 3 overflow attributes because IE9-10 do not
+		// change the overflow attribute when overflowX and
+		// overflowY are set to the same value
+		opts.overflow = [ style.overflow, style.overflowX, style.overflowY ];
+
+		// Set display property to inline-block for height/width
+		// animations on inline elements that are having width/height animated
+		display = jQuery.css( elem, "display" );
+		// Get default display if display is currently "none"
+		if ( display === "none" ) {
+			display = defaultDisplay( elem.nodeName );
+		}
+		if ( display === "inline" &&
+				jQuery.css( elem, "float" ) === "none" ) {
+
+			style.display = "inline-block";
+		}
+	}
+
+	if ( opts.overflow ) {
+		style.overflow = "hidden";
+		anim.always(function() {
+			style.overflow = opts.overflow[ 0 ];
+			style.overflowX = opts.overflow[ 1 ];
+			style.overflowY = opts.overflow[ 2 ];
+		});
+	}
+
+	// show/hide pass
+	for ( prop in props ) {
+		value = props[ prop ];
+		if ( rfxtypes.exec( value ) ) {
+			delete props[ prop ];
+			toggle = toggle || value === "toggle";
+			if ( value === ( hidden ? "hide" : "show" ) ) {
+
+				// If there is dataShow left over from a stopped hide or show and we are going to proceed with show, we should pretend to be hidden
+				if ( value === "show" && dataShow && dataShow[ prop ] !== undefined ) {
+					hidden = true;
+				} else {
+					continue;
+				}
+			}
+			orig[ prop ] = dataShow && dataShow[ prop ] || jQuery.style( elem, prop );
+		}
+	}
+
+	if ( !jQuery.isEmptyObject( orig ) ) {
+		if ( dataShow ) {
+			if ( "hidden" in dataShow ) {
+				hidden = dataShow.hidden;
+			}
+		} else {
+			dataShow = data_priv.access( elem, "fxshow", {} );
+		}
+
+		// store state if its toggle - enables .stop().toggle() to "reverse"
+		if ( toggle ) {
+			dataShow.hidden = !hidden;
+		}
+		if ( hidden ) {
+			jQuery( elem ).show();
+		} else {
+			anim.done(function() {
+				jQuery( elem ).hide();
+			});
+		}
+		anim.done(function() {
+			var prop;
+
+			data_priv.remove( elem, "fxshow" );
+			for ( prop in orig ) {
+				jQuery.style( elem, prop, orig[ prop ] );
+			}
+		});
+		for ( prop in orig ) {
+			tween = createTween( hidden ? dataShow[ prop ] : 0, prop, anim );
+
+			if ( !( prop in dataShow ) ) {
+				dataShow[ prop ] = tween.start;
+				if ( hidden ) {
+					tween.end = tween.start;
+					tween.start = prop === "width" || prop === "height" ? 1 : 0;
+				}
+			}
+		}
+	}
+}
+
+function propFilter( props, specialEasing ) {
+	var index, name, easing, value, hooks;
+
+	// camelCase, specialEasing and expand cssHook pass
+	for ( index in props ) {
+		name = jQuery.camelCase( index );
+		easing = specialEasing[ name ];
+		value = props[ index ];
+		if ( jQuery.isArray( value ) ) {
+			easing = value[ 1 ];
+			value = props[ index ] = value[ 0 ];
+		}
+
+		if ( index !== name ) {
+			props[ name ] = value;
+			delete props[ index ];
+		}
+
+		hooks = jQuery.cssHooks[ name ];
+		if ( hooks && "expand" in hooks ) {
+			value = hooks.expand( value );
+			delete props[ name ];
+
+			// not quite $.extend, this wont overwrite keys already present.
+			// also - reusing 'index' from above because we have the correct "name"
+			for ( index in value ) {
+				if ( !( index in props ) ) {
+					props[ index ] = value[ index ];
+					specialEasing[ index ] = easing;
+				}
+			}
+		} else {
+			specialEasing[ name ] = easing;
+		}
+	}
+}
+
+function Animation( elem, properties, options ) {
+	var result,
+		stopped,
+		index = 0,
+		length = animationPrefilters.length,
+		deferred = jQuery.Deferred().always( function() {
+			// don't match elem in the :animated selector
+			delete tick.elem;
+		}),
+		tick = function() {
+			if ( stopped ) {
+				return false;
+			}
+			var currentTime = fxNow || createFxNow(),
+				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
+				// archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
+				temp = remaining / animation.duration || 0,
+				percent = 1 - temp,
+				index = 0,
+				length = animation.tweens.length;
+
+			for ( ; index < length ; index++ ) {
+				animation.tweens[ index ].run( percent );
+			}
+
+			deferred.notifyWith( elem, [ animation, percent, remaining ]);
+
+			if ( percent < 1 && length ) {
+				return remaining;
+			} else {
+				deferred.resolveWith( elem, [ animation ] );
+				return false;
+			}
+		},
+		animation = deferred.promise({
+			elem: elem,
+			props: jQuery.extend( {}, properties ),
+			opts: jQuery.extend( true, { specialEasing: {} }, options ),
+			originalProperties: properties,
+			originalOptions: options,
+			startTime: fxNow || createFxNow(),
+			duration: options.duration,
+			tweens: [],
+			createTween: function( prop, end ) {
+				var tween = jQuery.Tween( elem, animation.opts, prop, end,
+						animation.opts.specialEasing[ prop ] || animation.opts.easing );
+				animation.tweens.push( tween );
+				return tween;
+			},
+			stop: function( gotoEnd ) {
+				var index = 0,
+					// if we are going to the end, we want to run all the tweens
+					// otherwise we skip this part
+					length = gotoEnd ? animation.tweens.length : 0;
+				if ( stopped ) {
+					return this;
+				}
+				stopped = true;
+				for ( ; index < length ; index++ ) {
+					animation.tweens[ index ].run( 1 );
+				}
+
+				// resolve when we played the last frame
+				// otherwise, reject
+				if ( gotoEnd ) {
+					deferred.resolveWith( elem, [ animation, gotoEnd ] );
+				} else {
+					deferred.rejectWith( elem, [ animation, gotoEnd ] );
+				}
+				return this;
+			}
+		}),
+		props = animation.props;
+
+	propFilter( props, animation.opts.specialEasing );
+
+	for ( ; index < length ; index++ ) {
+		result = animationPrefilters[ index ].call( animation, elem, props, animation.opts );
+		if ( result ) {
+			return result;
+		}
+	}
+
+	jQuery.map( props, createTween, animation );
+
+	if ( jQuery.isFunction( animation.opts.start ) ) {
+		animation.opts.start.call( elem, animation );
+	}
+
+	jQuery.fx.timer(
+		jQuery.extend( tick, {
+			elem: elem,
+			anim: animation,
+			queue: animation.opts.queue
+		})
+	);
+
+	// attach callbacks from options
+	return animation.progress( animation.opts.progress )
+		.done( animation.opts.done, animation.opts.complete )
+		.fail( animation.opts.fail )
+		.always( animation.opts.always );
+}
+
+jQuery.Animation = jQuery.extend( Animation, {
+
+	tweener: function( props, callback ) {
+		if ( jQuery.isFunction( props ) ) {
+			callback = props;
+			props = [ "*" ];
+		} else {
+			props = props.split(" ");
+		}
+
+		var prop,
+			index = 0,
+			length = props.length;
+
+		for ( ; index < length ; index++ ) {
+			prop = props[ index ];
+			tweeners[ prop ] = tweeners[ prop ] || [];
+			tweeners[ prop ].unshift( callback );
+		}
+	},
+
+	prefilter: function( callback, prepend ) {
+		if ( prepend ) {
+			animationPrefilters.unshift( callback );
+		} else {
+			animationPrefilters.push( callback );
+		}
+	}
+});
+
+jQuery.speed = function( speed, easing, fn ) {
+	var opt = speed && typeof speed === "object" ? jQuery.extend( {}, speed ) : {
+		complete: fn || !fn && easing ||
+			jQuery.isFunction( speed ) && speed,
+		duration: speed,
+		easing: fn && easing || easing && !jQuery.isFunction( easing ) && easing
+	};
+
+	opt.duration = jQuery.fx.off ? 0 : typeof opt.duration === "number" ? opt.duration :
+		opt.duration in jQuery.fx.speeds ? jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
+
+	// normalize opt.queue - true/undefined/null -> "fx"
+	if ( opt.queue == null || opt.queue === true ) {
+		opt.queue = "fx";
+	}
+
+	// Queueing
+	opt.old = opt.complete;
+
+	opt.complete = function() {
+		if ( jQuery.isFunction( opt.old ) ) {
+			opt.old.call( this );
+		}
+
+		if ( opt.queue ) {
+			jQuery.dequeue( this, opt.queue );
+		}
+	};
+
+	return opt;
+};
+
+jQuery.fn.extend({
+	fadeTo: function( speed, to, easing, callback ) {
+
+		// show any hidden elements after setting opacity to 0
+		return this.filter( isHidden ).css( "opacity", 0 ).show()
+
+			// animate to the value specified
+			.end().animate({ opacity: to }, speed, easing, callback );
+	},
+	animate: function( prop, speed, easing, callback ) {
+		var empty = jQuery.isEmptyObject( prop ),
+			optall = jQuery.speed( speed, easing, callback ),
+			doAnimation = function() {
+				// Operate on a copy of prop so per-property easing won't be lost
+				var anim = Animation( this, jQuery.extend( {}, prop ), optall );
+
+				// Empty animations, or finishing resolves immediately
+				if ( empty || data_priv.get( this, "finish" ) ) {
+					anim.stop( true );
+				}
+			};
+			doAnimation.finish = doAnimation;
+
+		return empty || optall.queue === false ?
+			this.each( doAnimation ) :
+			this.queue( optall.queue, doAnimation );
+	},
+	stop: function( type, clearQueue, gotoEnd ) {
+		var stopQueue = function( hooks ) {
+			var stop = hooks.stop;
+			delete hooks.stop;
+			stop( gotoEnd );
+		};
+
+		if ( typeof type !== "string" ) {
+			gotoEnd = clearQueue;
+			clearQueue = type;
+			type = undefined;
+		}
+		if ( clearQueue && type !== false ) {
+			this.queue( type || "fx", [] );
+		}
+
+		return this.each(function() {
+			var dequeue = true,
+				index = type != null && type + "queueHooks",
+				timers = jQuery.timers,
+				data = data_priv.get( this );
+
+			if ( index ) {
+				if ( data[ index ] && data[ index ].stop ) {
+					stopQueue( data[ index ] );
+				}
+			} else {
+				for ( index in data ) {
+					if ( data[ index ] && data[ index ].stop && rrun.test( index ) ) {
+						stopQueue( data[ index ] );
+					}
+				}
+			}
+
+			for ( index = timers.length; index--; ) {
+				if ( timers[ index ].elem === this && (type == null || timers[ index ].queue === type) ) {
+					timers[ index ].anim.stop( gotoEnd );
+					dequeue = false;
+					timers.splice( index, 1 );
+				}
+			}
+
+			// start the next in the queue if the last step wasn't forced
+			// timers currently will call their complete callbacks, which will dequeue
+			// but only if they were gotoEnd
+			if ( dequeue || !gotoEnd ) {
+				jQuery.dequeue( this, type );
+			}
+		});
+	},
+	finish: function( type ) {
+		if ( type !== false ) {
+			type = type || "fx";
+		}
+		return this.each(function() {
+			var index,
+				data = data_priv.get( this ),
+				queue = data[ type + "queue" ],
+				hooks = data[ type + "queueHooks" ],
+				timers = jQuery.timers,
+				length = queue ? queue.length : 0;
+
+			// enable finishing flag on private data
+			data.finish = true;
+
+			// empty the queue first
+			jQuery.queue( this, type, [] );
+
+			if ( hooks && hooks.stop ) {
+				hooks.stop.call( this, true );
+			}
+
+			// look for any active animations, and finish them
+			for ( index = timers.length; index--; ) {
+				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
+					timers[ index ].anim.stop( true );
+					timers.splice( index, 1 );
+				}
+			}
+
+			// look for any animations in the old queue and finish them
+			for ( index = 0; index < length; index++ ) {
+				if ( queue[ index ] && queue[ index ].finish ) {
+					queue[ index ].finish.call( this );
+				}
+			}
+
+			// turn off finishing flag
+			delete data.finish;
+		});
+	}
+});
+
+jQuery.each([ "toggle", "show", "hide" ], function( i, name ) {
+	var cssFn = jQuery.fn[ name ];
+	jQuery.fn[ name ] = function( speed, easing, callback ) {
+		return speed == null || typeof speed === "boolean" ?
+			cssFn.apply( this, arguments ) :
+			this.animate( genFx( name, true ), speed, easing, callback );
+	};
+});
+
+// Generate shortcuts for custom animations
+jQuery.each({
+	slideDown: genFx("show"),
+	slideUp: genFx("hide"),
+	slideToggle: genFx("toggle"),
+	fadeIn: { opacity: "show" },
+	fadeOut: { opacity: "hide" },
+	fadeToggle: { opacity: "toggle" }
+}, function( name, props ) {
+	jQuery.fn[ name ] = function( speed, easing, callback ) {
+		return this.animate( props, speed, easing, callback );
+	};
+});
+
+jQuery.timers = [];
+jQuery.fx.tick = function() {
+	var timer,
+		i = 0,
+		timers = jQuery.timers;
+
+	fxNow = jQuery.now();
+
+	for ( ; i < timers.length; i++ ) {
+		timer = timers[ i ];
+		// Checks the timer has not already been removed
+		if ( !timer() && timers[ i ] === timer ) {
+			timers.splice( i--, 1 );
+		}
+	}
+
+	if ( !timers.length ) {
+		jQuery.fx.stop();
+	}
+	fxNow = undefined;
+};
+
+jQuery.fx.timer = function( timer ) {
+	jQuery.timers.push( timer );
+	if ( timer() ) {
+		jQuery.fx.start();
+	} else {
+		jQuery.timers.pop();
+	}
+};
+
+jQuery.fx.interval = 13;
+
+jQuery.fx.start = function() {
+	if ( !timerId ) {
+		timerId = setInterval( jQuery.fx.tick, jQuery.fx.interval );
+	}
+};
+
+jQuery.fx.stop = function() {
+	clearInterval( timerId );
+	timerId = null;
+};
+
+jQuery.fx.speeds = {
+	slow: 600,
+	fast: 200,
+	// Default speed
+	_default: 400
+};
+
+
+// Based off of the plugin by Clint Helfers, with permission.
+// http://blindsignals.com/index.php/2009/07/jquery-delay/
+jQuery.fn.delay = function( time, type ) {
+	time = jQuery.fx ? jQuery.fx.speeds[ time ] || time : time;
+	type = type || "fx";
+
+	return this.queue( type, function( next, hooks ) {
+		var timeout = setTimeout( next, time );
+		hooks.stop = function() {
+			clearTimeout( timeout );
+		};
+	});
+};
+
+
+(function() {
+	var input = document.createElement( "input" ),
+		select = document.createElement( "select" ),
+		opt = select.appendChild( document.createElement( "option" ) );
+
+	input.type = "checkbox";
+
+	// Support: iOS 5.1, Android 4.x, Android 2.3
+	// Check the default checkbox/radio value ("" on old WebKit; "on" elsewhere)
+	support.checkOn = input.value !== "";
+
+	// Must access the parent to make an option select properly
+	// Support: IE9, IE10
+	support.optSelected = opt.selected;
+
+	// Make sure that the options inside disabled selects aren't marked as disabled
+	// (WebKit marks them as disabled)
+	select.disabled = true;
+	support.optDisabled = !opt.disabled;
+
+	// Check if an input maintains its value after becoming a radio
+	// Support: IE9, IE10
+	input = document.createElement( "input" );
+	input.value = "t";
+	input.type = "radio";
+	support.radioValue = input.value === "t";
+})();
+
+
+var nodeHook, boolHook,
+	attrHandle = jQuery.expr.attrHandle;
+
+jQuery.fn.extend({
+	attr: function( name, value ) {
+		return access( this, jQuery.attr, name, value, arguments.length > 1 );
+	},
+
+	removeAttr: function( name ) {
+		return this.each(function() {
+			jQuery.removeAttr( this, name );
+		});
+	}
+});
+
+jQuery.extend({
+	attr: function( elem, name, value ) {
+		var hooks, ret,
+			nType = elem.nodeType;
+
+		// don't get/set attributes on text, comment and attribute nodes
+		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
+			return;
+		}
+
+		// Fallback to prop when attributes are not supported
+		if ( typeof elem.getAttribute === strundefined ) {
+			return jQuery.prop( elem, name, value );
+		}
+
+		// All attributes are lowercase
+		// Grab necessary hook if one is defined
+		if ( nType !== 1 || !jQuery.isXMLDoc( elem ) ) {
+			name = name.toLowerCase();
+			hooks = jQuery.attrHooks[ name ] ||
+				( jQuery.expr.match.bool.test( name ) ? boolHook : nodeHook );
+		}
+
+		if ( value !== undefined ) {
+
+			if ( value === null ) {
+				jQuery.removeAttr( elem, name );
+
+			} else if ( hooks && "set" in hooks && (ret = hooks.set( elem, value, name )) !== undefined ) {
+				return ret;
+
+			} else {
+				elem.setAttribute( name, value + "" );
+				return value;
+			}
+
+		} else if ( hooks && "get" in hooks && (ret = hooks.get( elem, name )) !== null ) {
+			return ret;
+
+		} else {
+			ret = jQuery.find.attr( elem, name );
+
+			// Non-existent attributes return null, we normalize to undefined
+			return ret == null ?
+				undefined :
+				ret;
+		}
+	},
+
+	removeAttr: function( elem, value ) {
+		var name, propName,
+			i = 0,
+			attrNames = value && value.match( rnotwhite );
+
+		if ( attrNames && elem.nodeType === 1 ) {
+			while ( (name = attrNames[i++]) ) {
+				propName = jQuery.propFix[ name ] || name;
+
+				// Boolean attributes get special treatment (#10870)
+				if ( jQuery.expr.match.bool.test( name ) ) {
+					// Set corresponding property to false
+					elem[ propName ] = false;
+				}
+
+				elem.removeAttribute( name );
+			}
+		}
+	},
+
+	attrHooks: {
+		type: {
+			set: function( elem, value ) {
+				if ( !support.radioValue && value === "radio" &&
+					jQuery.nodeName( elem, "input" ) ) {
+					// Setting the type on a radio button after the value resets the value in IE6-9
+					// Reset value to default in case type is set after value during creation
+					var val = elem.value;
+					elem.setAttribute( "type", value );
+					if ( val ) {
+						elem.value = val;
+					}
+					return value;
+				}
+			}
+		}
+	}
+});
+
+// Hooks for boolean attributes
+boolHook = {
+	set: function( elem, value, name ) {
+		if ( value === false ) {
+			// Remove boolean attributes when set to false
+			jQuery.removeAttr( elem, name );
+		} else {
+			elem.setAttribute( name, name );
+		}
+		return name;
+	}
+};
+jQuery.each( jQuery.expr.match.bool.source.match( /\w+/g ), function( i, name ) {
+	var getter = attrHandle[ name ] || jQuery.find.attr;
+
+	attrHandle[ name ] = function( elem, name, isXML ) {
+		var ret, handle;
+		if ( !isXML ) {
+			// Avoid an infinite loop by temporarily removing this function from the getter
+			handle = attrHandle[ name ];
+			attrHandle[ name ] = ret;
+			ret = getter( elem, name, isXML ) != null ?
+				name.toLowerCase() :
+				null;
+			attrHandle[ name ] = handle;
+		}
+		return ret;
+	};
+});
+
+
+
+
+var rfocusable = /^(?:input|select|textarea|button)$/i;
+
+jQuery.fn.extend({
+	prop: function( name, value ) {
+		return access( this, jQuery.prop, name, value, arguments.length > 1 );
+	},
+
+	removeProp: function( name ) {
+		return this.each(function() {
+			delete this[ jQuery.propFix[ name ] || name ];
+		});
+	}
+});
+
+jQuery.extend({
+	propFix: {
+		"for": "htmlFor",
+		"class": "className"
+	},
+
+	prop: function( elem, name, value ) {
+		var ret, hooks, notxml,
+			nType = elem.nodeType;
+
+		// don't get/set properties on text, comment and attribute nodes
+		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
+			return;
+		}
+
+		notxml = nType !== 1 || !jQuery.isXMLDoc( elem );
+
+		if ( notxml ) {
+			// Fix name and attach hooks
+			name = jQuery.propFix[ name ] || name;
+			hooks = jQuery.propHooks[ name ];
+		}
+
+		if ( value !== undefined ) {
+			return hooks && "set" in hooks && (ret = hooks.set( elem, value, name )) !== undefined ?
+				ret :
+				( elem[ name ] = value );
+
+		} else {
+			return hooks && "get" in hooks && (ret = hooks.get( elem, name )) !== null ?
+				ret :
+				elem[ name ];
+		}
+	},
+
+	propHooks: {
+		tabIndex: {
+			get: function( elem ) {
+				return elem.hasAttribute( "tabindex" ) || rfocusable.test( elem.nodeName ) || elem.href ?
+					elem.tabIndex :
+					-1;
+			}
+		}
+	}
+});
+
+// Support: IE9+
+// Selectedness for an option in an optgroup can be inaccurate
+if ( !support.optSelected ) {
+	jQuery.propHooks.selected = {
+		get: function( elem ) {
+			var parent = elem.parentNode;
+			if ( parent && parent.parentNode ) {
+				parent.parentNode.selectedIndex;
+			}
+			return null;
+		}
+	};
+}
+
+jQuery.each([
+	"tabIndex",
+	"readOnly",
+	"maxLength",
+	"cellSpacing",
+	"cellPadding",
+	"rowSpan",
+	"colSpan",
+	"useMap",
+	"frameBorder",
+	"contentEditable"
+], function() {
+	jQuery.propFix[ this.toLowerCase() ] = this;
+});
+
+
+
+
+var rclass = /[\t\r\n\f]/g;
+
+jQuery.fn.extend({
+	addClass: function( value ) {
+		var classes, elem, cur, clazz, j, finalValue,
+			proceed = typeof value === "string" && value,
+			i = 0,
+			len = this.length;
+
+		if ( jQuery.isFunction( value ) ) {
+			return this.each(function( j ) {
+				jQuery( this ).addClass( value.call( this, j, this.className ) );
+			});
+		}
+
+		if ( proceed ) {
+			// The disjunction here is for better compressibility (see removeClass)
+			classes = ( value || "" ).match( rnotwhite ) || [];
+
+			for ( ; i < len; i++ ) {
+				elem = this[ i ];
+				cur = elem.nodeType === 1 && ( elem.className ?
+					( " " + elem.className + " " ).replace( rclass, " " ) :
+					" "
+				);
+
+				if ( cur ) {
+					j = 0;
+					while ( (clazz = classes[j++]) ) {
+						if ( cur.indexOf( " " + clazz + " " ) < 0 ) {
+							cur += clazz + " ";
+						}
+					}
+
+					// only assign if different to avoid unneeded rendering.
+					finalValue = jQuery.trim( cur );
+					if ( elem.className !== finalValue ) {
+						elem.className = finalValue;
+					}
+				}
+			}
+		}
+
+		return this;
+	},
+
+	removeClass: function( value ) {
+		var classes, elem, cur, clazz, j, finalValue,
+			proceed = arguments.length === 0 || typeof value === "string" && value,
+			i = 0,
+			len = this.length;
+
+		if ( jQuery.isFunction( value ) ) {
+			return this.each(function( j ) {
+				jQuery( this ).removeClass( value.call( this, j, this.className ) );
+			});
+		}
+		if ( proceed ) {
+			classes = ( value || "" ).match( rnotwhite ) || [];
+
+			for ( ; i < len; i++ ) {
+				elem = this[ i ];
+				// This expression is here for better compressibility (see addClass)
+				cur = elem.nodeType === 1 && ( elem.className ?
+					( " " + elem.className + " " ).replace( rclass, " " ) :
+					""
+				);
+
+				if ( cur ) {
+					j = 0;
+					while ( (clazz = classes[j++]) ) {
+						// Remove *all* instances
+						while ( cur.indexOf( " " + clazz + " " ) >= 0 ) {
+							cur = cur.replace( " " + clazz + " ", " " );
+						}
+					}
+
+					// only assign if different to avoid unneeded rendering.
+					finalValue = value ? jQuery.trim( cur ) : "";
+					if ( elem.className !== finalValue ) {
+						elem.className = finalValue;
+					}
+				}
+			}
+		}
+
+		return this;
+	},
+
+	toggleClass: function( value, stateVal ) {
+		var type = typeof value;
+
+		if ( typeof stateVal === "boolean" && type === "string" ) {
+			return stateVal ? this.addClass( value ) : this.removeClass( value );
+		}
+
+		if ( jQuery.isFunction( value ) ) {
+			return this.each(function( i ) {
+				jQuery( this ).toggleClass( value.call(this, i, this.className, stateVal), stateVal );
+			});
+		}
+
+		return this.each(function() {
+			if ( type === "string" ) {
+				// toggle individual class names
+				var className,
+					i = 0,
+					self = jQuery( this ),
+					classNames = value.match( rnotwhite ) || [];
+
+				while ( (className = classNames[ i++ ]) ) {
+					// check each className given, space separated list
+					if ( self.hasClass( className ) ) {
+						self.removeClass( className );
+					} else {
+						self.addClass( className );
+					}
+				}
+
+			// Toggle whole class name
+			} else if ( type === strundefined || type === "boolean" ) {
+				if ( this.className ) {
+					// store className if set
+					data_priv.set( this, "__className__", this.className );
+				}
+
+				// If the element has a class name or if we're passed "false",
+				// then remove the whole classname (if there was one, the above saved it).
+				// Otherwise bring back whatever was previously saved (if anything),
+				// falling back to the empty string if nothing was stored.
+				this.className = this.className || value === false ? "" : data_priv.get( this, "__className__" ) || "";
+			}
+		});
+	},
+
+	hasClass: function( selector ) {
+		var className = " " + selector + " ",
+			i = 0,
+			l = this.length;
+		for ( ; i < l; i++ ) {
+			if ( this[i].nodeType === 1 && (" " + this[i].className + " ").replace(rclass, " ").indexOf( className ) >= 0 ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+});
+
+
+
+
+var rreturn = /\r/g;
+
+jQuery.fn.extend({
+	val: function( value ) {
+		var hooks, ret, isFunction,
+			elem = this[0];
+
+		if ( !arguments.length ) {
+			if ( elem ) {
+				hooks = jQuery.valHooks[ elem.type ] || jQuery.valHooks[ elem.nodeName.toLowerCase() ];
+
+				if ( hooks && "get" in hooks && (ret = hooks.get( elem, "value" )) !== undefined ) {
+					return ret;
+				}
+
+				ret = elem.value;
+
+				return typeof ret === "string" ?
+					// handle most common string cases
+					ret.replace(rreturn, "") :
+					// handle cases where value is null/undef or number
+					ret == null ? "" : ret;
+			}
+
+			return;
+		}
+
+		isFunction = jQuery.isFunction( value );
+
+		return this.each(function( i ) {
+			var val;
+
+			if ( this.nodeType !== 1 ) {
+				return;
+			}
+
+			if ( isFunction ) {
+				val = value.call( this, i, jQuery( this ).val() );
+			} else {
+				val = value;
+			}
+
+			// Treat null/undefined as ""; convert numbers to string
+			if ( val == null ) {
+				val = "";
+
+			} else if ( typeof val === "number" ) {
+				val += "";
+
+			} else if ( jQuery.isArray( val ) ) {
+				val = jQuery.map( val, function( value ) {
+					return value == null ? "" : value + "";
+				});
+			}
+
+			hooks = jQuery.valHooks[ this.type ] || jQuery.valHooks[ this.nodeName.toLowerCase() ];
+
+			// If set returns undefined, fall back to normal setting
+			if ( !hooks || !("set" in hooks) || hooks.set( this, val, "value" ) === undefined ) {
+				this.value = val;
+			}
+		});
+	}
+});
+
+jQuery.extend({
+	valHooks: {
+		select: {
+			get: function( elem ) {
+				var value, option,
+					options = elem.options,
+					index = elem.selectedIndex,
+					one = elem.type === "select-one" || index < 0,
+					values = one ? null : [],
+					max = one ? index + 1 : options.length,
+					i = index < 0 ?
+						max :
+						one ? index : 0;
+
+				// Loop through all the selected options
+				for ( ; i < max; i++ ) {
+					option = options[ i ];
+
+					// IE6-9 doesn't update selected after form reset (#2551)
+					if ( ( option.selected || i === index ) &&
+							// Don't return options that are disabled or in a disabled optgroup
+							( support.optDisabled ? !option.disabled : option.getAttribute( "disabled" ) === null ) &&
+							( !option.parentNode.disabled || !jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
+
+						// Get the specific value for the option
+						value = jQuery( option ).val();
+
+						// We don't need an array for one selects
+						if ( one ) {
+							return value;
+						}
+
+						// Multi-Selects return an array
+						values.push( value );
+					}
+				}
+
+				return values;
+			},
+
+			set: function( elem, value ) {
+				var optionSet, option,
+					options = elem.options,
+					values = jQuery.makeArray( value ),
+					i = options.length;
+
+				while ( i-- ) {
+					option = options[ i ];
+					if ( (option.selected = jQuery.inArray( jQuery(option).val(), values ) >= 0) ) {
+						optionSet = true;
+					}
+				}
+
+				// force browsers to behave consistently when non-matching value is set
+				if ( !optionSet ) {
+					elem.selectedIndex = -1;
+				}
+				return values;
+			}
+		}
+	}
+});
+
+// Radios and checkboxes getter/setter
+jQuery.each([ "radio", "checkbox" ], function() {
+	jQuery.valHooks[ this ] = {
+		set: function( elem, value ) {
+			if ( jQuery.isArray( value ) ) {
+				return ( elem.checked = jQuery.inArray( jQuery(elem).val(), value ) >= 0 );
+			}
+		}
+	};
+	if ( !support.checkOn ) {
+		jQuery.valHooks[ this ].get = function( elem ) {
+			// Support: Webkit
+			// "" is returned instead of "on" if a value isn't specified
+			return elem.getAttribute("value") === null ? "on" : elem.value;
+		};
+	}
+});
+
+
+
+
+// Return jQuery for attributes-only inclusion
+
+
 jQuery.each( ("blur focus focusin focusout load resize scroll unload click dblclick " +
 	"mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
 	"change select submit keydown keypress keyup error contextmenu").split(" "), function( i, name ) {
@@ -6749,14 +7414,48 @@ jQuery.fn.extend({
 		return arguments.length === 1 ? this.off( selector, "**" ) : this.off( types, selector || "**", fn );
 	}
 });
+
+
+var nonce = jQuery.now();
+
+var rquery = (/\?/);
+
+
+
+// Support: Android 2.3
+// Workaround failure to string-cast null input
+jQuery.parseJSON = function( data ) {
+	return JSON.parse( data + "" );
+};
+
+
+// Cross-browser xml parsing
+jQuery.parseXML = function( data ) {
+	var xml, tmp;
+	if ( !data || typeof data !== "string" ) {
+		return null;
+	}
+
+	// Support: IE9
+	try {
+		tmp = new DOMParser();
+		xml = tmp.parseFromString( data, "text/xml" );
+	} catch ( e ) {
+		xml = undefined;
+	}
+
+	if ( !xml || xml.getElementsByTagName( "parsererror" ).length ) {
+		jQuery.error( "Invalid XML: " + data );
+	}
+	return xml;
+};
+
+
 var
 	// Document location
 	ajaxLocParts,
 	ajaxLocation,
 
-	ajax_nonce = jQuery.now(),
-
-	ajax_rquery = /\?/,
 	rhash = /#.*$/,
 	rts = /([?&])_=[^&]*/,
 	rheaders = /^(.*?):[ \t]*([^\r\n]*)$/mg,
@@ -6764,10 +7463,7 @@ var
 	rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
 	rnoContent = /^(?:GET|HEAD)$/,
 	rprotocol = /^\/\//,
-	rurl = /^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/,
-
-	// Keep a copy of the old load method
-	_load = jQuery.fn.load,
+	rurl = /^([\w.+-]+:)(?:\/\/(?:[^\/?#]*@|)([^\/?#:]*)(?::(\d+)|)|)/,
 
 	/* Prefilters
 	 * 1) They are useful to introduce custom dataTypes (see ajax/jsonp.js for an example)
@@ -6818,7 +7514,7 @@ function addToPrefiltersOrTransports( structure ) {
 
 		var dataType,
 			i = 0,
-			dataTypes = dataTypeExpression.toLowerCase().match( core_rnotwhite ) || [];
+			dataTypes = dataTypeExpression.toLowerCase().match( rnotwhite ) || [];
 
 		if ( jQuery.isFunction( func ) ) {
 			// For each dataType in the dataTypeExpression
@@ -6848,7 +7544,7 @@ function inspectPrefiltersOrTransports( structure, options, originalOptions, jqX
 		inspected[ dataType ] = true;
 		jQuery.each( structure[ dataType ] || [], function( _, prefilterOrFactory ) {
 			var dataTypeOrTransport = prefilterOrFactory( options, originalOptions, jqXHR );
-			if( typeof dataTypeOrTransport === "string" && !seekingTransport && !inspected[ dataTypeOrTransport ] ) {
+			if ( typeof dataTypeOrTransport === "string" && !seekingTransport && !inspected[ dataTypeOrTransport ] ) {
 				options.dataTypes.unshift( dataTypeOrTransport );
 				inspect( dataTypeOrTransport );
 				return false;
@@ -6881,69 +7577,156 @@ function ajaxExtend( target, src ) {
 	return target;
 }
 
-jQuery.fn.load = function( url, params, callback ) {
-	if ( typeof url !== "string" && _load ) {
-		return _load.apply( this, arguments );
+/* Handles responses to an ajax request:
+ * - finds the right dataType (mediates between content-type and expected dataType)
+ * - returns the corresponding response
+ */
+function ajaxHandleResponses( s, jqXHR, responses ) {
+
+	var ct, type, finalDataType, firstDataType,
+		contents = s.contents,
+		dataTypes = s.dataTypes;
+
+	// Remove auto dataType and get content-type in the process
+	while ( dataTypes[ 0 ] === "*" ) {
+		dataTypes.shift();
+		if ( ct === undefined ) {
+			ct = s.mimeType || jqXHR.getResponseHeader("Content-Type");
+		}
 	}
 
-	var selector, type, response,
-		self = this,
-		off = url.indexOf(" ");
-
-	if ( off >= 0 ) {
-		selector = url.slice( off );
-		url = url.slice( 0, off );
+	// Check if we're dealing with a known content-type
+	if ( ct ) {
+		for ( type in contents ) {
+			if ( contents[ type ] && contents[ type ].test( ct ) ) {
+				dataTypes.unshift( type );
+				break;
+			}
+		}
 	}
 
-	// If it's a function
-	if ( jQuery.isFunction( params ) ) {
-
-		// We assume that it's the callback
-		callback = params;
-		params = undefined;
-
-	// Otherwise, build a param string
-	} else if ( params && typeof params === "object" ) {
-		type = "POST";
+	// Check to see if we have a response for the expected dataType
+	if ( dataTypes[ 0 ] in responses ) {
+		finalDataType = dataTypes[ 0 ];
+	} else {
+		// Try convertible dataTypes
+		for ( type in responses ) {
+			if ( !dataTypes[ 0 ] || s.converters[ type + " " + dataTypes[0] ] ) {
+				finalDataType = type;
+				break;
+			}
+			if ( !firstDataType ) {
+				firstDataType = type;
+			}
+		}
+		// Or just use first one
+		finalDataType = finalDataType || firstDataType;
 	}
 
-	// If we have elements to modify, make the request
-	if ( self.length > 0 ) {
-		jQuery.ajax({
-			url: url,
+	// If we found a dataType
+	// We add the dataType to the list if needed
+	// and return the corresponding response
+	if ( finalDataType ) {
+		if ( finalDataType !== dataTypes[ 0 ] ) {
+			dataTypes.unshift( finalDataType );
+		}
+		return responses[ finalDataType ];
+	}
+}
 
-			// if "type" variable is undefined, then "GET" method will be used
-			type: type,
-			dataType: "html",
-			data: params
-		}).done(function( responseText ) {
+/* Chain conversions given the request and the original response
+ * Also sets the responseXXX fields on the jqXHR instance
+ */
+function ajaxConvert( s, response, jqXHR, isSuccess ) {
+	var conv2, current, conv, tmp, prev,
+		converters = {},
+		// Work with a copy of dataTypes in case we need to modify it for conversion
+		dataTypes = s.dataTypes.slice();
 
-			// Save response for use in complete callback
-			response = arguments;
-
-			self.html( selector ?
-
-				// If a selector was specified, locate the right elements in a dummy div
-				// Exclude scripts to avoid IE 'Permission Denied' errors
-				jQuery("<div>").append( jQuery.parseHTML( responseText ) ).find( selector ) :
-
-				// Otherwise use the full result
-				responseText );
-
-		}).complete( callback && function( jqXHR, status ) {
-			self.each( callback, response || [ jqXHR.responseText, status, jqXHR ] );
-		});
+	// Create converters map with lowercased keys
+	if ( dataTypes[ 1 ] ) {
+		for ( conv in s.converters ) {
+			converters[ conv.toLowerCase() ] = s.converters[ conv ];
+		}
 	}
 
-	return this;
-};
+	current = dataTypes.shift();
 
-// Attach a bunch of functions for handling common AJAX events
-jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ){
-	jQuery.fn[ type ] = function( fn ){
-		return this.on( type, fn );
-	};
-});
+	// Convert to each sequential dataType
+	while ( current ) {
+
+		if ( s.responseFields[ current ] ) {
+			jqXHR[ s.responseFields[ current ] ] = response;
+		}
+
+		// Apply the dataFilter if provided
+		if ( !prev && isSuccess && s.dataFilter ) {
+			response = s.dataFilter( response, s.dataType );
+		}
+
+		prev = current;
+		current = dataTypes.shift();
+
+		if ( current ) {
+
+		// There's only work to do if current dataType is non-auto
+			if ( current === "*" ) {
+
+				current = prev;
+
+			// Convert response if prev dataType is non-auto and differs from current
+			} else if ( prev !== "*" && prev !== current ) {
+
+				// Seek a direct converter
+				conv = converters[ prev + " " + current ] || converters[ "* " + current ];
+
+				// If none found, seek a pair
+				if ( !conv ) {
+					for ( conv2 in converters ) {
+
+						// If conv2 outputs current
+						tmp = conv2.split( " " );
+						if ( tmp[ 1 ] === current ) {
+
+							// If prev can be converted to accepted input
+							conv = converters[ prev + " " + tmp[ 0 ] ] ||
+								converters[ "* " + tmp[ 0 ] ];
+							if ( conv ) {
+								// Condense equivalence converters
+								if ( conv === true ) {
+									conv = converters[ conv2 ];
+
+								// Otherwise, insert the intermediate dataType
+								} else if ( converters[ conv2 ] !== true ) {
+									current = tmp[ 0 ];
+									dataTypes.unshift( tmp[ 1 ] );
+								}
+								break;
+							}
+						}
+					}
+				}
+
+				// Apply converter (if not an equivalence)
+				if ( conv !== true ) {
+
+					// Unless errors are allowed to bubble, catch and return them
+					if ( conv && s[ "throws" ] ) {
+						response = conv( response );
+					} else {
+						try {
+							response = conv( response );
+						} catch ( e ) {
+							return { state: "parsererror", error: conv ? e : "No conversion from " + prev + " to " + current };
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return { state: "success", data: response };
+}
 
 jQuery.extend({
 
@@ -7169,7 +7952,7 @@ jQuery.extend({
 		s.type = options.method || options.type || s.method || s.type;
 
 		// Extract dataTypes list
-		s.dataTypes = jQuery.trim( s.dataType || "*" ).toLowerCase().match( core_rnotwhite ) || [""];
+		s.dataTypes = jQuery.trim( s.dataType || "*" ).toLowerCase().match( rnotwhite ) || [ "" ];
 
 		// A cross-domain request is in order when we have a protocol:host:port mismatch
 		if ( s.crossDomain == null ) {
@@ -7217,7 +8000,7 @@ jQuery.extend({
 
 			// If data is available, append data to url
 			if ( s.data ) {
-				cacheURL = ( s.url += ( ajax_rquery.test( cacheURL ) ? "&" : "?" ) + s.data );
+				cacheURL = ( s.url += ( rquery.test( cacheURL ) ? "&" : "?" ) + s.data );
 				// #9682: remove data so that it's not used in an eventual retry
 				delete s.data;
 			}
@@ -7227,10 +8010,10 @@ jQuery.extend({
 				s.url = rts.test( cacheURL ) ?
 
 					// If there is already a '_' parameter, set its value
-					cacheURL.replace( rts, "$1_=" + ajax_nonce++ ) :
+					cacheURL.replace( rts, "$1_=" + nonce++ ) :
 
 					// Otherwise add one to the end
-					cacheURL + ( ajax_rquery.test( cacheURL ) ? "&" : "?" ) + "_=" + ajax_nonce++;
+					cacheURL + ( rquery.test( cacheURL ) ? "&" : "?" ) + "_=" + nonce++;
 			}
 		}
 
@@ -7454,156 +8237,337 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 	};
 });
 
-/* Handles responses to an ajax request:
- * - finds the right dataType (mediates between content-type and expected dataType)
- * - returns the corresponding response
- */
-function ajaxHandleResponses( s, jqXHR, responses ) {
+// Attach a bunch of functions for handling common AJAX events
+jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
+	jQuery.fn[ type ] = function( fn ) {
+		return this.on( type, fn );
+	};
+});
 
-	var ct, type, finalDataType, firstDataType,
-		contents = s.contents,
-		dataTypes = s.dataTypes;
 
-	// Remove auto dataType and get content-type in the process
-	while( dataTypes[ 0 ] === "*" ) {
-		dataTypes.shift();
-		if ( ct === undefined ) {
-			ct = s.mimeType || jqXHR.getResponseHeader("Content-Type");
+jQuery._evalUrl = function( url ) {
+	return jQuery.ajax({
+		url: url,
+		type: "GET",
+		dataType: "script",
+		async: false,
+		global: false,
+		"throws": true
+	});
+};
+
+
+jQuery.fn.extend({
+	wrapAll: function( html ) {
+		var wrap;
+
+		if ( jQuery.isFunction( html ) ) {
+			return this.each(function( i ) {
+				jQuery( this ).wrapAll( html.call(this, i) );
+			});
 		}
-	}
 
-	// Check if we're dealing with a known content-type
-	if ( ct ) {
-		for ( type in contents ) {
-			if ( contents[ type ] && contents[ type ].test( ct ) ) {
-				dataTypes.unshift( type );
-				break;
+		if ( this[ 0 ] ) {
+
+			// The elements to wrap the target around
+			wrap = jQuery( html, this[ 0 ].ownerDocument ).eq( 0 ).clone( true );
+
+			if ( this[ 0 ].parentNode ) {
+				wrap.insertBefore( this[ 0 ] );
 			}
-		}
-	}
 
-	// Check to see if we have a response for the expected dataType
-	if ( dataTypes[ 0 ] in responses ) {
-		finalDataType = dataTypes[ 0 ];
+			wrap.map(function() {
+				var elem = this;
+
+				while ( elem.firstElementChild ) {
+					elem = elem.firstElementChild;
+				}
+
+				return elem;
+			}).append( this );
+		}
+
+		return this;
+	},
+
+	wrapInner: function( html ) {
+		if ( jQuery.isFunction( html ) ) {
+			return this.each(function( i ) {
+				jQuery( this ).wrapInner( html.call(this, i) );
+			});
+		}
+
+		return this.each(function() {
+			var self = jQuery( this ),
+				contents = self.contents();
+
+			if ( contents.length ) {
+				contents.wrapAll( html );
+
+			} else {
+				self.append( html );
+			}
+		});
+	},
+
+	wrap: function( html ) {
+		var isFunction = jQuery.isFunction( html );
+
+		return this.each(function( i ) {
+			jQuery( this ).wrapAll( isFunction ? html.call(this, i) : html );
+		});
+	},
+
+	unwrap: function() {
+		return this.parent().each(function() {
+			if ( !jQuery.nodeName( this, "body" ) ) {
+				jQuery( this ).replaceWith( this.childNodes );
+			}
+		}).end();
+	}
+});
+
+
+jQuery.expr.filters.hidden = function( elem ) {
+	// Support: Opera <= 12.12
+	// Opera reports offsetWidths and offsetHeights less than zero on some elements
+	return elem.offsetWidth <= 0 && elem.offsetHeight <= 0;
+};
+jQuery.expr.filters.visible = function( elem ) {
+	return !jQuery.expr.filters.hidden( elem );
+};
+
+
+
+
+var r20 = /%20/g,
+	rbracket = /\[\]$/,
+	rCRLF = /\r?\n/g,
+	rsubmitterTypes = /^(?:submit|button|image|reset|file)$/i,
+	rsubmittable = /^(?:input|select|textarea|keygen)/i;
+
+function buildParams( prefix, obj, traditional, add ) {
+	var name;
+
+	if ( jQuery.isArray( obj ) ) {
+		// Serialize array item.
+		jQuery.each( obj, function( i, v ) {
+			if ( traditional || rbracket.test( prefix ) ) {
+				// Treat each array item as a scalar.
+				add( prefix, v );
+
+			} else {
+				// Item is non-scalar (array or object), encode its numeric index.
+				buildParams( prefix + "[" + ( typeof v === "object" ? i : "" ) + "]", v, traditional, add );
+			}
+		});
+
+	} else if ( !traditional && jQuery.type( obj ) === "object" ) {
+		// Serialize object item.
+		for ( name in obj ) {
+			buildParams( prefix + "[" + name + "]", obj[ name ], traditional, add );
+		}
+
 	} else {
-		// Try convertible dataTypes
-		for ( type in responses ) {
-			if ( !dataTypes[ 0 ] || s.converters[ type + " " + dataTypes[0] ] ) {
-				finalDataType = type;
-				break;
-			}
-			if ( !firstDataType ) {
-				firstDataType = type;
-			}
-		}
-		// Or just use first one
-		finalDataType = finalDataType || firstDataType;
-	}
-
-	// If we found a dataType
-	// We add the dataType to the list if needed
-	// and return the corresponding response
-	if ( finalDataType ) {
-		if ( finalDataType !== dataTypes[ 0 ] ) {
-			dataTypes.unshift( finalDataType );
-		}
-		return responses[ finalDataType ];
+		// Serialize scalar item.
+		add( prefix, obj );
 	}
 }
 
-/* Chain conversions given the request and the original response
- * Also sets the responseXXX fields on the jqXHR instance
- */
-function ajaxConvert( s, response, jqXHR, isSuccess ) {
-	var conv2, current, conv, tmp, prev,
-		converters = {},
-		// Work with a copy of dataTypes in case we need to modify it for conversion
-		dataTypes = s.dataTypes.slice();
+// Serialize an array of form elements or a set of
+// key/values into a query string
+jQuery.param = function( a, traditional ) {
+	var prefix,
+		s = [],
+		add = function( key, value ) {
+			// If value is a function, invoke it and return its value
+			value = jQuery.isFunction( value ) ? value() : ( value == null ? "" : value );
+			s[ s.length ] = encodeURIComponent( key ) + "=" + encodeURIComponent( value );
+		};
 
-	// Create converters map with lowercased keys
-	if ( dataTypes[ 1 ] ) {
-		for ( conv in s.converters ) {
-			converters[ conv.toLowerCase() ] = s.converters[ conv ];
+	// Set traditional to true for jQuery <= 1.3.2 behavior.
+	if ( traditional === undefined ) {
+		traditional = jQuery.ajaxSettings && jQuery.ajaxSettings.traditional;
+	}
+
+	// If an array was passed in, assume that it is an array of form elements.
+	if ( jQuery.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
+		// Serialize the form elements
+		jQuery.each( a, function() {
+			add( this.name, this.value );
+		});
+
+	} else {
+		// If traditional, encode the "old" way (the way 1.3.2 or older
+		// did it), otherwise encode params recursively.
+		for ( prefix in a ) {
+			buildParams( prefix, a[ prefix ], traditional, add );
 		}
 	}
 
-	current = dataTypes.shift();
+	// Return the resulting serialization
+	return s.join( "&" ).replace( r20, "+" );
+};
 
-	// Convert to each sequential dataType
-	while ( current ) {
+jQuery.fn.extend({
+	serialize: function() {
+		return jQuery.param( this.serializeArray() );
+	},
+	serializeArray: function() {
+		return this.map(function() {
+			// Can add propHook for "elements" to filter or add form elements
+			var elements = jQuery.prop( this, "elements" );
+			return elements ? jQuery.makeArray( elements ) : this;
+		})
+		.filter(function() {
+			var type = this.type;
 
-		if ( s.responseFields[ current ] ) {
-			jqXHR[ s.responseFields[ current ] ] = response;
+			// Use .is( ":disabled" ) so that fieldset[disabled] works
+			return this.name && !jQuery( this ).is( ":disabled" ) &&
+				rsubmittable.test( this.nodeName ) && !rsubmitterTypes.test( type ) &&
+				( this.checked || !rcheckableType.test( type ) );
+		})
+		.map(function( i, elem ) {
+			var val = jQuery( this ).val();
+
+			return val == null ?
+				null :
+				jQuery.isArray( val ) ?
+					jQuery.map( val, function( val ) {
+						return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
+					}) :
+					{ name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
+		}).get();
+	}
+});
+
+
+jQuery.ajaxSettings.xhr = function() {
+	try {
+		return new XMLHttpRequest();
+	} catch( e ) {}
+};
+
+var xhrId = 0,
+	xhrCallbacks = {},
+	xhrSuccessStatus = {
+		// file protocol always yields status code 0, assume 200
+		0: 200,
+		// Support: IE9
+		// #1450: sometimes IE returns 1223 when it should be 204
+		1223: 204
+	},
+	xhrSupported = jQuery.ajaxSettings.xhr();
+
+// Support: IE9
+// Open requests must be manually aborted on unload (#5280)
+if ( window.ActiveXObject ) {
+	jQuery( window ).on( "unload", function() {
+		for ( var key in xhrCallbacks ) {
+			xhrCallbacks[ key ]();
 		}
+	});
+}
 
-		// Apply the dataFilter if provided
-		if ( !prev && isSuccess && s.dataFilter ) {
-			response = s.dataFilter( response, s.dataType );
-		}
+support.cors = !!xhrSupported && ( "withCredentials" in xhrSupported );
+support.ajax = xhrSupported = !!xhrSupported;
 
-		prev = current;
-		current = dataTypes.shift();
+jQuery.ajaxTransport(function( options ) {
+	var callback;
 
-		if ( current ) {
+	// Cross domain only allowed if supported through XMLHttpRequest
+	if ( support.cors || xhrSupported && !options.crossDomain ) {
+		return {
+			send: function( headers, complete ) {
+				var i,
+					xhr = options.xhr(),
+					id = ++xhrId;
 
-		// There's only work to do if current dataType is non-auto
-			if ( current === "*" ) {
+				xhr.open( options.type, options.url, options.async, options.username, options.password );
 
-				current = prev;
+				// Apply custom fields if provided
+				if ( options.xhrFields ) {
+					for ( i in options.xhrFields ) {
+						xhr[ i ] = options.xhrFields[ i ];
+					}
+				}
 
-			// Convert response if prev dataType is non-auto and differs from current
-			} else if ( prev !== "*" && prev !== current ) {
+				// Override mime type if needed
+				if ( options.mimeType && xhr.overrideMimeType ) {
+					xhr.overrideMimeType( options.mimeType );
+				}
 
-				// Seek a direct converter
-				conv = converters[ prev + " " + current ] || converters[ "* " + current ];
+				// X-Requested-With header
+				// For cross-domain requests, seeing as conditions for a preflight are
+				// akin to a jigsaw puzzle, we simply never set it to be sure.
+				// (it can always be set on a per-request basis or even using ajaxSetup)
+				// For same-domain requests, won't change header if already provided.
+				if ( !options.crossDomain && !headers["X-Requested-With"] ) {
+					headers["X-Requested-With"] = "XMLHttpRequest";
+				}
 
-				// If none found, seek a pair
-				if ( !conv ) {
-					for ( conv2 in converters ) {
+				// Set headers
+				for ( i in headers ) {
+					xhr.setRequestHeader( i, headers[ i ] );
+				}
 
-						// If conv2 outputs current
-						tmp = conv2.split( " " );
-						if ( tmp[ 1 ] === current ) {
+				// Callback
+				callback = function( type ) {
+					return function() {
+						if ( callback ) {
+							delete xhrCallbacks[ id ];
+							callback = xhr.onload = xhr.onerror = null;
 
-							// If prev can be converted to accepted input
-							conv = converters[ prev + " " + tmp[ 0 ] ] ||
-								converters[ "* " + tmp[ 0 ] ];
-							if ( conv ) {
-								// Condense equivalence converters
-								if ( conv === true ) {
-									conv = converters[ conv2 ];
-
-								// Otherwise, insert the intermediate dataType
-								} else if ( converters[ conv2 ] !== true ) {
-									current = tmp[ 0 ];
-									dataTypes.unshift( tmp[ 1 ] );
-								}
-								break;
+							if ( type === "abort" ) {
+								xhr.abort();
+							} else if ( type === "error" ) {
+								complete(
+									// file: protocol always yields status 0; see #8605, #14207
+									xhr.status,
+									xhr.statusText
+								);
+							} else {
+								complete(
+									xhrSuccessStatus[ xhr.status ] || xhr.status,
+									xhr.statusText,
+									// Support: IE9
+									// Accessing binary-data responseText throws an exception
+									// (#11426)
+									typeof xhr.responseText === "string" ? {
+										text: xhr.responseText
+									} : undefined,
+									xhr.getAllResponseHeaders()
+								);
 							}
 						}
-					}
-				}
+					};
+				};
 
-				// Apply converter (if not an equivalence)
-				if ( conv !== true ) {
+				// Listen to events
+				xhr.onload = callback();
+				xhr.onerror = callback("error");
 
-					// Unless errors are allowed to bubble, catch and return them
-					if ( conv && s[ "throws" ] ) {
-						response = conv( response );
-					} else {
-						try {
-							response = conv( response );
-						} catch ( e ) {
-							return { state: "parsererror", error: conv ? e : "No conversion from " + prev + " to " + current };
-						}
-					}
+				// Create the abort callback
+				callback = xhrCallbacks[ id ] = callback("abort");
+
+				// Do send the request
+				// This may raise an exception which is actually
+				// handled in jQuery.ajax (so no try/catch here)
+				xhr.send( options.hasContent && options.data || null );
+			},
+
+			abort: function() {
+				if ( callback ) {
+					callback();
 				}
 			}
-		}
+		};
 	}
+});
 
-	return { state: "success", data: response };
-}
+
+
+
 // Install script dataType
 jQuery.ajaxSetup({
 	accepts: {
@@ -7661,6 +8625,10 @@ jQuery.ajaxTransport( "script", function( s ) {
 		};
 	}
 });
+
+
+
+
 var oldCallbacks = [],
 	rjsonp = /(=)\?(?=&|$)|\?\?/;
 
@@ -7668,7 +8636,7 @@ var oldCallbacks = [],
 jQuery.ajaxSetup({
 	jsonp: "callback",
 	jsonpCallback: function() {
-		var callback = oldCallbacks.pop() || ( jQuery.expando + "_" + ( ajax_nonce++ ) );
+		var callback = oldCallbacks.pop() || ( jQuery.expando + "_" + ( nonce++ ) );
 		this[ callback ] = true;
 		return callback;
 	}
@@ -7695,7 +8663,7 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 		if ( jsonProp ) {
 			s[ jsonProp ] = s[ jsonProp ].replace( rjsonp, "$1" + callbackName );
 		} else if ( s.jsonp !== false ) {
-			s.url += ( ajax_rquery.test( s.url ) ? "&" : "?" ) + s.jsonp + "=" + callbackName;
+			s.url += ( rquery.test( s.url ) ? "&" : "?" ) + s.jsonp + "=" + callbackName;
 		}
 
 		// Use data converter to retrieve json after script execution
@@ -7741,886 +8709,126 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 		return "script";
 	}
 });
-jQuery.ajaxSettings.xhr = function() {
-	try {
-		return new XMLHttpRequest();
-	} catch( e ) {}
+
+
+
+
+// data: string of html
+// context (optional): If specified, the fragment will be created in this context, defaults to document
+// keepScripts (optional): If true, will include scripts passed in the html string
+jQuery.parseHTML = function( data, context, keepScripts ) {
+	if ( !data || typeof data !== "string" ) {
+		return null;
+	}
+	if ( typeof context === "boolean" ) {
+		keepScripts = context;
+		context = false;
+	}
+	context = context || document;
+
+	var parsed = rsingleTag.exec( data ),
+		scripts = !keepScripts && [];
+
+	// Single tag
+	if ( parsed ) {
+		return [ context.createElement( parsed[1] ) ];
+	}
+
+	parsed = jQuery.buildFragment( [ data ], context, scripts );
+
+	if ( scripts && scripts.length ) {
+		jQuery( scripts ).remove();
+	}
+
+	return jQuery.merge( [], parsed.childNodes );
 };
 
-var xhrSupported = jQuery.ajaxSettings.xhr(),
-	xhrSuccessStatus = {
-		// file protocol always yields status code 0, assume 200
-		0: 200,
-		// Support: IE9
-		// #1450: sometimes IE returns 1223 when it should be 204
-		1223: 204
-	},
-	// Support: IE9
-	// We need to keep track of outbound xhr and abort them manually
-	// because IE is not smart enough to do it all by itself
-	xhrId = 0,
-	xhrCallbacks = {};
 
-if ( window.ActiveXObject ) {
-	jQuery( window ).on( "unload", function() {
-		for( var key in xhrCallbacks ) {
-			xhrCallbacks[ key ]();
-		}
-		xhrCallbacks = undefined;
-	});
-}
+// Keep a copy of the old load method
+var _load = jQuery.fn.load;
 
-jQuery.support.cors = !!xhrSupported && ( "withCredentials" in xhrSupported );
-jQuery.support.ajax = xhrSupported = !!xhrSupported;
-
-jQuery.ajaxTransport(function( options ) {
-	var callback;
-	// Cross domain only allowed if supported through XMLHttpRequest
-	if ( jQuery.support.cors || xhrSupported && !options.crossDomain ) {
-		return {
-			send: function( headers, complete ) {
-				var i, id,
-					xhr = options.xhr();
-				xhr.open( options.type, options.url, options.async, options.username, options.password );
-				// Apply custom fields if provided
-				if ( options.xhrFields ) {
-					for ( i in options.xhrFields ) {
-						xhr[ i ] = options.xhrFields[ i ];
-					}
-				}
-				// Override mime type if needed
-				if ( options.mimeType && xhr.overrideMimeType ) {
-					xhr.overrideMimeType( options.mimeType );
-				}
-				// X-Requested-With header
-				// For cross-domain requests, seeing as conditions for a preflight are
-				// akin to a jigsaw puzzle, we simply never set it to be sure.
-				// (it can always be set on a per-request basis or even using ajaxSetup)
-				// For same-domain requests, won't change header if already provided.
-				if ( !options.crossDomain && !headers["X-Requested-With"] ) {
-					headers["X-Requested-With"] = "XMLHttpRequest";
-				}
-				// Set headers
-				for ( i in headers ) {
-					xhr.setRequestHeader( i, headers[ i ] );
-				}
-				// Callback
-				callback = function( type ) {
-					return function() {
-						if ( callback ) {
-							delete xhrCallbacks[ id ];
-							callback = xhr.onload = xhr.onerror = null;
-							if ( type === "abort" ) {
-								xhr.abort();
-							} else if ( type === "error" ) {
-								complete(
-									// file protocol always yields status 0, assume 404
-									xhr.status || 404,
-									xhr.statusText
-								);
-							} else {
-								complete(
-									xhrSuccessStatus[ xhr.status ] || xhr.status,
-									xhr.statusText,
-									// Support: IE9
-									// #11426: When requesting binary data, IE9 will throw an exception
-									// on any attempt to access responseText
-									typeof xhr.responseText === "string" ? {
-										text: xhr.responseText
-									} : undefined,
-									xhr.getAllResponseHeaders()
-								);
-							}
-						}
-					};
-				};
-				// Listen to events
-				xhr.onload = callback();
-				xhr.onerror = callback("error");
-				// Create the abort callback
-				callback = xhrCallbacks[( id = xhrId++ )] = callback("abort");
-				// Do send the request
-				// This may raise an exception which is actually
-				// handled in jQuery.ajax (so no try/catch here)
-				xhr.send( options.hasContent && options.data || null );
-			},
-			abort: function() {
-				if ( callback ) {
-					callback();
-				}
-			}
-		};
-	}
-});
-var fxNow, timerId,
-	rfxtypes = /^(?:toggle|show|hide)$/,
-	rfxnum = new RegExp( "^(?:([+-])=|)(" + core_pnum + ")([a-z%]*)$", "i" ),
-	rrun = /queueHooks$/,
-	animationPrefilters = [ defaultPrefilter ],
-	tweeners = {
-		"*": [function( prop, value ) {
-			var tween = this.createTween( prop, value ),
-				target = tween.cur(),
-				parts = rfxnum.exec( value ),
-				unit = parts && parts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
-
-				// Starting value computation is required for potential unit mismatches
-				start = ( jQuery.cssNumber[ prop ] || unit !== "px" && +target ) &&
-					rfxnum.exec( jQuery.css( tween.elem, prop ) ),
-				scale = 1,
-				maxIterations = 20;
-
-			if ( start && start[ 3 ] !== unit ) {
-				// Trust units reported by jQuery.css
-				unit = unit || start[ 3 ];
-
-				// Make sure we update the tween properties later on
-				parts = parts || [];
-
-				// Iteratively approximate from a nonzero starting point
-				start = +target || 1;
-
-				do {
-					// If previous iteration zeroed out, double until we get *something*
-					// Use a string for doubling factor so we don't accidentally see scale as unchanged below
-					scale = scale || ".5";
-
-					// Adjust and apply
-					start = start / scale;
-					jQuery.style( tween.elem, prop, start + unit );
-
-				// Update scale, tolerating zero or NaN from tween.cur()
-				// And breaking the loop if scale is unchanged or perfect, or if we've just had enough
-				} while ( scale !== (scale = tween.cur() / target) && scale !== 1 && --maxIterations );
-			}
-
-			// Update tween properties
-			if ( parts ) {
-				start = tween.start = +start || +target || 0;
-				tween.unit = unit;
-				// If a +=/-= token was provided, we're doing a relative animation
-				tween.end = parts[ 1 ] ?
-					start + ( parts[ 1 ] + 1 ) * parts[ 2 ] :
-					+parts[ 2 ];
-			}
-
-			return tween;
-		}]
-	};
-
-// Animations created synchronously will run synchronously
-function createFxNow() {
-	setTimeout(function() {
-		fxNow = undefined;
-	});
-	return ( fxNow = jQuery.now() );
-}
-
-function createTween( value, prop, animation ) {
-	var tween,
-		collection = ( tweeners[ prop ] || [] ).concat( tweeners[ "*" ] ),
-		index = 0,
-		length = collection.length;
-	for ( ; index < length; index++ ) {
-		if ( (tween = collection[ index ].call( animation, prop, value )) ) {
-
-			// we're done with this property
-			return tween;
-		}
-	}
-}
-
-function Animation( elem, properties, options ) {
-	var result,
-		stopped,
-		index = 0,
-		length = animationPrefilters.length,
-		deferred = jQuery.Deferred().always( function() {
-			// don't match elem in the :animated selector
-			delete tick.elem;
-		}),
-		tick = function() {
-			if ( stopped ) {
-				return false;
-			}
-			var currentTime = fxNow || createFxNow(),
-				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
-				// archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
-				temp = remaining / animation.duration || 0,
-				percent = 1 - temp,
-				index = 0,
-				length = animation.tweens.length;
-
-			for ( ; index < length ; index++ ) {
-				animation.tweens[ index ].run( percent );
-			}
-
-			deferred.notifyWith( elem, [ animation, percent, remaining ]);
-
-			if ( percent < 1 && length ) {
-				return remaining;
-			} else {
-				deferred.resolveWith( elem, [ animation ] );
-				return false;
-			}
-		},
-		animation = deferred.promise({
-			elem: elem,
-			props: jQuery.extend( {}, properties ),
-			opts: jQuery.extend( true, { specialEasing: {} }, options ),
-			originalProperties: properties,
-			originalOptions: options,
-			startTime: fxNow || createFxNow(),
-			duration: options.duration,
-			tweens: [],
-			createTween: function( prop, end ) {
-				var tween = jQuery.Tween( elem, animation.opts, prop, end,
-						animation.opts.specialEasing[ prop ] || animation.opts.easing );
-				animation.tweens.push( tween );
-				return tween;
-			},
-			stop: function( gotoEnd ) {
-				var index = 0,
-					// if we are going to the end, we want to run all the tweens
-					// otherwise we skip this part
-					length = gotoEnd ? animation.tweens.length : 0;
-				if ( stopped ) {
-					return this;
-				}
-				stopped = true;
-				for ( ; index < length ; index++ ) {
-					animation.tweens[ index ].run( 1 );
-				}
-
-				// resolve when we played the last frame
-				// otherwise, reject
-				if ( gotoEnd ) {
-					deferred.resolveWith( elem, [ animation, gotoEnd ] );
-				} else {
-					deferred.rejectWith( elem, [ animation, gotoEnd ] );
-				}
-				return this;
-			}
-		}),
-		props = animation.props;
-
-	propFilter( props, animation.opts.specialEasing );
-
-	for ( ; index < length ; index++ ) {
-		result = animationPrefilters[ index ].call( animation, elem, props, animation.opts );
-		if ( result ) {
-			return result;
-		}
+/**
+ * Load a url into a page
+ */
+jQuery.fn.load = function( url, params, callback ) {
+	if ( typeof url !== "string" && _load ) {
+		return _load.apply( this, arguments );
 	}
 
-	jQuery.map( props, createTween, animation );
+	var selector, type, response,
+		self = this,
+		off = url.indexOf(" ");
 
-	if ( jQuery.isFunction( animation.opts.start ) ) {
-		animation.opts.start.call( elem, animation );
+	if ( off >= 0 ) {
+		selector = url.slice( off );
+		url = url.slice( 0, off );
 	}
 
-	jQuery.fx.timer(
-		jQuery.extend( tick, {
-			elem: elem,
-			anim: animation,
-			queue: animation.opts.queue
-		})
-	);
+	// If it's a function
+	if ( jQuery.isFunction( params ) ) {
 
-	// attach callbacks from options
-	return animation.progress( animation.opts.progress )
-		.done( animation.opts.done, animation.opts.complete )
-		.fail( animation.opts.fail )
-		.always( animation.opts.always );
-}
+		// We assume that it's the callback
+		callback = params;
+		params = undefined;
 
-function propFilter( props, specialEasing ) {
-	var index, name, easing, value, hooks;
-
-	// camelCase, specialEasing and expand cssHook pass
-	for ( index in props ) {
-		name = jQuery.camelCase( index );
-		easing = specialEasing[ name ];
-		value = props[ index ];
-		if ( jQuery.isArray( value ) ) {
-			easing = value[ 1 ];
-			value = props[ index ] = value[ 0 ];
-		}
-
-		if ( index !== name ) {
-			props[ name ] = value;
-			delete props[ index ];
-		}
-
-		hooks = jQuery.cssHooks[ name ];
-		if ( hooks && "expand" in hooks ) {
-			value = hooks.expand( value );
-			delete props[ name ];
-
-			// not quite $.extend, this wont overwrite keys already present.
-			// also - reusing 'index' from above because we have the correct "name"
-			for ( index in value ) {
-				if ( !( index in props ) ) {
-					props[ index ] = value[ index ];
-					specialEasing[ index ] = easing;
-				}
-			}
-		} else {
-			specialEasing[ name ] = easing;
-		}
+	// Otherwise, build a param string
+	} else if ( params && typeof params === "object" ) {
+		type = "POST";
 	}
-}
 
-jQuery.Animation = jQuery.extend( Animation, {
+	// If we have elements to modify, make the request
+	if ( self.length > 0 ) {
+		jQuery.ajax({
+			url: url,
 
-	tweener: function( props, callback ) {
-		if ( jQuery.isFunction( props ) ) {
-			callback = props;
-			props = [ "*" ];
-		} else {
-			props = props.split(" ");
-		}
+			// if "type" variable is undefined, then "GET" method will be used
+			type: type,
+			dataType: "html",
+			data: params
+		}).done(function( responseText ) {
 
-		var prop,
-			index = 0,
-			length = props.length;
+			// Save response for use in complete callback
+			response = arguments;
 
-		for ( ; index < length ; index++ ) {
-			prop = props[ index ];
-			tweeners[ prop ] = tweeners[ prop ] || [];
-			tweeners[ prop ].unshift( callback );
-		}
-	},
+			self.html( selector ?
 
-	prefilter: function( callback, prepend ) {
-		if ( prepend ) {
-			animationPrefilters.unshift( callback );
-		} else {
-			animationPrefilters.push( callback );
-		}
-	}
-});
+				// If a selector was specified, locate the right elements in a dummy div
+				// Exclude scripts to avoid IE 'Permission Denied' errors
+				jQuery("<div>").append( jQuery.parseHTML( responseText ) ).find( selector ) :
 
-function defaultPrefilter( elem, props, opts ) {
-	/* jshint validthis: true */
-	var prop, value, toggle, tween, hooks, oldfire,
-		anim = this,
-		orig = {},
-		style = elem.style,
-		hidden = elem.nodeType && isHidden( elem ),
-		dataShow = data_priv.get( elem, "fxshow" );
+				// Otherwise use the full result
+				responseText );
 
-	// handle queue: false promises
-	if ( !opts.queue ) {
-		hooks = jQuery._queueHooks( elem, "fx" );
-		if ( hooks.unqueued == null ) {
-			hooks.unqueued = 0;
-			oldfire = hooks.empty.fire;
-			hooks.empty.fire = function() {
-				if ( !hooks.unqueued ) {
-					oldfire();
-				}
-			};
-		}
-		hooks.unqueued++;
-
-		anim.always(function() {
-			// doing this makes sure that the complete handler will be called
-			// before this completes
-			anim.always(function() {
-				hooks.unqueued--;
-				if ( !jQuery.queue( elem, "fx" ).length ) {
-					hooks.empty.fire();
-				}
-			});
+		}).complete( callback && function( jqXHR, status ) {
+			self.each( callback, response || [ jqXHR.responseText, status, jqXHR ] );
 		});
 	}
 
-	// height/width overflow pass
-	if ( elem.nodeType === 1 && ( "height" in props || "width" in props ) ) {
-		// Make sure that nothing sneaks out
-		// Record all 3 overflow attributes because IE9-10 do not
-		// change the overflow attribute when overflowX and
-		// overflowY are set to the same value
-		opts.overflow = [ style.overflow, style.overflowX, style.overflowY ];
-
-		// Set display property to inline-block for height/width
-		// animations on inline elements that are having width/height animated
-		if ( jQuery.css( elem, "display" ) === "inline" &&
-				jQuery.css( elem, "float" ) === "none" ) {
-
-			style.display = "inline-block";
-		}
-	}
-
-	if ( opts.overflow ) {
-		style.overflow = "hidden";
-		anim.always(function() {
-			style.overflow = opts.overflow[ 0 ];
-			style.overflowX = opts.overflow[ 1 ];
-			style.overflowY = opts.overflow[ 2 ];
-		});
-	}
+	return this;
+};
 
 
-	// show/hide pass
-	for ( prop in props ) {
-		value = props[ prop ];
-		if ( rfxtypes.exec( value ) ) {
-			delete props[ prop ];
-			toggle = toggle || value === "toggle";
-			if ( value === ( hidden ? "hide" : "show" ) ) {
 
-				// If there is dataShow left over from a stopped hide or show and we are going to proceed with show, we should pretend to be hidden
-				if ( value === "show" && dataShow && dataShow[ prop ] !== undefined ) {
-					hidden = true;
-				} else {
-					continue;
-				}
-			}
-			orig[ prop ] = dataShow && dataShow[ prop ] || jQuery.style( elem, prop );
-		}
-	}
 
-	if ( !jQuery.isEmptyObject( orig ) ) {
-		if ( dataShow ) {
-			if ( "hidden" in dataShow ) {
-				hidden = dataShow.hidden;
-			}
-		} else {
-			dataShow = data_priv.access( elem, "fxshow", {} );
-		}
+jQuery.expr.filters.animated = function( elem ) {
+	return jQuery.grep(jQuery.timers, function( fn ) {
+		return elem === fn.elem;
+	}).length;
+};
 
-		// store state if its toggle - enables .stop().toggle() to "reverse"
-		if ( toggle ) {
-			dataShow.hidden = !hidden;
-		}
-		if ( hidden ) {
-			jQuery( elem ).show();
-		} else {
-			anim.done(function() {
-				jQuery( elem ).hide();
-			});
-		}
-		anim.done(function() {
-			var prop;
 
-			data_priv.remove( elem, "fxshow" );
-			for ( prop in orig ) {
-				jQuery.style( elem, prop, orig[ prop ] );
-			}
-		});
-		for ( prop in orig ) {
-			tween = createTween( hidden ? dataShow[ prop ] : 0, prop, anim );
 
-			if ( !( prop in dataShow ) ) {
-				dataShow[ prop ] = tween.start;
-				if ( hidden ) {
-					tween.end = tween.start;
-					tween.start = prop === "width" || prop === "height" ? 1 : 0;
-				}
-			}
-		}
-	}
+
+var docElem = window.document.documentElement;
+
+/**
+ * Gets a window from an element
+ */
+function getWindow( elem ) {
+	return jQuery.isWindow( elem ) ? elem : elem.nodeType === 9 && elem.defaultView;
 }
-
-function Tween( elem, options, prop, end, easing ) {
-	return new Tween.prototype.init( elem, options, prop, end, easing );
-}
-jQuery.Tween = Tween;
-
-Tween.prototype = {
-	constructor: Tween,
-	init: function( elem, options, prop, end, easing, unit ) {
-		this.elem = elem;
-		this.prop = prop;
-		this.easing = easing || "swing";
-		this.options = options;
-		this.start = this.now = this.cur();
-		this.end = end;
-		this.unit = unit || ( jQuery.cssNumber[ prop ] ? "" : "px" );
-	},
-	cur: function() {
-		var hooks = Tween.propHooks[ this.prop ];
-
-		return hooks && hooks.get ?
-			hooks.get( this ) :
-			Tween.propHooks._default.get( this );
-	},
-	run: function( percent ) {
-		var eased,
-			hooks = Tween.propHooks[ this.prop ];
-
-		if ( this.options.duration ) {
-			this.pos = eased = jQuery.easing[ this.easing ](
-				percent, this.options.duration * percent, 0, 1, this.options.duration
-			);
-		} else {
-			this.pos = eased = percent;
-		}
-		this.now = ( this.end - this.start ) * eased + this.start;
-
-		if ( this.options.step ) {
-			this.options.step.call( this.elem, this.now, this );
-		}
-
-		if ( hooks && hooks.set ) {
-			hooks.set( this );
-		} else {
-			Tween.propHooks._default.set( this );
-		}
-		return this;
-	}
-};
-
-Tween.prototype.init.prototype = Tween.prototype;
-
-Tween.propHooks = {
-	_default: {
-		get: function( tween ) {
-			var result;
-
-			if ( tween.elem[ tween.prop ] != null &&
-				(!tween.elem.style || tween.elem.style[ tween.prop ] == null) ) {
-				return tween.elem[ tween.prop ];
-			}
-
-			// passing an empty string as a 3rd parameter to .css will automatically
-			// attempt a parseFloat and fallback to a string if the parse fails
-			// so, simple values such as "10px" are parsed to Float.
-			// complex values such as "rotate(1rad)" are returned as is.
-			result = jQuery.css( tween.elem, tween.prop, "" );
-			// Empty strings, null, undefined and "auto" are converted to 0.
-			return !result || result === "auto" ? 0 : result;
-		},
-		set: function( tween ) {
-			// use step hook for back compat - use cssHook if its there - use .style if its
-			// available and use plain properties where available
-			if ( jQuery.fx.step[ tween.prop ] ) {
-				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.style && ( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null || jQuery.cssHooks[ tween.prop ] ) ) {
-				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
-			} else {
-				tween.elem[ tween.prop ] = tween.now;
-			}
-		}
-	}
-};
-
-// Support: IE9
-// Panic based approach to setting things on disconnected nodes
-
-Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
-	set: function( tween ) {
-		if ( tween.elem.nodeType && tween.elem.parentNode ) {
-			tween.elem[ tween.prop ] = tween.now;
-		}
-	}
-};
-
-jQuery.each([ "toggle", "show", "hide" ], function( i, name ) {
-	var cssFn = jQuery.fn[ name ];
-	jQuery.fn[ name ] = function( speed, easing, callback ) {
-		return speed == null || typeof speed === "boolean" ?
-			cssFn.apply( this, arguments ) :
-			this.animate( genFx( name, true ), speed, easing, callback );
-	};
-});
-
-jQuery.fn.extend({
-	fadeTo: function( speed, to, easing, callback ) {
-
-		// show any hidden elements after setting opacity to 0
-		return this.filter( isHidden ).css( "opacity", 0 ).show()
-
-			// animate to the value specified
-			.end().animate({ opacity: to }, speed, easing, callback );
-	},
-	animate: function( prop, speed, easing, callback ) {
-		var empty = jQuery.isEmptyObject( prop ),
-			optall = jQuery.speed( speed, easing, callback ),
-			doAnimation = function() {
-				// Operate on a copy of prop so per-property easing won't be lost
-				var anim = Animation( this, jQuery.extend( {}, prop ), optall );
-
-				// Empty animations, or finishing resolves immediately
-				if ( empty || data_priv.get( this, "finish" ) ) {
-					anim.stop( true );
-				}
-			};
-			doAnimation.finish = doAnimation;
-
-		return empty || optall.queue === false ?
-			this.each( doAnimation ) :
-			this.queue( optall.queue, doAnimation );
-	},
-	stop: function( type, clearQueue, gotoEnd ) {
-		var stopQueue = function( hooks ) {
-			var stop = hooks.stop;
-			delete hooks.stop;
-			stop( gotoEnd );
-		};
-
-		if ( typeof type !== "string" ) {
-			gotoEnd = clearQueue;
-			clearQueue = type;
-			type = undefined;
-		}
-		if ( clearQueue && type !== false ) {
-			this.queue( type || "fx", [] );
-		}
-
-		return this.each(function() {
-			var dequeue = true,
-				index = type != null && type + "queueHooks",
-				timers = jQuery.timers,
-				data = data_priv.get( this );
-
-			if ( index ) {
-				if ( data[ index ] && data[ index ].stop ) {
-					stopQueue( data[ index ] );
-				}
-			} else {
-				for ( index in data ) {
-					if ( data[ index ] && data[ index ].stop && rrun.test( index ) ) {
-						stopQueue( data[ index ] );
-					}
-				}
-			}
-
-			for ( index = timers.length; index--; ) {
-				if ( timers[ index ].elem === this && (type == null || timers[ index ].queue === type) ) {
-					timers[ index ].anim.stop( gotoEnd );
-					dequeue = false;
-					timers.splice( index, 1 );
-				}
-			}
-
-			// start the next in the queue if the last step wasn't forced
-			// timers currently will call their complete callbacks, which will dequeue
-			// but only if they were gotoEnd
-			if ( dequeue || !gotoEnd ) {
-				jQuery.dequeue( this, type );
-			}
-		});
-	},
-	finish: function( type ) {
-		if ( type !== false ) {
-			type = type || "fx";
-		}
-		return this.each(function() {
-			var index,
-				data = data_priv.get( this ),
-				queue = data[ type + "queue" ],
-				hooks = data[ type + "queueHooks" ],
-				timers = jQuery.timers,
-				length = queue ? queue.length : 0;
-
-			// enable finishing flag on private data
-			data.finish = true;
-
-			// empty the queue first
-			jQuery.queue( this, type, [] );
-
-			if ( hooks && hooks.stop ) {
-				hooks.stop.call( this, true );
-			}
-
-			// look for any active animations, and finish them
-			for ( index = timers.length; index--; ) {
-				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
-					timers[ index ].anim.stop( true );
-					timers.splice( index, 1 );
-				}
-			}
-
-			// look for any animations in the old queue and finish them
-			for ( index = 0; index < length; index++ ) {
-				if ( queue[ index ] && queue[ index ].finish ) {
-					queue[ index ].finish.call( this );
-				}
-			}
-
-			// turn off finishing flag
-			delete data.finish;
-		});
-	}
-});
-
-// Generate parameters to create a standard animation
-function genFx( type, includeWidth ) {
-	var which,
-		attrs = { height: type },
-		i = 0;
-
-	// if we include width, step value is 1 to do all cssExpand values,
-	// if we don't include width, step value is 2 to skip over Left and Right
-	includeWidth = includeWidth? 1 : 0;
-	for( ; i < 4 ; i += 2 - includeWidth ) {
-		which = cssExpand[ i ];
-		attrs[ "margin" + which ] = attrs[ "padding" + which ] = type;
-	}
-
-	if ( includeWidth ) {
-		attrs.opacity = attrs.width = type;
-	}
-
-	return attrs;
-}
-
-// Generate shortcuts for custom animations
-jQuery.each({
-	slideDown: genFx("show"),
-	slideUp: genFx("hide"),
-	slideToggle: genFx("toggle"),
-	fadeIn: { opacity: "show" },
-	fadeOut: { opacity: "hide" },
-	fadeToggle: { opacity: "toggle" }
-}, function( name, props ) {
-	jQuery.fn[ name ] = function( speed, easing, callback ) {
-		return this.animate( props, speed, easing, callback );
-	};
-});
-
-jQuery.speed = function( speed, easing, fn ) {
-	var opt = speed && typeof speed === "object" ? jQuery.extend( {}, speed ) : {
-		complete: fn || !fn && easing ||
-			jQuery.isFunction( speed ) && speed,
-		duration: speed,
-		easing: fn && easing || easing && !jQuery.isFunction( easing ) && easing
-	};
-
-	opt.duration = jQuery.fx.off ? 0 : typeof opt.duration === "number" ? opt.duration :
-		opt.duration in jQuery.fx.speeds ? jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
-
-	// normalize opt.queue - true/undefined/null -> "fx"
-	if ( opt.queue == null || opt.queue === true ) {
-		opt.queue = "fx";
-	}
-
-	// Queueing
-	opt.old = opt.complete;
-
-	opt.complete = function() {
-		if ( jQuery.isFunction( opt.old ) ) {
-			opt.old.call( this );
-		}
-
-		if ( opt.queue ) {
-			jQuery.dequeue( this, opt.queue );
-		}
-	};
-
-	return opt;
-};
-
-jQuery.easing = {
-	linear: function( p ) {
-		return p;
-	},
-	swing: function( p ) {
-		return 0.5 - Math.cos( p*Math.PI ) / 2;
-	}
-};
-
-jQuery.timers = [];
-jQuery.fx = Tween.prototype.init;
-jQuery.fx.tick = function() {
-	var timer,
-		timers = jQuery.timers,
-		i = 0;
-
-	fxNow = jQuery.now();
-
-	for ( ; i < timers.length; i++ ) {
-		timer = timers[ i ];
-		// Checks the timer has not already been removed
-		if ( !timer() && timers[ i ] === timer ) {
-			timers.splice( i--, 1 );
-		}
-	}
-
-	if ( !timers.length ) {
-		jQuery.fx.stop();
-	}
-	fxNow = undefined;
-};
-
-jQuery.fx.timer = function( timer ) {
-	if ( timer() && jQuery.timers.push( timer ) ) {
-		jQuery.fx.start();
-	}
-};
-
-jQuery.fx.interval = 13;
-
-jQuery.fx.start = function() {
-	if ( !timerId ) {
-		timerId = setInterval( jQuery.fx.tick, jQuery.fx.interval );
-	}
-};
-
-jQuery.fx.stop = function() {
-	clearInterval( timerId );
-	timerId = null;
-};
-
-jQuery.fx.speeds = {
-	slow: 600,
-	fast: 200,
-	// Default speed
-	_default: 400
-};
-
-// Back Compat <1.8 extension point
-jQuery.fx.step = {};
-
-if ( jQuery.expr && jQuery.expr.filters ) {
-	jQuery.expr.filters.animated = function( elem ) {
-		return jQuery.grep(jQuery.timers, function( fn ) {
-			return elem === fn.elem;
-		}).length;
-	};
-}
-jQuery.fn.offset = function( options ) {
-	if ( arguments.length ) {
-		return options === undefined ?
-			this :
-			this.each(function( i ) {
-				jQuery.offset.setOffset( this, options, i );
-			});
-	}
-
-	var docElem, win,
-		elem = this[ 0 ],
-		box = { top: 0, left: 0 },
-		doc = elem && elem.ownerDocument;
-
-	if ( !doc ) {
-		return;
-	}
-
-	docElem = doc.documentElement;
-
-	// Make sure it's not a disconnected DOM node
-	if ( !jQuery.contains( docElem, elem ) ) {
-		return box;
-	}
-
-	// If we don't have gBCR, just use 0,0 rather than error
-	// BlackBerry 5, iOS 3 (original iPhone)
-	if ( typeof elem.getBoundingClientRect !== core_strundefined ) {
-		box = elem.getBoundingClientRect();
-	}
-	win = getWindow( doc );
-	return {
-		top: box.top + win.pageYOffset - docElem.clientTop,
-		left: box.left + win.pageXOffset - docElem.clientLeft
-	};
-};
 
 jQuery.offset = {
-
 	setOffset: function( elem, options, i ) {
 		var curPosition, curLeft, curCSSTop, curTop, curOffset, curCSSLeft, calculatePosition,
 			position = jQuery.css( elem, "position" ),
@@ -8635,7 +8843,8 @@ jQuery.offset = {
 		curOffset = curElem.offset();
 		curCSSTop = jQuery.css( elem, "top" );
 		curCSSLeft = jQuery.css( elem, "left" );
-		calculatePosition = ( position === "absolute" || position === "fixed" ) && ( curCSSTop + curCSSLeft ).indexOf("auto") > -1;
+		calculatePosition = ( position === "absolute" || position === "fixed" ) &&
+			( curCSSTop + curCSSLeft ).indexOf("auto") > -1;
 
 		// Need to be able to calculate position if either top or left is auto and position is either absolute or fixed
 		if ( calculatePosition ) {
@@ -8668,8 +8877,43 @@ jQuery.offset = {
 	}
 };
 
-
 jQuery.fn.extend({
+	offset: function( options ) {
+		if ( arguments.length ) {
+			return options === undefined ?
+				this :
+				this.each(function( i ) {
+					jQuery.offset.setOffset( this, options, i );
+				});
+		}
+
+		var docElem, win,
+			elem = this[ 0 ],
+			box = { top: 0, left: 0 },
+			doc = elem && elem.ownerDocument;
+
+		if ( !doc ) {
+			return;
+		}
+
+		docElem = doc.documentElement;
+
+		// Make sure it's not a disconnected DOM node
+		if ( !jQuery.contains( docElem, elem ) ) {
+			return box;
+		}
+
+		// If we don't have gBCR, just use 0,0 rather than error
+		// BlackBerry 5, iOS 3 (original iPhone)
+		if ( typeof elem.getBoundingClientRect !== strundefined ) {
+			box = elem.getBoundingClientRect();
+		}
+		win = getWindow( doc );
+		return {
+			top: box.top + win.pageYOffset - docElem.clientTop,
+			left: box.left + win.pageXOffset - docElem.clientLeft
+		};
+	},
 
 	position: function() {
 		if ( !this[ 0 ] ) {
@@ -8680,7 +8924,7 @@ jQuery.fn.extend({
 			elem = this[ 0 ],
 			parentOffset = { top: 0, left: 0 };
 
-		// Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is it's only offset parent
+		// Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is its only offset parent
 		if ( jQuery.css( elem, "position" ) === "fixed" ) {
 			// We assume that getBoundingClientRect is available when computed position is fixed
 			offset = elem.getBoundingClientRect();
@@ -8711,7 +8955,7 @@ jQuery.fn.extend({
 		return this.map(function() {
 			var offsetParent = this.offsetParent || docElem;
 
-			while ( offsetParent && ( !jQuery.nodeName( offsetParent, "html" ) && jQuery.css( offsetParent, "position") === "static" ) ) {
+			while ( offsetParent && ( !jQuery.nodeName( offsetParent, "html" ) && jQuery.css( offsetParent, "position" ) === "static" ) ) {
 				offsetParent = offsetParent.offsetParent;
 			}
 
@@ -8720,13 +8964,12 @@ jQuery.fn.extend({
 	}
 });
 
-
 // Create scrollLeft and scrollTop methods
-jQuery.each( {scrollLeft: "pageXOffset", scrollTop: "pageYOffset"}, function( method, prop ) {
+jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( method, prop ) {
 	var top = "pageYOffset" === prop;
 
 	jQuery.fn[ method ] = function( val ) {
-		return jQuery.access( this, function( elem, method, val ) {
+		return access( this, function( elem, method, val ) {
 			var win = getWindow( elem );
 
 			if ( val === undefined ) {
@@ -8746,9 +8989,25 @@ jQuery.each( {scrollLeft: "pageXOffset", scrollTop: "pageYOffset"}, function( me
 	};
 });
 
-function getWindow( elem ) {
-	return jQuery.isWindow( elem ) ? elem : elem.nodeType === 9 && elem.defaultView;
-}
+// Add the top/left cssHooks using jQuery.fn.position
+// Webkit bug: https://bugs.webkit.org/show_bug.cgi?id=29084
+// getComputedStyle returns percent when specified for top/left/bottom/right
+// rather than make the css module depend on the offset module, we just check for it here
+jQuery.each( [ "top", "left" ], function( i, prop ) {
+	jQuery.cssHooks[ prop ] = addGetHookIf( support.pixelPosition,
+		function( elem, computed ) {
+			if ( computed ) {
+				computed = curCSS( elem, prop );
+				// if curCSS returns percentage, fallback to offset
+				return rnumnonpx.test( computed ) ?
+					jQuery( elem ).position()[ prop ] + "px" :
+					computed;
+			}
+		}
+	);
+});
+
+
 // Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
 jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 	jQuery.each( { padding: "inner" + name, content: type, "": "outer" + name }, function( defaultExtra, funcName ) {
@@ -8757,7 +9016,7 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 			var chainable = arguments.length && ( defaultExtra || typeof margin !== "boolean" ),
 				extra = defaultExtra || ( margin === true || value === true ? "margin" : "border" );
 
-			return jQuery.access( this, function( elem, type, value ) {
+			return access( this, function( elem, type, value ) {
 				var doc;
 
 				if ( jQuery.isWindow( elem ) ) {
@@ -8790,8 +9049,7 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 		};
 	});
 });
-// Limit scope pollution from any deprecated API
-// (function() {
+
 
 // The number of elements contained in the matched element set
 jQuery.fn.size = function() {
@@ -8800,36 +9058,60 @@ jQuery.fn.size = function() {
 
 jQuery.fn.andSelf = jQuery.fn.addBack;
 
-// })();
-if ( typeof module === "object" && module && typeof module.exports === "object" ) {
-	// Expose jQuery as module.exports in loaders that implement the Node
-	// module pattern (including browserify). Do not create the global, since
-	// the user will be storing it themselves locally, and globals are frowned
-	// upon in the Node module world.
-	module.exports = jQuery;
-} else {
-	// Register as a named AMD module, since jQuery can be concatenated with other
-	// files that may use define, but not via a proper concatenation script that
-	// understands anonymous AMD modules. A named AMD is safest and most robust
-	// way to register. Lowercase jquery is used because AMD module names are
-	// derived from file names, and jQuery is normally delivered in a lowercase
-	// file name. Do this after creating the global so that if an AMD module wants
-	// to call noConflict to hide this version of jQuery, it will work.
-	if ( typeof define === "function" && define.amd ) {
-		define( "jquery", [], function () { return jQuery; } );
-	}
+
+
+
+// Register as a named AMD module, since jQuery can be concatenated with other
+// files that may use define, but not via a proper concatenation script that
+// understands anonymous AMD modules. A named AMD is safest and most robust
+// way to register. Lowercase jquery is used because AMD module names are
+// derived from file names, and jQuery is normally delivered in a lowercase
+// file name. Do this after creating the global so that if an AMD module wants
+// to call noConflict to hide this version of jQuery, it will work.
+if ( typeof define === "function" && define.amd ) {
+	define( "jquery", [], function() {
+		return jQuery;
+	});
 }
 
-// If there is a window object, that at least has a document property,
-// define jQuery and $ identifiers
-if ( typeof window === "object" && typeof window.document === "object" ) {
+
+
+
+var
+	// Map over jQuery in case of overwrite
+	_jQuery = window.jQuery,
+
+	// Map over the $ in case of overwrite
+	_$ = window.$;
+
+jQuery.noConflict = function( deep ) {
+	if ( window.$ === jQuery ) {
+		window.$ = _$;
+	}
+
+	if ( deep && window.jQuery === jQuery ) {
+		window.jQuery = _jQuery;
+	}
+
+	return jQuery;
+};
+
+// Expose jQuery and $ identifiers, even in
+// AMD (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
+// and CommonJS for browser emulators (#13566)
+if ( typeof noGlobal === strundefined ) {
 	window.jQuery = window.$ = jQuery;
 }
 
-})( window );
+
+
+
+return jQuery;
+
+}));
 
 /*!
- * Modernizr v2.7.1
+ * Modernizr v2.7.2
  * www.modernizr.com
  *
  * Copyright (c) Faruk Ates, Paul Irish, Alex Sexton
@@ -8854,7 +9136,7 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 
 window.Modernizr = (function( window, document, undefined ) {
 
-    var version = '2.7.1',
+    var version = '2.7.2',
 
     Modernizr = {},
 
@@ -9435,7 +9717,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
     // Note, Android < 4 will pass this test, but can only animate
     //   a single property at a time
-    //   daneden.me/2011/12/putting-up-with-androids-bullshit/
+    //   goo.gl/v3V4Gp
     tests['cssanimations'] = function() {
         return testPropsAll('animationName');
     };
@@ -10248,26 +10530,27 @@ window.Modernizr = (function( window, document, undefined ) {
 
   var header_helpers = function (class_array) {
     var i = class_array.length;
+    var head = $('head');
 
     while (i--) {
-      if($('head').has('.' + class_array[i]).length === 0) {
-        $('head').append('<meta class="' + class_array[i] + '">');
+      if(head.has('.' + class_array[i]).length === 0) {
+          head.append('<meta class="' + class_array[i] + '" />');
       }
     }
   };
 
   header_helpers([
-    'foundation-mq-small', 
-    'foundation-mq-medium', 
-    'foundation-mq-large', 
-    'foundation-mq-xlarge', 
-    'foundation-mq-xxlarge', 
+    'foundation-mq-small',
+    'foundation-mq-medium',
+    'foundation-mq-large',
+    'foundation-mq-xlarge',
+    'foundation-mq-xxlarge',
     'foundation-data-attribute-namespace']);
 
   // Enable FastClick if present
 
   $(function() {
-    if(typeof FastClick !== 'undefined') {
+    if (typeof FastClick !== 'undefined') {
       // Don't attach to body if undefined
       if (typeof document.body !== 'undefined') {
         FastClick.attach(document.body);
@@ -10280,10 +10563,11 @@ window.Modernizr = (function( window, document, undefined ) {
   // getElementById is not available.
   var S = function (selector, context) {
     if (typeof selector === 'string') {
-      if (context) { 
+      if (context) {
         var cont;
         if (context.jquery) {
           cont = context[0];
+          if (!cont) return context;
         } else {
           cont = context;
         }
@@ -10307,22 +10591,12 @@ window.Modernizr = (function( window, document, undefined ) {
     return arr.join('-');
   };
 
-  var header_helpers = function (class_array) {
-    var i = class_array.length;
-
-    while (i--) {
-      if($('head').has('.' + class_array[i]).length === 0) {
-        $('head').append('<meta class="' + class_array[i] + '">');
-      }
-    }
-  };
-
   var add_namespace = function (str) {
     var parts = str.split('-'),
         i = parts.length,
         arr = [];
 
-    while(i--) {
+    while (i--) {
       if (i !== 0) {
         arr.push(parts[i]);
       } else {
@@ -10357,7 +10631,6 @@ window.Modernizr = (function( window, document, undefined ) {
     } else {
       S('[' + this.attr_name() +']', this.scope).each(function () {
         var should_bind_events = !S(this).data(self.attr_name(true) + '-init');
-
         S(this).data(self.attr_name(true) + '-init', $.extend({}, self.settings, (options || method), self.data_options(S(this))));
 
         if (should_bind_events) {
@@ -10394,13 +10667,13 @@ window.Modernizr = (function( window, document, undefined ) {
     } else {
       bindLoad.call(image);
     }
-  }
-
+  };
+  
   /*
     https://github.com/paulirish/matchMedia.js
   */
 
-  window.matchMedia = window.matchMedia || (function( doc, undefined ) {
+  window.matchMedia = window.matchMedia || (function( doc ) {
 
     "use strict";
 
@@ -10416,7 +10689,7 @@ window.Modernizr = (function( window, document, undefined ) {
     fakeBody.style.background = "none";
     fakeBody.appendChild(div);
 
-    return function(q){
+    return function (q) {
 
       div.innerHTML = "&shy;<style media=\"" + q + "\"> #mq-test-1 { width: 42px; }</style>";
 
@@ -10442,21 +10715,21 @@ window.Modernizr = (function( window, document, undefined ) {
    * Licensed under the MIT license.
    */
 
-  (function( $ ) {
+  (function($) {
 
   // requestAnimationFrame polyfill adapted from Erik Möller
   // fixes from Paul Irish and Tino Zijdel
   // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
   // http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
 
-
   var animating,
-    lastTime = 0,
-    vendors = ['webkit', 'moz'],
-    requestAnimationFrame = window.requestAnimationFrame,
-    cancelAnimationFrame = window.cancelAnimationFrame;
+      lastTime = 0,
+      vendors = ['webkit', 'moz'],
+      requestAnimationFrame = window.requestAnimationFrame,
+      cancelAnimationFrame = window.cancelAnimationFrame,
+      jqueryFxAvailable = 'undefined' !== typeof jQuery.fx;
 
-  for(; lastTime < vendors.length && !requestAnimationFrame; lastTime++) {
+  for (; lastTime < vendors.length && !requestAnimationFrame; lastTime++) {
     requestAnimationFrame = window[ vendors[lastTime] + "RequestAnimationFrame" ];
     cancelAnimationFrame = cancelAnimationFrame ||
       window[ vendors[lastTime] + "CancelAnimationFrame" ] || 
@@ -10464,42 +10737,48 @@ window.Modernizr = (function( window, document, undefined ) {
   }
 
   function raf() {
-    if ( animating ) {
-      requestAnimationFrame( raf );
-      jQuery.fx.tick();
+    if (animating) {
+      requestAnimationFrame(raf);
+      
+      if (jqueryFxAvailable) {
+        jQuery.fx.tick();
+      }
     }
   }
 
-  if ( requestAnimationFrame ) {
+  if (requestAnimationFrame) {
     // use rAF
     window.requestAnimationFrame = requestAnimationFrame;
     window.cancelAnimationFrame = cancelAnimationFrame;
-    jQuery.fx.timer = function( timer ) {
-      if ( timer() && jQuery.timers.push( timer ) && !animating ) {
-        animating = true;
-        raf();
-      }
-    };
+    
+    if (jqueryFxAvailable) {
+      jQuery.fx.timer = function (timer) {
+        if (timer() && jQuery.timers.push(timer) && !animating) {
+          animating = true;
+          raf();
+        }
+      };
 
-    jQuery.fx.stop = function() {
-      animating = false;
-    };
+      jQuery.fx.stop = function () {
+        animating = false;
+      };
+    }
   } else {
     // polyfill
-    window.requestAnimationFrame = function( callback, element ) {
+    window.requestAnimationFrame = function (callback) {
       var currTime = new Date().getTime(),
-        timeToCall = Math.max( 0, 16 - ( currTime - lastTime ) ),
-        id = window.setTimeout( function() {
-          callback( currTime + timeToCall );
-        }, timeToCall );
+        timeToCall = Math.max(0, 16 - (currTime - lastTime)),
+        id = window.setTimeout(function () {
+          callback(currTime + timeToCall);
+        }, timeToCall);
       lastTime = currTime + timeToCall;
       return id;
     };
 
-    window.cancelAnimationFrame = function(id) {
+    window.cancelAnimationFrame = function (id) {
       clearTimeout(id);
     };
-      
+
   }
 
   }( jQuery ));
@@ -10516,7 +10795,7 @@ window.Modernizr = (function( window, document, undefined ) {
   window.Foundation = {
     name : 'Foundation',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     media_queries : {
       small : S('.foundation-mq-small').css('font-family').replace(/^[\/\\'"]+|(;\s?})+|[\/\\'"]+$/g, ''),
@@ -10529,12 +10808,11 @@ window.Modernizr = (function( window, document, undefined ) {
     stylesheet : $('<style></style>').appendTo('head')[0].sheet,
 
     global: {
-      namespace: ''
+      namespace: undefined
     },
 
     init : function (scope, libraries, method, options, response) {
-      var library_arr,
-          args = [scope, method, options, response],
+      var args = [scope, method, options, response],
           responses = [];
 
       // check RTL
@@ -10563,10 +10841,16 @@ window.Modernizr = (function( window, document, undefined ) {
         this.patch(this.libs[lib]);
 
         if (args && args.hasOwnProperty(lib)) {
+            if (typeof this.libs[lib].settings !== 'undefined') {
+                $.extend(true, this.libs[lib].settings, args[lib]);
+            }
+            else if (typeof this.libs[lib].defaults !== 'undefined') {
+                $.extend(true, this.libs[lib].defaults, args[lib]);
+            }
           return this.libs[lib].init.apply(this.libs[lib], [this.scope, args[lib]]);
         }
 
-        args = args instanceof Array ? args : Array(args);    // PATCH: added this line
+        args = args instanceof Array ? args : new Array(args);    // PATCH: added this line
         return this.libs[lib].init.apply(this.libs[lib], args);
       }
 
@@ -10596,11 +10880,25 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     set_namespace: function () {
-      var namespace = $('.foundation-data-attribute-namespace').css('font-family');
 
-      if (/false/i.test(namespace)) return;
+      // Description:
+      //    Don't bother reading the namespace out of the meta tag
+      //    if the namespace has been set globally in javascript
+      //
+      // Example: 
+      //    Foundation.global.namespace = 'my-namespace';
+      // or make it an empty string:
+      //    Foundation.global.namespace = '';
+      //
+      //
 
-      this.global.namespace = namespace;
+      // If the namespace has not been set (is undefined), try to read it out of the meta element. 
+      // Otherwise use the globally defined namespace, even if it's empty ('')
+      var namespace = ( this.global.namespace === undefined ) ? $('.foundation-data-attribute-namespace').css('font-family') : this.global.namespace;
+      
+      // Finally, if the namsepace is either undefined or false, set it to an empty string. 
+      // Otherwise use the namespace value.
+      this.global.namespace = ( namespace === undefined || /false/i.test(namespace) ) ? '' : namespace;
     },
 
     libs : {},
@@ -10634,16 +10932,18 @@ window.Modernizr = (function( window, document, undefined ) {
       //
       // Returns:
       //    Lazy_function (Function): Function with throttling applied.
-      throttle : function(func, delay) {
+      throttle : function (func, delay) {
         var timer = null;
 
         return function () {
           var context = this, args = arguments;
 
-          clearTimeout(timer);
-          timer = setTimeout(function () {
-            func.apply(context, args);
-          }, delay);
+          if (timer == null) {
+            timer = setTimeout(function () {
+              func.apply(context, args);
+              timer = null;
+            }, delay);
+          }
         };
       },
 
@@ -10661,11 +10961,11 @@ window.Modernizr = (function( window, document, undefined ) {
       //
       // Returns:
       //    Lazy_function (Function): Function with debouncing applied.
-      debounce : function(func, delay, immediate) {
+      debounce : function (func, delay, immediate) {
         var timeout, result;
-        return function() {
+        return function () {
           var context = this, args = arguments;
-          var later = function() {
+          var later = function () {
             timeout = null;
             if (!immediate) result = func.apply(context, args);
           };
@@ -10704,14 +11004,14 @@ window.Modernizr = (function( window, document, undefined ) {
           return cached_options;
         }
 
-        opts_arr = (cached_options || ':').split(';'),
+        opts_arr = (cached_options || ':').split(';');
         ii = opts_arr.length;
 
         function isNumber (o) {
           return ! isNaN (o-0) && o !== null && o !== "" && o !== false && o !== true;
         }
 
-        function trim(str) {
+        function trim (str) {
           if (typeof str === 'string') return $.trim(str);
           return str;
         }
@@ -10721,7 +11021,13 @@ window.Modernizr = (function( window, document, undefined ) {
 
           if (/true/i.test(p[1])) p[1] = true;
           if (/false/i.test(p[1])) p[1] = false;
-          if (isNumber(p[1])) p[1] = parseInt(p[1], 10);
+          if (isNumber(p[1])) {
+            if (p[1].indexOf('.') === -1) {
+              p[1] = parseInt(p[1], 10);
+            } else {
+              p[1] = parseFloat(p[1]);
+            }
+          }
 
           if (p.length === 2 && p[0].length > 0) {
             opts[trim(p[0])] = trim(p[1]);
@@ -10739,7 +11045,7 @@ window.Modernizr = (function( window, document, undefined ) {
       //    Foundation.media_queries
       //
       //    Class (String): Class name for the generated <meta> tag
-      register_media : function(media, media_class) {
+      register_media : function (media, media_class) {
         if(Foundation.media_queries[media] === undefined) {
           $('head').append('<meta class="' + media_class + '">');
           Foundation.media_queries[media] = removeQuotes($('.' + media_class).css('font-family'));
@@ -10754,12 +11060,13 @@ window.Modernizr = (function( window, document, undefined ) {
       //
       //    Media (String): Optional media query string for the CSS rule to be 
       //    nested under.
-      add_custom_rule : function(rule, media) {
-        if(media === undefined) {
+      add_custom_rule : function (rule, media) {
+        if (media === undefined) {
           Foundation.stylesheet.insertRule(rule, Foundation.stylesheet.cssRules.length);
         } else {
           var query = Foundation.media_queries[media];
-          if(query !== undefined) {
+
+          if (query !== undefined) {
             Foundation.stylesheet.insertRule('@media ' + 
               Foundation.media_queries[media] + '{ ' + rule + ' }');
           }
@@ -10777,10 +11084,14 @@ window.Modernizr = (function( window, document, undefined ) {
         var self = this,
             unloaded = images.length;
 
-        images.each(function(){
-          single_image_loaded(self.S(this),function(){
-            unloaded -= 1; 
-            if(unloaded == 0){
+        if (unloaded === 0) {
+          callback(images);
+        }
+
+        images.each(function () {
+          single_image_loaded(self.S(this), function () {
+            unloaded -= 1;
+            if (unloaded === 0) {
               callback(images);
             }
           });
@@ -10796,18 +11107,11 @@ window.Modernizr = (function( window, document, undefined ) {
       //
       // Returns:
       //    Rand (String): Pseudo-random, alphanumeric string.
-      random_str : function (length) {
-        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+      random_str : function () {
+        if (!this.fidx) this.fidx = 0;
+        this.prefix = this.prefix || [(this.name || 'F'), (+new Date).toString(36)].join('-');
 
-        if (!length) {
-          length = Math.floor(Math.random() * chars.length);
-        }
-
-        var str = '';
-        while (length--) {
-          str += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return str;
+        return this.prefix + (this.fidx++).toString(36);
       }
     }
   };
@@ -10829,7 +11133,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.abide = {
     name : 'abide',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       live_validate : true,
@@ -10839,11 +11143,8 @@ window.Modernizr = (function( window, document, undefined ) {
       patterns : {
         alpha: /^[a-zA-Z]+$/,
         alpha_numeric : /^[a-zA-Z0-9]+$/,
-        integer: /^\d+$/,
-        number: /-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?/,
-
-        // generic password: upper-case, lower-case, number/special character, and min 8 characters
-        password : /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
+        integer: /^[-+]?\d+$/,
+        number: /^[-+]?\d*(?:\.\d+)?$/,
 
         // amex, visa, diners
         card : /^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})$/,
@@ -10852,21 +11153,30 @@ window.Modernizr = (function( window, document, undefined ) {
         // http://www.whatwg.org/specs/web-apps/current-work/multipage/states-of-the-type-attribute.html#valid-e-mail-address
         email : /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
 
-        url: /(https?|ftp|file|ssh):\/\/(((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-zA-Z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-zA-Z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-zA-Z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-zA-Z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-zA-Z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-zA-Z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?/,
+        url: /^(https?|ftp|file|ssh):\/\/(((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-zA-Z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-zA-Z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-zA-Z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-zA-Z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-zA-Z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-zA-Z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-zA-Z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/,
         // abc.de
         domain: /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$/,
 
-        datetime: /([0-2][0-9]{3})\-([0-1][0-9])\-([0-3][0-9])T([0-5][0-9])\:([0-5][0-9])\:([0-5][0-9])(Z|([\-\+]([0-1][0-9])\:00))/,
+        datetime: /^([0-2][0-9]{3})\-([0-1][0-9])\-([0-3][0-9])T([0-5][0-9])\:([0-5][0-9])\:([0-5][0-9])(Z|([\-\+]([0-1][0-9])\:00))$/,
         // YYYY-MM-DD
-        date: /(?:19|20)[0-9]{2}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-9])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:30))|(?:(?:0[13578]|1[02])-31))/,
+        date: /(?:19|20)[0-9]{2}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-9])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:30))|(?:(?:0[13578]|1[02])-31))$/,
         // HH:MM:SS
-        time : /(0[0-9]|1[0-9]|2[0-3])(:[0-5][0-9]){2}/,
-        dateISO: /\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/,
+        time : /^(0[0-9]|1[0-9]|2[0-3])(:[0-5][0-9]){2}$/,
+        dateISO: /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/,
         // MM/DD/YYYY
-        month_day_year : /(0[1-9]|1[012])[- \/.](0[1-9]|[12][0-9]|3[01])[- \/.](19|20)\d\d/,
+        month_day_year : /^(0[1-9]|1[012])[- \/.](0[1-9]|[12][0-9]|3[01])[- \/.](19|20)\d\d$/,
 
         // #FFF or #FFFFFF
         color: /^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/
+      },
+      validators : {
+        equalTo: function(el, required, parent) {
+          var from  = document.getElementById(el.getAttribute(this.add_namespace('data-equalto'))).value,
+              to    = el.value,
+              valid = (from === to);
+
+          return valid;
+        }
       }
     },
 
@@ -10879,7 +11189,7 @@ window.Modernizr = (function( window, document, undefined ) {
     events : function (scope) {
       var self = this,
           form = self.S(scope).attr('novalidate', 'novalidate'),
-          settings = form.data(this.attr_name(true) + '-init');
+          settings = form.data(this.attr_name(true) + '-init') || {};
 
       this.invalid_attr = this.add_namespace('data-invalid');
 
@@ -10898,7 +11208,6 @@ window.Modernizr = (function( window, document, undefined ) {
             self.validate([this], e);
           })
           .on('keydown.fndtn.abide', function (e) {
-            var settings = $(this).closest('form').data('abide-init');
             if (settings.live_validate === true) {
               clearTimeout(self.timer);
               self.timer = setTimeout(function () {
@@ -10917,15 +11226,17 @@ window.Modernizr = (function( window, document, undefined ) {
     validate : function (els, e, is_ajax) {
       var validations = this.parse_patterns(els),
           validation_count = validations.length,
-          form = this.S(els[0]).closest('form'),
+          form = this.S(els[0]).closest('[data-' + this.attr_name(true) + ']'),
+          settings = form.data(this.attr_name(true) + '-init') || {},
           submit_event = /submit/.test(e.type);
 
+      form.trigger('validated');
       // Has to count up to make sure the focus gets applied to the top error
       for (var i=0; i < validation_count; i++) {
         if (!validations[i] && (submit_event || is_ajax)) {
-          if (this.settings.focus_on_invalid) els[i].focus();
+          if (settings.focus_on_invalid) els[i].focus();
           form.trigger('invalid');
-          this.S(els[i]).closest('form').attr(this.invalid_attr, '');
+          this.S(els[i]).closest('[data-' + this.attr_name(true) + ']').attr(this.invalid_attr, '');
           return false;
         }
       }
@@ -10961,9 +11272,9 @@ window.Modernizr = (function( window, document, undefined ) {
       if (this.settings.patterns.hasOwnProperty(pattern) && pattern.length > 0) {
         return [el, this.settings.patterns[pattern], required];
       } else if (pattern.length > 0) {
-        return [el, new RegExp(pattern), required];
+        return [el, new RegExp('^'+pattern+'$'), required];
       }
-      
+
       if (this.settings.patterns.hasOwnProperty(type)) {
         return [el, this.settings.patterns[type], required];
       }
@@ -10975,20 +11286,25 @@ window.Modernizr = (function( window, document, undefined ) {
 
     check_validation_and_apply_styles : function (el_patterns) {
       var i = el_patterns.length,
-          validations = [];
+          validations = [],
+          form = this.S(el_patterns[0][0]).closest('[data-' + this.attr_name(true) + ']'),
+          settings = form.data(this.attr_name(true) + '-init') || {};
 
       while (i--) {
         var el = el_patterns[i][0],
             required = el_patterns[i][2],
             value = el.value,
             direct_parent = this.S(el).parent(),
-            is_equal = el.getAttribute(this.add_namespace('data-equalto')),
+            validator = el.getAttribute(this.add_namespace('data-abide-validator')),
             is_radio = el.type === "radio",
             is_checkbox = el.type === "checkbox",
             label = this.S('label[for="' + el.getAttribute('id') + '"]'),
             valid_length = (required) ? (el.value.length > 0) : true;
 
-        var parent;
+        var parent, valid;
+
+        // support old way to do equalTo validations
+        if(el.getAttribute(this.add_namespace('data-equalto'))) { validator = "equalTo" }
 
         if (!direct_parent.is('label')) {
           parent = direct_parent;
@@ -11000,22 +11316,32 @@ window.Modernizr = (function( window, document, undefined ) {
           validations.push(this.valid_radio(el, required));
         } else if (is_checkbox && required) {
           validations.push(this.valid_checkbox(el, required));
-        } else if (is_equal && required) {
-          validations.push(this.valid_equal(el, required, parent));
+        } else if (validator) {
+          valid = this.settings.validators[validator].apply(this, [el, required, parent])
+          validations.push(valid);
+
+          if (valid) {
+            this.S(el).removeAttr(this.invalid_attr);
+            parent.removeClass('error');
+          } else {
+            this.S(el).attr(this.invalid_attr, '');
+            parent.addClass('error');
+          }
+
         } else {
 
           if (el_patterns[i][1].test(value) && valid_length ||
-            !required && el.value.length < 1) {
+            !required && el.value.length < 1 || $(el).attr('disabled')) {
             this.S(el).removeAttr(this.invalid_attr);
             parent.removeClass('error');
-            if (label.length > 0 && this.settings.error_labels) label.removeClass('error');
+            if (label.length > 0 && settings.error_labels) label.removeClass('error');
 
             validations.push(true);
             $(el).triggerHandler('valid');
           } else {
             this.S(el).attr(this.invalid_attr, '');
             parent.addClass('error');
-            if (label.length > 0 && this.settings.error_labels) label.addClass('error');
+            if (label.length > 0 && settings.error_labels) label.addClass('error');
 
             validations.push(false);
             $(el).triggerHandler('invalid');
@@ -11041,7 +11367,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
     valid_radio : function (el, required) {
       var name = el.getAttribute('name'),
-          group = document.getElementsByName(name),
+          group = this.S(el).closest('[data-' + this.attr_name(true) + ']').find("[name="+name+"]"),
           count = group.length,
           valid = false;
 
@@ -11076,6 +11402,27 @@ window.Modernizr = (function( window, document, undefined ) {
       }
 
       return valid;
+    },
+
+    valid_oneof: function(el, required, parent, doNotValidateOthers) {
+      var el = this.S(el),
+        others = this.S('[' + this.add_namespace('data-oneof') + ']'),
+        valid = others.filter(':checked').length > 0;
+
+      if (valid) {
+        el.removeAttr(this.invalid_attr).parent().removeClass('error');
+      } else {
+        el.attr(this.invalid_attr, '').parent().addClass('error');
+      }
+
+      if (!doNotValidateOthers) {
+        var _this = this;
+        others.each(function() {
+          _this.valid_oneof.call(_this, this, null, null, true);
+        });
+      }
+
+      return valid;
     }
   };
 }(jQuery, this, this.document));
@@ -11086,15 +11433,16 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.accordion = {
     name : 'accordion',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       active_class: 'active',
+      multi_expand: false,
       toggleable: true
     },
 
     init : function (scope, method, options) {
-      this.bindings(method, options); 
+      this.bindings(method, options);
     },
 
     events : function () {
@@ -11102,24 +11450,28 @@ window.Modernizr = (function( window, document, undefined ) {
       var S = this.S;
       S(this.scope)
       .off('.fndtn.accordion')
-      .on('click.fndtn.accordion', '[' + this.attr_name() + '] > dd > a', function (e) {
+      .on('click.fndtn.accordion', '[' + this.attr_name() + '] dd > a', function (e) {
         var accordion = S(this).closest('[' + self.attr_name() + ']'),
             target = S('#' + this.href.split('#')[1]),
             siblings = S('dd > .content', accordion),
-            aunts = $('> dd', accordion),
+            aunts = $('dd', accordion),
             settings = accordion.data(self.attr_name(true) + '-init'),
             active_content = S('dd > .content.' + settings.active_class, accordion),
             active_parent = S('dd.' + settings.active_class, accordion);
-
         e.preventDefault();
 
-        if (active_content[0] == target[0] && settings.toggleable) {
+        if (! S(this).closest('dl').is(accordion)) { return; }
+
+        if (settings.toggleable && target.is(active_content)) {
           active_parent.toggleClass(settings.active_class, false);
           return target.toggleClass(settings.active_class, false);
         }
 
-        siblings.removeClass(settings.active_class);
-        aunts.removeClass(settings.active_class);
+        if (!settings.multi_expand) {
+          siblings.removeClass(settings.active_class);
+          aunts.removeClass(settings.active_class);
+        }
+
         target.addClass(settings.active_class).parent().addClass(settings.active_class);
       });
     },
@@ -11136,11 +11488,9 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.alert = {
     name : 'alert',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
-      animation: 'fadeOut',
-      speed: 300, // fade out speed
       callback: function (){}
     },
 
@@ -11157,10 +11507,18 @@ window.Modernizr = (function( window, document, undefined ) {
               settings = alertBox.data(self.attr_name(true) + '-init') || self.settings;
 
         e.preventDefault();
-        alertBox[settings.animation](settings.speed, function () {
-          S(this).trigger('closed').remove();
-          settings.callback();
-        });
+        if ('transitionend' in window || 'webkitTransitionEnd' in window || 'oTransitionEnd' in window) {
+          alertBox.addClass("alert-close");
+          alertBox.on('transitionend webkitTransitionEnd oTransitionEnd', function(e) {
+            S(this).trigger('close').remove();
+            settings.callback();
+          });
+        } else {
+          alertBox.fadeOut(300, function () {
+            S(this).trigger('close').remove();
+            settings.callback();
+          });
+        }
       });
     },
 
@@ -11174,7 +11532,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.clearing = {
     name : 'clearing',
 
-    version: '5.1.1',
+    version: '5.2.2',
 
     settings : {
       templates : {
@@ -11188,7 +11546,7 @@ window.Modernizr = (function( window, document, undefined ) {
       // add 'div.clearing-blackout, div.visible-img' to close on background click
       close_selectors : '.clearing-close',
 
-      touch_label : '&larr;&nbsp;Swipe to Advance&nbsp;&rarr;',
+      touch_label : '',
 
       // event initializers and locks
       init : false,
@@ -11201,7 +11559,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
       this.bindings(method, options);
 
-      if (self.S(this.scope).is('[' + this.attr_name() + ']')) { 
+      if (self.S(this.scope).is('[' + this.attr_name() + ']')) {
         this.assemble(self.S('li', this.scope));
       } else {
         self.S('[' + this.attr_name() + ']', this.scope).each(function () {
@@ -11213,6 +11571,10 @@ window.Modernizr = (function( window, document, undefined ) {
     events : function (scope) {
       var self = this,
       S = self.S;
+
+      if ($('.scroll-container').length > 0) {
+        this.scope = $('.scroll-container');
+      }
 
       S(this.scope)
         .off('.clearing')
@@ -11233,8 +11595,8 @@ window.Modernizr = (function( window, document, undefined ) {
 
             // if clearing is open and the current image is
             // clicked, go to the next image in sequence
-            if (target.hasClass('visible') && 
-              current[0] === target[0] && 
+            if (target.hasClass('visible') &&
+              current[0] === target[0] &&
               next.length > 0 && self.is_open(current)) {
               target = next;
               image = S('img', target);
@@ -11250,8 +11612,9 @@ window.Modernizr = (function( window, document, undefined ) {
         .on('click.fndtn.clearing', '.clearing-main-prev',
           function (e) { self.nav(e, 'prev') })
         .on('click.fndtn.clearing', this.settings.close_selectors,
-          function (e) { Foundation.libs.clearing.close(e, this) })
-        .on('keydown.fndtn.clearing',
+          function (e) { Foundation.libs.clearing.close(e, this) });
+
+      $(document).on('keydown.fndtn.clearing',
           function (e) { self.keydown(e) });
 
       S(window).off('.clearing').on('resize.fndtn.clearing',
@@ -11311,14 +11674,24 @@ window.Modernizr = (function( window, document, undefined ) {
     assemble : function ($li) {
       var $el = $li.parent();
 
-      if ($el.parent().hasClass('carousel')) return;
+      if ($el.parent().hasClass('carousel')) {
+        return;
+      }
+      
       $el.after('<div id="foundationClearingHolder"></div>');
-
+      var grid = $el.detach();
+      var grid_outerHTML = '';
+      if (grid[0] == null) {
+        return;
+      } else {
+        grid_outerHTML = grid[0].outerHTML;
+      }
+      
       var holder = this.S('#foundationClearingHolder'),
           settings = $el.data(this.attr_name(true) + '-init'),
           grid = $el.detach(),
           data = {
-            grid: '<div class="carousel">' + grid[0].outerHTML + '</div>',
+            grid: '<div class="carousel">' + grid_outerHTML + '</div>',
             viewing: settings.templates.viewing
           },
           wrapper = '<div class="clearing-assembled"><div>' + data.viewing +
@@ -11334,11 +11707,46 @@ window.Modernizr = (function( window, document, undefined ) {
 
     open : function ($image, current, target) {
       var self = this,
+          body = $(document.body),
           root = target.closest('.clearing-assembled'),
           container = self.S('div', root).first(),
           visible_image = self.S('.visible-img', container),
           image = self.S('img', visible_image).not($image),
-          label = self.S('.clearing-touch-label', container);
+          label = self.S('.clearing-touch-label', container),
+          error = false;
+
+      image.error(function () {
+        error = true;
+      });
+
+      function startLoad() {
+        setTimeout(function () {
+          this.image_loaded(image, function () {
+            if (image.outerWidth() === 1 && !error) {
+              startLoad.call(this);
+            } else {
+              cb.call(this, image);
+            }
+          }.bind(this));
+        }.bind(this), 50);
+      }
+
+      function cb (image) {
+        var $image = $(image);
+        image.css('visibility', 'visible');
+        // toggle the gallery
+        body.css('overflow', 'hidden');
+        root.addClass('clearing-blackout');
+        container.addClass('clearing-container');
+        visible_image.show();
+        this.fix_height(target)
+          .caption(self.S('.clearing-caption', visible_image), self.S('img', target))
+          .center_and_label(image, label)
+          .shift(current, target, function () {
+            target.siblings().removeClass('visible');
+            target.addClass('visible');
+          });
+      }
 
       if (!this.locked()) {
         // set the image to the selected thumbnail
@@ -11346,20 +11754,8 @@ window.Modernizr = (function( window, document, undefined ) {
           .attr('src', this.load($image))
           .css('visibility', 'hidden');
 
-        this.image_loaded(image, function () {
-          image.css('visibility', 'visible');
-          // toggle the gallery
-          root.addClass('clearing-blackout');
-          container.addClass('clearing-container');
-          visible_image.show();
-          this.fix_height(target)
-            .caption(self.S('.clearing-caption', visible_image), $image)
-            .center_and_label(image,label)
-            .shift(current, target, function () {
-              target.siblings().removeClass('visible');
-              target.addClass('visible');
-            });
-        }.bind(this));
+        startLoad.call(this);
+
       }
     },
 
@@ -11372,9 +11768,11 @@ window.Modernizr = (function( window, document, undefined ) {
             } else {
               return target.closest('.clearing-blackout');
             }
-          }($(el))), container, visible_image;
+          }($(el))),
+          body = $(document.body), container, visible_image;
 
       if (el === e.target && root) {
+        body.css('overflow', '');
         container = $('div', root).first();
         visible_image = $('.visible-img', container);
         this.settings.prev_index = 0;
@@ -11393,7 +11791,7 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     keydown : function (e) {
-      var clearing = $('ul[' + this.attr_name() + ']', '.clearing-blackout'),
+      var clearing = $('.clearing-blackout ul[' + this.attr_name() + ']'),
           NEXT_KEY = this.rtl ? 37 : 39,
           PREV_KEY = this.rtl ? 39 : 37,
           ESC_KEY = 27;
@@ -11466,10 +11864,13 @@ window.Modernizr = (function( window, document, undefined ) {
           marginLeft : -(target.outerWidth() / 2),
           marginTop : -(target.outerHeight() / 2)
         });
-        label.css({
-          marginLeft : -(label.outerWidth() / 2),
-          marginTop : -(target.outerHeight() / 2)-label.outerHeight()-10
-        });
+
+        if (label.length > 0) {
+          label.css({
+            marginLeft : -(label.outerWidth() / 2),
+            marginTop : -(target.outerHeight() / 2)-label.outerHeight()-10
+          });
+        }
       } else {
         target.css({
           marginRight : -(target.outerWidth() / 2),
@@ -11477,12 +11878,15 @@ window.Modernizr = (function( window, document, undefined ) {
           left: 'auto',
           right: '50%'
         });
-        label.css({
-          marginRight : -(label.outerWidth() / 2),
-          marginTop : -(target.outerHeight() / 2)-label.outerHeight()-10,
-          left: 'auto',
-          right: '50%'
-        });
+
+        if (label.length > 0) {
+          label.css({
+            marginRight : -(label.outerWidth() / 2),
+            marginTop : -(target.outerHeight() / 2)-label.outerHeight()-10,
+            left: 'auto',
+            right: '50%'
+          });
+        }
       }
       return this;
     },
@@ -11525,7 +11929,7 @@ window.Modernizr = (function( window, document, undefined ) {
     // image caption
 
     caption : function (container, $image) {
-      var caption = $image.data('caption');
+      var caption = $image.attr('data-caption');
 
       if (caption) {
         container
@@ -11660,10 +12064,11 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.dropdown = {
     name : 'dropdown',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       active_class: 'open',
+      align: 'bottom',
       is_hover: false,
       opened: function(){},
       closed: function(){}
@@ -11683,8 +12088,10 @@ window.Modernizr = (function( window, document, undefined ) {
         .off('.dropdown')
         .on('click.fndtn.dropdown', '[' + this.attr_name() + ']', function (e) {
           var settings = S(this).data(self.attr_name(true) + '-init') || self.settings;
-          e.preventDefault();
-          if (!settings.is_hover || Modernizr.touch) self.toggle(S(this));
+          if (!settings.is_hover || Modernizr.touch) {
+            e.preventDefault();
+            self.toggle($(this));
+          }
         })
         .on('mouseenter.fndtn.dropdown', '[' + this.attr_name() + '], [' + this.attr_name() + '-content]', function (e) {
           var $this = S(this);
@@ -11745,7 +12152,9 @@ window.Modernizr = (function( window, document, undefined ) {
         .off('.dropdown')
         .on('resize.fndtn.dropdown', self.throttle(function () {
           self.resize.call(self);
-        }, 50)).trigger('resize');
+        }, 50));
+
+      this.resize();
     },
 
     close: function (dropdown) {
@@ -11754,8 +12163,11 @@ window.Modernizr = (function( window, document, undefined ) {
         if (self.S(this).hasClass(self.settings.active_class)) {
           self.S(this)
             .css(Foundation.rtl ? 'right':'left', '-99999px')
+            .removeClass(self.settings.active_class)
+            .prev('[' + self.attr_name() + ']')
             .removeClass(self.settings.active_class);
-          self.S(this).trigger('closed');
+
+          self.S(this).trigger('closed', [dropdown]);
         }
       });
     },
@@ -11771,7 +12183,8 @@ window.Modernizr = (function( window, document, undefined ) {
         this
           .css(dropdown
             .addClass(this.settings.active_class), target);
-        dropdown.trigger('opened');
+        dropdown.prev('[' + this.attr_name() + ']').addClass(this.settings.active_class);
+        dropdown.trigger('opened', [dropdown, target]);
     },
 
     data_attr: function () {
@@ -11809,41 +12222,131 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     css : function (dropdown, target) {
-      var offset_parent = dropdown.offsetParent(),
-          position = target.offset();
-
-      position.top -= offset_parent.offset().top;
-      position.left -= offset_parent.offset().left;
+      this.clear_idx();
 
       if (this.small()) {
-        dropdown.css({
+        var p = this.dirs.bottom.call(dropdown, target);
+
+        dropdown.attr('style', '').removeClass('drop-left drop-right drop-top').css({
           position : 'absolute',
           width: '95%',
           'max-width': 'none',
-          top: position.top + target.outerHeight()
+          top: p.top
         });
+
         dropdown.css(Foundation.rtl ? 'right':'left', '2.5%');
       } else {
-        if (!Foundation.rtl && this.S(window).width() > dropdown.outerWidth() + target.offset().left) {
-          var left = position.left;
-          if (dropdown.hasClass('right')) {
-            dropdown.removeClass('right');
-          }
-        } else {
-          if (!dropdown.hasClass('right')) {
-            dropdown.addClass('right');
-          }
-          var left = position.left - (dropdown.outerWidth() - target.outerWidth());
-        }
+        var settings = target.data(this.attr_name(true) + '-init') || this.settings;
 
-        dropdown.attr('style', '').css({
-          position : 'absolute',
-          top: position.top + target.outerHeight(),
-          left: left
-        });
+        this.style(dropdown, target, settings);
       }
 
       return dropdown;
+    },
+
+    style : function (dropdown, target, settings) {
+      var css = $.extend({position: 'absolute'}, 
+        this.dirs[settings.align].call(dropdown, target, settings));
+
+      dropdown.attr('style', '').css(css);
+    },
+
+    // return CSS property object
+    // `this` is the dropdown
+    dirs : {
+      // Calculate target offset
+      _base : function (t) {
+        var o_p = this.offsetParent(),
+            o = o_p.offset(),
+            p = t.offset();
+
+        p.top -= o.top;
+        p.left -= o.left;
+
+        return p;
+      },
+      top: function (t, s) {
+        var self = Foundation.libs.dropdown,
+            p = self.dirs._base.call(this, t),
+            pip_offset_base = (t.outerWidth() / 2) - 8;
+
+        this.addClass('drop-top');
+
+        if (t.outerWidth() < this.outerWidth() || self.small()) {
+          self.adjust_pip(pip_offset_base, p);
+        }
+
+        if (Foundation.rtl) {
+          return {left: p.left - this.outerWidth() + t.outerWidth(), 
+            top: p.top - this.outerHeight()};
+        }
+
+        return {left: p.left, top: p.top - this.outerHeight()};
+      },
+      bottom: function (t, s) {
+        var self = Foundation.libs.dropdown,
+            p = self.dirs._base.call(this, t),
+            pip_offset_base = (t.outerWidth() / 2) - 8;
+
+        if (t.outerWidth() < this.outerWidth() || self.small()) {
+          self.adjust_pip(pip_offset_base, p);
+        }
+
+        if (self.rtl) {
+          return {left: p.left - this.outerWidth() + t.outerWidth(), top: p.top + t.outerHeight()};
+        }
+
+        return {left: p.left, top: p.top + t.outerHeight()};
+      },
+      left: function (t, s) {
+        var p = Foundation.libs.dropdown.dirs._base.call(this, t);
+
+        this.addClass('drop-left');
+
+        return {left: p.left - this.outerWidth(), top: p.top};
+      },
+      right: function (t, s) {
+        var p = Foundation.libs.dropdown.dirs._base.call(this, t);
+
+        this.addClass('drop-right');
+
+        return {left: p.left + t.outerWidth(), top: p.top};
+      }
+    },
+
+    // Insert rule to style psuedo elements
+    adjust_pip : function (pip_offset_base, p) {
+      var sheet = Foundation.stylesheet;
+
+      if (this.small()) {
+        pip_offset_base += p.left - 8;
+      }
+
+      this.rule_idx = sheet.cssRules.length;
+
+      var sel_before = '.f-dropdown.open:before',
+          sel_after  = '.f-dropdown.open:after',
+          css_before = 'left: ' + pip_offset_base + 'px;',
+          css_after  = 'left: ' + (pip_offset_base - 1) + 'px;';
+
+      if (sheet.insertRule) {
+        sheet.insertRule([sel_before, '{', css_before, '}'].join(' '), this.rule_idx);
+        sheet.insertRule([sel_after, '{', css_after, '}'].join(' '), this.rule_idx + 1);
+      } else {
+        sheet.addRule(sel_before, css_before, this.rule_idx);
+        sheet.addRule(sel_after, css_after, this.rule_idx + 1);
+      }
+    },
+
+    // Remove old dropdown rule index
+    clear_idx : function () {
+      var sheet = Foundation.stylesheet;
+
+      if (this.rule_idx) {
+        sheet.deleteRule(this.rule_idx);
+        sheet.deleteRule(this.rule_idx);
+        delete this.rule_idx;
+      }
     },
 
     small : function () {
@@ -11856,7 +12359,6 @@ window.Modernizr = (function( window, document, undefined ) {
       this.S('html, body').off('.fndtn.dropdown');
       this.S(window).off('.fndtn.dropdown');
       this.S('[data-dropdown-content]').off('.fndtn.dropdown');
-      this.settings.init = false;
     },
 
     reflow : function () {}
@@ -11869,7 +12371,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.equalizer = {
     name : 'equalizer',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       use_tallest: true,
@@ -11878,6 +12380,7 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     init : function (scope, method, options) {
+      Foundation.inherit(this, 'image_loaded');
       this.bindings(method, options);
       this.reflow();
     },
@@ -11890,10 +12393,10 @@ window.Modernizr = (function( window, document, undefined ) {
 
     equalize: function(equalizer) {
       var isStacked = false,
-          vals = equalizer.find('[' + this.attr_name() + '-watch]'),
+          vals = equalizer.find('[' + this.attr_name() + '-watch]:visible'),
           firstTopOffset = vals.first().offset().top,
           settings = equalizer.data(this.attr_name(true)+'-init');
-      
+
       if (vals.length === 0) return;
       settings.before_height_change();
       equalizer.trigger('before-height-change');
@@ -11905,14 +12408,14 @@ window.Modernizr = (function( window, document, undefined ) {
         }
       });
       if (isStacked) return;
-      
-      var heights = vals.map(function(){ return $(this).outerHeight() });
+
+      var heights = vals.map(function(){ return $(this).outerHeight() }).get();
       if (settings.use_tallest) {
         var max = Math.max.apply(null, heights);
-        vals.height(max);
+        vals.css('height', max);
       } else {
         var min = Math.min.apply(null, heights);
-        vals.height(min);
+        vals.css('height', min);
       }
       settings.after_height_change();
       equalizer.trigger('after-height-change');
@@ -11922,7 +12425,10 @@ window.Modernizr = (function( window, document, undefined ) {
       var self = this;
 
       this.S('[' + this.attr_name() + ']', this.scope).each(function(){
-        self.equalize($(this));
+        var $eq_target = $(this);
+        self.image_loaded(self.S('img', this), function(){
+          self.equalize($eq_target)
+        });
       });
     }
   };
@@ -11933,7 +12439,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.interchange = {
     name : 'interchange',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     cache : {},
 
@@ -11952,11 +12458,11 @@ window.Modernizr = (function( window, document, undefined ) {
         xxlarge: Foundation.media_queries.xxlarge,
         landscape : 'only screen and (orientation: landscape)',
         portrait : 'only screen and (orientation: portrait)',
-        retina : 'only screen and (-webkit-min-device-pixel-ratio: 2),' + 
-          'only screen and (min--moz-device-pixel-ratio: 2),' + 
-          'only screen and (-o-min-device-pixel-ratio: 2/1),' + 
-          'only screen and (min-device-pixel-ratio: 2),' + 
-          'only screen and (min-resolution: 192dpi),' + 
+        retina : 'only screen and (-webkit-min-device-pixel-ratio: 2),' +
+          'only screen and (min--moz-device-pixel-ratio: 2),' +
+          'only screen and (-o-min-device-pixel-ratio: 2/1),' +
+          'only screen and (min-device-pixel-ratio: 2),' +
+          'only screen and (min-resolution: 192dpi),' +
           'only screen and (min-resolution: 2dppx)'
       },
 
@@ -11986,6 +12492,12 @@ window.Modernizr = (function( window, document, undefined ) {
 
           if (last_path == path) return;
 
+          if (/\.(gif|jpg|jpeg|tiff|png)([?#].*)?/i.test(path)) {
+            $(el).css('background-image', 'url('+path+')');
+            el.data('interchange-last-path', path);
+            return trigger(path);
+          }
+
           return $.get(path, function (response) {
             el.html(response);
             el.data(this.data_attr + '-last-path', path);
@@ -12001,19 +12513,30 @@ window.Modernizr = (function( window, document, undefined ) {
 
       this.data_attr = this.set_data_attr();
       $.extend(true, this.settings, method, options);
-
       this.bindings(method, options);
       this.load('images');
       this.load('nodes');
     },
 
+    get_media_hash : function() {
+        var mediaHash='';
+        for (var queryName in this.settings.named_queries ) {
+            mediaHash += matchMedia(this.settings.named_queries[queryName]).matches.toString();
+        }
+        return mediaHash;
+    },
+
     events : function () {
-      var self = this;
+      var self = this, prevMediaHash;
 
       $(window)
         .off('.interchange')
         .on('resize.fndtn.interchange', self.throttle(function () {
-          self.resize();
+            var currMediaHash = self.get_media_hash();
+            if (currMediaHash !== prevMediaHash) {
+                self.resize();
+            }
+            prevMediaHash = currMediaHash;
         }, 50));
 
       return this;
@@ -12116,8 +12639,6 @@ window.Modernizr = (function( window, document, undefined ) {
           data_attr = this.data_attr;
 
       this.cached_nodes = [];
-      // Set nodes_loaded to true if there are no nodes
-      // this.nodes_loaded = false;
       this.nodes_loaded = (count === 0);
 
 
@@ -12153,6 +12674,7 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     convert_directive : function (directive) {
+
       var trimmed = this.trim(directive);
 
       if (trimmed.length > 0) {
@@ -12184,20 +12706,8 @@ window.Modernizr = (function( window, document, undefined ) {
       return this.store(el, scenarios);
     },
 
-    uuid : function (separator) {
-      var delim = separator || "-",
-          self = this;
-
-      function S4() {
-        return self.random_str(6);
-      }
-
-      return (S4() + S4() + delim + S4() + delim + S4()
-        + delim + S4() + delim + S4() + S4() + S4());
-    },
-
     store : function (el, scenarios) {
-      var uuid = this.uuid(),
+      var uuid = this.random_str(),
           current_uuid = el.data(this.add_namespace('uuid', true));
 
       if (this.cache[current_uuid]) return this.cache[current_uuid];
@@ -12208,6 +12718,7 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     trim : function(str) {
+
       if (typeof str === 'string') {
         return $.trim(str);
       }
@@ -12262,7 +12773,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.joyride = {
     name : 'joyride',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     defaults : {
       expose                   : false,     // turn on or off the expose feature
@@ -12284,6 +12795,7 @@ window.Modernizr = (function( window, document, undefined ) {
       cookie_domain            : false,     // Will this cookie be attached to a domain, ie. '.notableapp.com'
       cookie_expires           : 365,       // set when you would like the cookie to expire.
       tip_container            : 'body',    // Where will the tip be attached
+      abort_on_close           : true,      // When true, the close event will not fire any callback
       tip_location_patterns    : {
         top: ['bottom'],
         bottom: [], // bottom should not need to be repositioned
@@ -12311,7 +12823,7 @@ window.Modernizr = (function( window, document, undefined ) {
     init : function (scope, method, options) {
       Foundation.inherit(this, 'throttle random_str');
 
-      this.settings = this.defaults;
+      this.settings = this.settings || $.extend({}, this.defaults, (options || method));
 
       this.bindings(method, options)
     },
@@ -12340,7 +12852,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
         .on('click.fndtn.joyride', '.joyride-close-tip', function (e) {
           e.preventDefault();
-          this.end();
+          this.end(this.settings.abort_on_close);
         }.bind(this));
 
       $(window)
@@ -12461,7 +12973,6 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     create : function (opts) {
-      console.log(opts.$li)
       var buttonText = opts.$li.attr(this.add_namespace('data-button')) 
         || opts.$li.attr(this.add_namespace('data-text')),
         tipClass = opts.$li.attr('class'),
@@ -12628,7 +13139,6 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     set_target : function () {
-      console.log(this.add_namespace('data-class'))
       var cl = this.settings.$li.attr(this.add_namespace('data-class')),
           id = this.settings.$li.attr(this.add_namespace('data-id')),
           $sel = function () {
@@ -12640,8 +13150,6 @@ window.Modernizr = (function( window, document, undefined ) {
               return $('body');
             }
           };
-
-      console.log(cl, id)
 
       this.settings.$target = $sel();
     },
@@ -12718,7 +13226,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
             this.settings.$next_tip.css({
               top: this.settings.$target.offset().top,
-              left: (this.outerWidth(this.settings.$target) + this.settings.$target.offset().left + nub_width)});
+              left: (this.settings.$target.outerWidth() + this.settings.$target.offset().left + nub_width)});
 
             this.nub_position($nub, this.settings.tip_settings.nub_position, 'left');
 
@@ -12726,7 +13234,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
             this.settings.$next_tip.css({
               top: this.settings.$target.offset().top,
-              left: (this.settings.$target.offset().left - this.outerWidth(this.settings.$next_tip) - nub_width)});
+              left: (this.settings.$target.offset().left - this.settings.$next_tip.outerWidth() - nub_width)});
 
             this.nub_position($nub, this.settings.tip_settings.nub_position, 'right');
 
@@ -13068,7 +13576,7 @@ window.Modernizr = (function( window, document, undefined ) {
       }
     },
 
-    end : function () {
+    end : function (abort) {
       if (this.settings.cookie_monster) {
         $.cookie(this.settings.cookie_name, 'ridden', { expires: this.settings.cookie_expires, domain: this.settings.cookie_domain });
       }
@@ -13085,8 +13593,12 @@ window.Modernizr = (function( window, document, undefined ) {
 
       $('.joyride-modal-bg').hide();
       this.settings.$current_tip.hide();
-      this.settings.post_step_callback(this.settings.$li.index(), this.settings.$current_tip);
-      this.settings.post_ride_callback(this.settings.$li.index(), this.settings.$current_tip);
+
+      if (typeof abort === 'undefined') {
+        this.settings.post_step_callback(this.settings.$li.index(), this.settings.$current_tip);
+        this.settings.post_ride_callback(this.settings.$li.index(), this.settings.$current_tip);
+      }
+
       $('.joyride-tip-guide').remove();
     },
 
@@ -13109,14 +13621,14 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs['magellan-expedition'] = {
     name : 'magellan-expedition',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       active_class: 'active',
       threshold: 0, // pixels from the top of the expedition for it to become fixes
       destination_threshold: 20, // pixels from the top of destination for it to be considered active
       throttle_delay: 30 // calculation throttling to increase framerate
-    },
+    }, 
 
     init : function (scope, method, options) {
       Foundation.inherit(this, 'throttle');
@@ -13127,10 +13639,9 @@ window.Modernizr = (function( window, document, undefined ) {
       var self = this,
           S = self.S,
           settings = self.settings;
-      
+
       // initialize expedition offset
       self.set_expedition_position();
-      
 
       S(self.scope)
         .off('.magellan')
@@ -13140,23 +13651,26 @@ window.Modernizr = (function( window, document, undefined ) {
                 settings = expedition.data('magellan-expedition-init');
 
             var hash = this.hash.split('#').join(''),
-                target = $('a[name='+hash+']');
+                target = $("a[name='"+hash+"']");
             if (target.length === 0) target = $('#'+hash);
 
             // Account for expedition height if fixed position
             var scroll_top = target.offset().top;
-            if (expedition.css('position') === 'fixed') {
-              scroll_top = scroll_top - expedition.outerHeight();
-            }
+            scroll_top = scroll_top - expedition.outerHeight();
 
             $('html, body').stop().animate({
                 'scrollTop': scroll_top
             }, 700, 'swing', function () {
-                window.location.hash = '#'+hash;
+                if(history.pushState) {
+                    history.pushState(null, null, '#'+hash);
+                }
+                else {
+                    location.hash = '#'+hash;
+                }
             });
         })
         .on('scroll.fndtn.magellan', self.throttle(this.check_for_arrivals.bind(this), settings.throttle_delay))
-        .on('resize.fndtn.magellan', self.throttle(this.set_expedition_position.bind(this), settings.throttle_delay));
+        $(window).on('resize.fndtn.magellan', self.throttle(this.set_expedition_position.bind(this), settings.throttle_delay));
     },
 
     check_for_arrivals : function() {
@@ -13187,7 +13701,7 @@ window.Modernizr = (function( window, document, undefined ) {
       $('[' + this.attr_name() + '=fixed]', self.scope).each(function() {
         var expedition = $(this),
             top_offset = expedition.data('magellan-top-offset');
-        
+
         if (window_top_offset >= top_offset) {
           // Placeholder allows height calculations to be consistent even when
           // appearing to switch between fixed/non-fixed placement
@@ -13233,13 +13747,13 @@ window.Modernizr = (function( window, document, undefined ) {
     offsets : function(expedition, window_offset) {
       var self = this,
           settings = expedition.data(self.attr_name(true) + '-init'),
-          viewport_offset = (window_offset + settings.destination_threshold);
+          viewport_offset = window_offset;
 
       return expedition.find('[' + self.add_namespace('data-magellan-arrival') + ']').map(function(idx, el) {
         var name = $(this).data(self.data_attr('magellan-arrival')),
             dest = $('[' + self.add_namespace('data-magellan-destination') + '=' + name + ']');
         if (dest.length > 0) {
-          var top_offset = dest.offset().top;
+          var top_offset = dest.offset().top - settings.destination_threshold - expedition.outerHeight();
           return {
             destination : dest,
             arrival : $(this),
@@ -13274,13 +13788,14 @@ window.Modernizr = (function( window, document, undefined ) {
     }
   };
 }(jQuery, this, this.document));
+
 ;(function ($, window, document, undefined) {
   'use strict';
 
   Foundation.libs.offcanvas = {
     name : 'offcanvas',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {},
 
@@ -13289,25 +13804,36 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     events : function () {
-      var S = this.S;
+      var self = this,
+          S = self.S;
 
       S(this.scope).off('.offcanvas')
         .on('click.fndtn.offcanvas', '.left-off-canvas-toggle', function (e) {
-          e.preventDefault();
-          S(this).closest('.off-canvas-wrap').toggleClass('move-right');
+          self.click_toggle_class(e, 'move-right');
         })
-        .on('click.fndtn.offcanvas', '.exit-off-canvas', function (e) {
-          e.preventDefault();
+        .on('click.fndtn.offcanvas', '.left-off-canvas-menu a', function (e) {
           S(".off-canvas-wrap").removeClass("move-right");
         })
         .on('click.fndtn.offcanvas', '.right-off-canvas-toggle', function (e) {
-          e.preventDefault();
-          S(this).closest(".off-canvas-wrap").toggleClass("move-left");
+          self.click_toggle_class(e, 'move-left');
+        })
+        .on('click.fndtn.offcanvas', '.right-off-canvas-menu a', function (e) {
+          S(".off-canvas-wrap").removeClass("move-left");
         })
         .on('click.fndtn.offcanvas', '.exit-off-canvas', function (e) {
-          e.preventDefault();
-          S(".off-canvas-wrap").removeClass("move-left");
-        });
+          self.click_remove_class(e, 'move-left');
+          self.click_remove_class(e, 'move-right');
+        })
+    },
+
+    click_toggle_class: function(e, class_name) {
+      e.preventDefault();
+      this.S(e.target).closest('.off-canvas-wrap').toggleClass(class_name);
+    },
+
+    click_remove_class: function(e, class_name) {
+      e.preventDefault();
+      this.S('.off-canvas-wrap').removeClass(class_name);
     },
 
     reflow : function () {}
@@ -13333,16 +13859,16 @@ window.Modernizr = (function( window, document, undefined ) {
         timer_container,
         idx = 0,
         animate,
-        timer,
-        locked = false,
-        adjust_height_after = false;
+        adjust_height_after = false,
+        has_init_active = slides_container.find("." + settings.active_slide_class).length > 0;
 
+    self.cache = {};
 
     self.slides = function() {
       return slides_container.children(settings.slide_selector);
     };
 
-    self.slides().first().addClass(settings.active_slide_class);
+    if (!has_init_active) {self.slides().first().addClass(settings.active_slide_class)};
 
     self.update_slide_number = function(index) {
       if (settings.slide_number) {
@@ -13356,7 +13882,7 @@ window.Modernizr = (function( window, document, undefined ) {
     };
 
     self.update_active_link = function(index) {
-      var link = $('a[data-orbit-link="'+self.slides().eq(index).attr('data-orbit-slide')+'"]');
+      var link = $('[data-orbit-link="'+self.slides().eq(index).attr('data-orbit-slide')+'"]');
       link.siblings().removeClass(settings.bullets_active_class);
       link.addClass(settings.bullets_active_class);
     };
@@ -13365,7 +13891,12 @@ window.Modernizr = (function( window, document, undefined ) {
       slides_container.wrap('<div class="'+settings.container_class+'"></div>');
       container = slides_container.parent();
       slides_container.addClass(settings.slides_container_class);
+      slides_container.addClass(settings.animation);
       
+      if (settings.stack_on_small) {
+        container.addClass(settings.stack_on_small_class);
+      }
+
       if (settings.navigation_arrows) {
         container.append($('<a href="#"><span></span></a>').addClass(settings.prev_class));
         container.append($('<a href="#"><span></span></a>').addClass(settings.next_class));
@@ -13374,7 +13905,9 @@ window.Modernizr = (function( window, document, undefined ) {
       if (settings.timer) {
         timer_container = $('<div>').addClass(settings.timer_container_class);
         timer_container.append('<span>');
-        timer_container.append($('<div>').addClass(settings.timer_progress_class));
+        if (settings.timer_show_progress_bar) {
+            timer_container.append($('<div>').addClass(settings.timer_progress_class));
+        }
         timer_container.addClass(settings.timer_paused_class);
         container.append(timer_container);
       }
@@ -13395,20 +13928,21 @@ window.Modernizr = (function( window, document, undefined ) {
         });
       }
 
-      if (settings.stack_on_small) {
-        container.addClass(settings.stack_on_small_class);
-      }
     };
 
-    self._goto = function(next_idx, start_timer) {
-      // if (locked) {return false;}
-      if (next_idx === idx) {return false;}
-      if (typeof timer === 'object') {timer.restart();}
-      var slides = self.slides();
-
+    self._prepare_direction = function(next_idx, current_direction) {
       var dir = 'next';
-      locked = true;
-      if (next_idx < idx) {dir = 'prev';}
+      if (next_idx <= idx) { dir = 'prev'; }
+      
+      if (settings.animation === 'slide') {    
+        setTimeout(function(){
+          slides_container.removeClass("swipe-prev swipe-next");
+          if (dir === 'next') {slides_container.addClass("swipe-next");}
+          else if (dir === 'prev') {slides_container.addClass("swipe-prev");}
+        },0);
+      }
+      
+      var slides = self.slides();
       if (next_idx >= slides.length) {
         if (!settings.circular) return false;
         next_idx = 0;
@@ -13416,26 +13950,48 @@ window.Modernizr = (function( window, document, undefined ) {
         if (!settings.circular) return false;
         next_idx = slides.length - 1;
       }
+      var current = $(slides.get(idx))
+        , next = $(slides.get(next_idx));
       
-      var current = $(slides.get(idx));
-      var next = $(slides.get(next_idx));
+      return [dir, current, next, next_idx];
+    };
 
-      current.css('zIndex', 2);
-      current.removeClass(settings.active_slide_class);
-      next.css('zIndex', 4).addClass(settings.active_slide_class);
+    self._goto = function(next_idx, start_timer) {
+      if (next_idx === null) {return false;}
+      if (self.cache.animating) {return false;}
+      if (next_idx === idx) {return false;}
+      if (typeof self.cache.timer === 'object') {self.cache.timer.restart();}
+      
+      var slides = self.slides();
+      self.cache.animating = true;
+      var res = self._prepare_direction(next_idx)
+        , dir = res[0]
+        , current = res[1]
+        , next = res[2]
+        , next_idx = res[3];
+
+      // This means that circular is disabled and we most likely reached the last slide.
+      if (res === false) return false;
 
       slides_container.trigger('before-slide-change.fndtn.orbit');
       settings.before_slide_change();
-      self.update_active_link(next_idx);
+      idx = next_idx;
+
+      current.css("transitionDuration", settings.animation_speed+"ms");
+      next.css("transitionDuration", settings.animation_speed+"ms");
       
       var callback = function() {
         var unlock = function() {
-          idx = next_idx;
-          locked = false;
-          if (start_timer === true) {timer = self.create_timer(); timer.start();}
+          if (start_timer === true) {self.cache.timer.restart();}
           self.update_slide_number(idx);
+          next.addClass(settings.active_slide_class);
+          self.update_active_link(next_idx);
           slides_container.trigger('after-slide-change.fndtn.orbit',[{slide_number: idx, total_slides: slides.length}]);
           settings.after_slide_change(idx, slides.length);
+          setTimeout(function(){
+            self.cache.animating = false;
+          }, 100);
+          
         };
         if (slides_container.height() != next.height() && settings.variable_height) {
           slides_container.animate({'height': next.height()}, 250, 'linear', unlock);
@@ -13461,13 +14017,19 @@ window.Modernizr = (function( window, document, undefined ) {
     self.next = function(e) {
       e.stopImmediatePropagation();
       e.preventDefault();
-      self._goto(idx + 1);
+      self._prepare_direction(idx + 1);
+      setTimeout(function(){
+        self._goto(idx + 1);
+    }, 100);
     };
     
     self.prev = function(e) {
       e.stopImmediatePropagation();
       e.preventDefault();
-      self._goto(idx - 1);
+      self._prepare_direction(idx - 1);
+      setTimeout(function(){
+        self._goto(idx - 1)
+      }, 100);
     };
 
     self.link_custom = function(e) {
@@ -13475,7 +14037,11 @@ window.Modernizr = (function( window, document, undefined ) {
       var link = $(this).attr('data-orbit-link');
       if ((typeof link === 'string') && (link = $.trim(link)) != "") {
         var slide = container.find('[data-orbit-slide='+link+']');
-        if (slide.index() != -1) {self._goto(slide.index());}
+        if (slide.index() != -1) {
+          setTimeout(function(){
+            self._goto(slide.index());
+          },100);
+        }
       }
     };
 
@@ -13485,11 +14051,17 @@ window.Modernizr = (function( window, document, undefined ) {
         if(isNaN(parseInt(index)))
         {
           var slide = container.find('[data-orbit-slide='+index+']');
-          if (slide.index() != -1) {self._goto(slide.index() + 1);}
+          if (slide.index() != -1) {
+            setTimeout(function(){
+              self._goto(slide.index() + 1);
+            },100);
+          }
         }
         else
         {
-          self._goto(parseInt(index));
+          setTimeout(function(){
+            self._goto(parseInt(index));
+          },100);
         }
       }
 
@@ -13520,71 +14092,114 @@ window.Modernizr = (function( window, document, undefined ) {
     };
 
     self.stop_timer = function() {
-      if (typeof timer === 'object') timer.stop();
+      if (typeof self.cache.timer === 'object') self.cache.timer.stop();
     };
 
     self.toggle_timer = function() {
       var t = container.find('.'+settings.timer_container_class);
       if (t.hasClass(settings.timer_paused_class)) {
-        if (typeof timer === 'undefined') {timer = self.create_timer();}
-        timer.start();     
+        if (typeof self.cache.timer === 'undefined') {self.cache.timer = self.create_timer();}
+        self.cache.timer.start();     
       }
       else {
-        if (typeof timer === 'object') {timer.stop();}
+        if (typeof self.cache.timer === 'object') {self.cache.timer.stop();}
       }
     };
 
     self.init = function() {
       self.build_markup();
       if (settings.timer) {
-        timer = self.create_timer(); 
-        Foundation.utils.image_loaded(this.slides().children('img'), timer.start);
+        self.cache.timer = self.create_timer(); 
+        Foundation.utils.image_loaded(this.slides().children('img'), self.cache.timer.start);
       }
-      animate = new FadeAnimation(settings, slides_container);
-      if (settings.animation === 'slide') 
-        animate = new SlideAnimation(settings, slides_container);        
+      
+      animate = new CSSAnimation(settings, slides_container);
+
+      if (has_init_active) {
+        var $init_target = slides_container.find("." + settings.active_slide_class),
+            animation_speed = settings.animation_speed;
+        settings.animation_speed = 1;
+        $init_target.removeClass('active');
+        self._goto($init_target.index());
+        settings.animation_speed = animation_speed;
+      }
+
       container.on('click', '.'+settings.next_class, self.next);
       container.on('click', '.'+settings.prev_class, self.prev);
-      container.on('click', '[data-orbit-slide]', self.link_bullet);
+
+      if (settings.next_on_click) {
+        container.on('click', '[data-orbit-slide]', self.link_bullet);
+      }
+      
       container.on('click', self.toggle_timer);
       if (settings.swipe) {
-        container.on('touchstart.fndtn.orbit', function(e) {
+        slides_container.on('touchstart.fndtn.orbit',function(e) {
+          if (self.cache.animating) {return;}
           if (!e.touches) {e = e.originalEvent;}
-          var data = {
-            start_page_x: e.touches[0].pageX,
-            start_page_y: e.touches[0].pageY,
-            start_time: (new Date()).getTime(),
-            delta_x: 0,
-            is_scrolling: undefined
-          };
-          container.data('swipe-transition', data);
+          e.preventDefault();
           e.stopPropagation();
+
+          self.cache.start_page_x = e.touches[0].pageX;
+          self.cache.start_page_y = e.touches[0].pageY;
+          self.cache.start_time = (new Date()).getTime();
+          self.cache.delta_x = 0;
+          self.cache.is_scrolling = null;
+          self.cache.direction = null;
+          
+          self.stop_timer(); // does not appear to prevent callback from occurring          
         })
-        .on('touchmove.fndtn.orbit', function(e) {
-          if (!e.touches) { e = e.originalEvent; }
-          // Ignore pinch/zoom events
-          if(e.touches.length > 1 || e.scale && e.scale !== 1) return;
-
-          var data = container.data('swipe-transition');
-          if (typeof data === 'undefined') {data = {};}
-
-          data.delta_x = e.touches[0].pageX - data.start_page_x;
-
-          if ( typeof data.is_scrolling === 'undefined') {
-            data.is_scrolling = !!( data.is_scrolling || Math.abs(data.delta_x) < Math.abs(e.touches[0].pageY - data.start_page_y) );
-          }
-
-          if (!data.is_scrolling && !data.active) {
+        .on('touchmove.fndtn.orbit',function(e) {
+          if (Math.abs(self.cache.delta_x) > 5) {
             e.preventDefault();
-            var direction = (data.delta_x < 0) ? (idx+1) : (idx-1);
-            data.active = true;
-            self._goto(direction);
+            e.stopPropagation();
           }
+
+          if (self.cache.animating) {return;}          
+          requestAnimationFrame(function(){
+            if (!e.touches) { e = e.originalEvent; }
+
+            // Ignore pinch/zoom events
+            if(e.touches.length > 1 || e.scale && e.scale !== 1) return;
+
+            self.cache.delta_x = e.touches[0].pageX - self.cache.start_page_x;
+
+            if (self.cache.is_scrolling === null) {
+              self.cache.is_scrolling = !!( self.cache.is_scrolling || Math.abs(self.cache.delta_x) < Math.abs(e.touches[0].pageY - self.cache.start_page_y) );
+            }
+
+            if (self.cache.is_scrolling) {
+              return;
+            }
+            
+            var direction = (self.cache.delta_x < 0) ? (idx+1) : (idx-1);
+            if (self.cache.direction !== direction) {
+              var res = self._prepare_direction(direction);
+              self.cache.direction = direction;
+              self.cache.dir = res[0];
+              self.cache.current = res[1];
+              self.cache.next = res[2];
+            }
+
+            if (settings.animation === 'slide') {
+              var offset, next_offset;
+              
+              offset = (self.cache.delta_x / container.width()) * 100;
+              if (offset >= 0) {next_offset = -(100 - offset);}
+              else {next_offset = 100 + offset;}
+
+              self.cache.current.css("transform","translate3d("+offset+"%,0,0)");
+              self.cache.next.css("transform","translate3d("+next_offset+"%,0,0)");
+            }
+          });
         })
         .on('touchend.fndtn.orbit', function(e) {
-          container.data('swipe-transition', {});
+          if (self.cache.animating) {return;}
+          e.preventDefault();
           e.stopPropagation();
-        })
+          setTimeout(function(){
+            self._goto(self.cache.direction);
+          }, 50);
+        });
       }
       container.on('mouseenter.fndtn.orbit', function(e) {
         if (settings.timer && settings.pause_on_hover) {
@@ -13593,17 +14208,18 @@ window.Modernizr = (function( window, document, undefined ) {
       })
       .on('mouseleave.fndtn.orbit', function(e) {
         if (settings.timer && settings.resume_on_mouseout) {
-          timer.start();
+          self.cache.timer.start();
         }
       });
       
       $(document).on('click', '[data-orbit-link]', self.link_custom);
-      $(window).on('resize', self.compute_dimensions);
-      Foundation.utils.image_loaded(this.slides().children('img'), self.compute_dimensions);
-      Foundation.utils.image_loaded(this.slides().children('img'), function() {
-        container.prev('.preloader').css('display', 'none');
-        self.update_slide_number(0);
-        self.update_active_link(0);
+      $(window).on('load resize', self.compute_dimensions);
+      var children = this.slides().find('img');
+      Foundation.utils.image_loaded(children, self.compute_dimensions);
+      Foundation.utils.image_loaded(children, function() {
+        container.prev('.'+settings.preloader_class).css('display', 'none');
+        self.update_slide_number(idx);
+        self.update_active_link(idx);
         slides_container.trigger('ready.fndtn.orbit');
       });
     };
@@ -13615,6 +14231,7 @@ window.Modernizr = (function( window, document, undefined ) {
     var self = this,
         duration = settings.timer_speed,
         progress = el.find('.'+settings.timer_progress_class),
+        do_progress = progress && progress.css('display') != 'none',
         start, 
         timeout,
         left = -1;
@@ -13631,15 +14248,18 @@ window.Modernizr = (function( window, document, undefined ) {
       clearTimeout(timeout);
       el.addClass(settings.timer_paused_class);
       left = -1;
-      self.update_progress(0);
+      if (do_progress) {self.update_progress(0);}
+      self.start();
     };
 
     this.start = function() {
       if (!el.hasClass(settings.timer_paused_class)) {return true;}
       left = (left === -1) ? duration : left;
       el.removeClass(settings.timer_paused_class);
-      start = new Date().getTime();
-      progress.animate({'width': '100%'}, left, 'linear');
+      if (do_progress) {
+          start = new Date().getTime();
+          progress.animate({'width': '100%'}, left, 'linear');
+      }
       timeout = setTimeout(function() {
         self.restart();
         callback();
@@ -13651,58 +14271,103 @@ window.Modernizr = (function( window, document, undefined ) {
       if (el.hasClass(settings.timer_paused_class)) {return true;}
       clearTimeout(timeout);
       el.addClass(settings.timer_paused_class);
-      var end = new Date().getTime();
-      left = left - (end - start);
-      var w = 100 - ((left / duration) * 100);
-      self.update_progress(w);
+      if (do_progress) {
+          var end = new Date().getTime();
+          left = left - (end - start);
+          var w = 100 - ((left / duration) * 100);
+          self.update_progress(w);
+      }
       el.trigger('timer-stopped.fndtn.orbit');
     };
   };
-  
-  var SlideAnimation = function(settings, container) {
-    var duration = settings.animation_speed;
-    var is_rtl = ($('html[dir=rtl]').length === 1);
-    var margin = is_rtl ? 'marginRight' : 'marginLeft';
-    var animMargin = {};
-    animMargin[margin] = '0%';
+
+  var CSSAnimation = function(settings, container) {
+    var animation_end = "webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend";
 
     this.next = function(current, next, callback) {
-      current.animate({marginLeft:'-100%'}, duration);
-      next.animate(animMargin, duration, function() {
-        current.css(margin, '100%');
-        callback();
+      if (Modernizr.csstransitions) {
+        next.on(animation_end, function(e){
+          next.unbind(animation_end);
+          current.removeClass("active animate-out");
+          next.removeClass("animate-in");
+          container.children().css({
+            "transform":"",
+            "-ms-transform":"",
+            "-webkit-transition-duration":"",
+            "-moz-transition-duration": "",
+            "-o-transition-duration": "",
+            "transition-duration":""
+          });
+          callback();
+        });
+      } else {
+        setTimeout(function(){
+          current.removeClass("active animate-out");
+          next.removeClass("animate-in");
+          container.children().css({
+            "transform":"",
+            "-ms-transform":"",
+            "-webkit-transition-duration":"",
+            "-moz-transition-duration": "",
+            "-o-transition-duration": "",
+            "transition-duration":""
+          });
+          callback();
+        }, settings.animation_speed);
+      }
+      container.children().css({
+        "transform":"",
+        "-ms-transform":"",
+        "-webkit-transition-duration":"",
+        "-moz-transition-duration": "",
+        "-o-transition-duration": "",
+        "transition-duration":""
       });
+      current.addClass("animate-out");
+      next.addClass("animate-in");
     };
 
     this.prev = function(current, prev, callback) {
-      current.animate({marginLeft:'100%'}, duration);
-      prev.css(margin, '-100%');
-      prev.animate(animMargin, duration, function() {
-        current.css(margin, '100%');
-        callback();
+      if (Modernizr.csstransitions) {
+        prev.on(animation_end, function(e){
+          prev.unbind(animation_end);
+          current.removeClass("active animate-out");
+          prev.removeClass("animate-in");
+          container.children().css({
+            "transform":"",
+            "-ms-transform":"",
+            "-webkit-transition-duration":"",
+            "-moz-transition-duration": "",
+            "-o-transition-duration": "",
+            "transition-duration":""
+          });
+          callback();
+        });
+      } else {
+        setTimeout(function(){
+          current.removeClass("active animate-out");
+          prev.removeClass("animate-in");
+          container.children().css({
+            "transform":"",
+            "-ms-transform":"",
+            "-webkit-transition-duration":"",
+            "-moz-transition-duration": "",
+            "-o-transition-duration": "",
+            "transition-duration":""
+          });
+          callback();
+        }, settings.animation_speed);
+      }
+      container.children().css({
+        "transform":"",
+        "-ms-transform":"",
+        "-webkit-transition-duration":"",
+        "-moz-transition-duration": "",
+        "-o-transition-duration": "",
+        "transition-duration":""
       });
-    };
-  };
-
-  var FadeAnimation = function(settings, container) {
-    var duration = settings.animation_speed;
-    var is_rtl = ($('html[dir=rtl]').length === 1);
-    var margin = is_rtl ? 'marginRight' : 'marginLeft';
-
-    this.next = function(current, next, callback) {
-      next.css({'margin':'0%', 'opacity':'0.01'});
-      next.animate({'opacity':'1'}, duration, 'linear', function() {
-        current.css('margin', '100%');
-        callback();
-      });
-    };
-
-    this.prev = function(current, prev, callback) {
-      prev.css({'margin':'0%', 'opacity':'0.01'});
-      prev.animate({'opacity':'1'}, duration, 'linear', function() {
-        current.css('margin', '100%');
-        callback();
-      });
+      current.addClass("animate-out");
+      prev.addClass("animate-in");
     };
   };
 
@@ -13712,13 +14377,14 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.orbit = {
     name: 'orbit',
 
-    version: '5.1.1',
+    version: '5.2.2',
 
     settings: {
       animation: 'slide',
       timer_speed: 10000,
       pause_on_hover: true,
       resume_on_mouseout: false,
+      next_on_click: true,
       animation_speed: 500,
       stack_on_small: false,
       navigation_arrows: true,
@@ -13731,7 +14397,9 @@ window.Modernizr = (function( window, document, undefined ) {
       timer_container_class: 'orbit-timer',
       timer_paused_class: 'paused',
       timer_progress_class: 'orbit-progress',
+      timer_show_progress_bar: true,
       slides_container_class: 'orbit-slides-container',
+      preloader_class: 'preloader',
       slide_selector: '*',
       bullets_container_class: 'orbit-bullets',
       bullets_active_class: 'active',
@@ -13785,7 +14453,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.reveal = {
     name : 'reveal',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     locked : false,
 
@@ -13846,7 +14514,7 @@ window.Modernizr = (function( window, document, undefined ) {
         });
 
       S(document)
-        .on('click.fndtn.reveal', this.close_targets(), function (e) {
+        .on('touchend.fndtn.reveal click.fndtn.reveal', this.close_targets(), function (e) {
 
           e.preventDefault();
 
@@ -13854,8 +14522,12 @@ window.Modernizr = (function( window, document, undefined ) {
             var settings = S('[' + self.attr_name() + '].open').data(self.attr_name(true) + '-init'),
                 bg_clicked = S(e.target)[0] === S('.' + settings.bg_class)[0];
 
-            if (bg_clicked && !settings.close_on_background_click) {
-              return;
+            if (bg_clicked) {
+              if (settings.close_on_background_click) {
+                e.stopPropagation();
+              } else {
+                return;
+              }
             }
 
             self.locked = true;
@@ -13949,8 +14621,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
         if (typeof ajax_settings === 'undefined' || !ajax_settings.url) {
           if (open_modal.length > 0) {
-            var open_modal_settings = open_modal.data(self.attr_name(true) + '-init');
-            this.hide(open_modal, open_modal_settings.css.close);
+            this.hide(open_modal, settings.css.close);
           }
 
           this.show(modal, settings.css.open);
@@ -13967,8 +14638,7 @@ window.Modernizr = (function( window, document, undefined ) {
               self.S(modal).foundation('section', 'reflow');
 
               if (open_modal.length > 0) {
-                var open_modal_settings = open_modal.data(self.attr_name(true));
-                self.hide(open_modal, open_modal_settings.css.close);
+                self.hide(open_modal, settings.css.close);
               }
               self.show(modal, settings.css.open);
             }
@@ -14008,7 +14678,7 @@ window.Modernizr = (function( window, document, undefined ) {
 
       if (this.S('.' + this.settings.bg_class).length === 0) {
         this.settings.bg = $('<div />', {'class': this.settings.bg_class})
-          .appendTo('body');
+          .appendTo('body').hide();
       }
 
       if (this.settings.bg.filter(':visible').length > 0) {
@@ -14034,7 +14704,11 @@ window.Modernizr = (function( window, document, undefined ) {
           el.detach().appendTo(rootElement);
         }
 
-        if (/pop/i.test(settings.animation)) {
+        var animData = getAnimationData(settings.animation);
+        if (!animData.animate) {
+          this.locked = false;
+        }
+        if (animData.pop) {
           css.top = $(window).scrollTop() - el.data('offset') + 'px';
           var end_css = {
             top: $(window).scrollTop() + el.data('css-top') + 'px',
@@ -14052,7 +14726,8 @@ window.Modernizr = (function( window, document, undefined ) {
           }.bind(this), settings.animation_speed / 2);
         }
 
-        if (/fade/i.test(settings.animation)) {
+        if (animData.fade) {
+          css.top = $(window).scrollTop() + el.data('css-top') + 'px';
           var end_css = {opacity: 1};
 
           return setTimeout(function () {
@@ -14072,7 +14747,7 @@ window.Modernizr = (function( window, document, undefined ) {
       var settings = this.settings;
 
       // should we animate the background?
-      if (/fade/i.test(settings.animation)) {
+      if (getAnimationData(settings.animation).fade) {
         return el.fadeIn(settings.animation_speed / 2);
       }
 
@@ -14085,7 +14760,11 @@ window.Modernizr = (function( window, document, undefined ) {
       // is modal
       if (css) {
         var settings = el.data(this.attr_name(true) + '-init');
-        if (/pop/i.test(settings.animation)) {
+        var animData = getAnimationData(settings.animation);
+        if (!animData.animate) {
+          this.locked = false;
+        }
+        if (animData.pop) {
           var end_css = {
             top: - $(window).scrollTop() - el.data('offset') + 'px',
             opacity: 0
@@ -14101,7 +14780,7 @@ window.Modernizr = (function( window, document, undefined ) {
           }.bind(this), settings.animation_speed / 2);
         }
 
-        if (/fade/i.test(settings.animation)) {
+        if (animData.fade) {
           var end_css = {opacity: 0};
 
           return setTimeout(function () {
@@ -14120,7 +14799,7 @@ window.Modernizr = (function( window, document, undefined ) {
       var settings = this.settings;
 
       // should we animate the background?
-      if (/fade/i.test(settings.animation)) {
+      if (getAnimationData(settings.animation).fade) {
         return el.fadeOut(settings.animation_speed / 2);
       }
 
@@ -14177,6 +14856,224 @@ window.Modernizr = (function( window, document, undefined ) {
 
     reflow : function () {}
   };
+
+  /*
+   * getAnimationData('popAndFade') // {animate: true,  pop: true,  fade: true}
+   * getAnimationData('fade')       // {animate: true,  pop: false, fade: true}
+   * getAnimationData('pop')        // {animate: true,  pop: true,  fade: false}
+   * getAnimationData('foo')        // {animate: false, pop: false, fade: false}
+   * getAnimationData(null)         // {animate: false, pop: false, fade: false}
+   */
+  function getAnimationData(str) {
+    var fade = /fade/i.test(str);
+    var pop = /pop/i.test(str);
+    return {
+      animate: fade || pop,
+      pop: pop,
+      fade: fade
+    };
+  }
+}(jQuery, this, this.document));
+
+;(function ($, window, document, undefined) {
+  'use strict';
+
+  Foundation.libs.slider = {
+    name : 'slider',
+
+    version : '5.2.2',
+
+    settings: {
+      start: 0,
+      end: 100,
+      step: 1,
+      initial: null,
+      display_selector: '',
+      on_change: function(){}
+    },
+
+    cache : {},
+
+    init : function (scope, method, options) {
+      Foundation.inherit(this,'throttle');
+      this.bindings(method, options);
+      this.reflow();
+    },
+
+    events : function() {
+      var self = this;
+
+      $(this.scope)
+        .off('.slider')
+        .on('mousedown.fndtn.slider touchstart.fndtn.slider pointerdown.fndtn.slider',
+        '[' + self.attr_name() + '] .range-slider-handle', function(e) {
+          if (!self.cache.active) {
+            e.preventDefault();
+            self.set_active_slider($(e.target));
+          }
+        })
+        .on('mousemove.fndtn.slider touchmove.fndtn.slider pointermove.fndtn.slider', function(e) {
+          if (!!self.cache.active) {
+            e.preventDefault();
+            self.calculate_position(self.cache.active, e.pageX || e.originalEvent.clientX || e.originalEvent.touches[0].clientX || e.currentPoint.x);
+          }
+        })
+        .on('mouseup.fndtn.slider touchend.fndtn.slider pointerup.fndtn.slider', function(e) {
+          self.remove_active_slider();
+        })
+        .on('change.fndtn.slider', function(e) {
+          self.settings.on_change();
+        });
+
+      self.S(window)
+        .on('resize.fndtn.slider', self.throttle(function(e) {
+          self.reflow();
+        }, 300));
+    },
+
+    set_active_slider : function($handle) {
+      this.cache.active = $handle;
+    },
+
+    remove_active_slider : function() {
+      this.cache.active = null;
+    },
+
+    calculate_position : function($handle, cursor_x) {
+      var self = this,
+          settings = $.extend({}, self.settings, self.data_options($handle.parent())),
+          handle_w = $.data($handle[0], 'handle_w'),
+          handle_o = $.data($handle[0], 'handle_o'),
+          bar_w = $.data($handle[0], 'bar_w'),
+          bar_o = $.data($handle[0], 'bar_o');
+
+      requestAnimationFrame(function(){
+        var pct;
+
+        if (Foundation.rtl) {
+          pct = self.limit_to(((bar_o+bar_w-cursor_x)/bar_w),0,1);
+        } else {
+          pct = self.limit_to(((cursor_x-bar_o)/bar_w),0,1);
+        }
+
+        var norm = self.normalized_value(pct, settings.start, settings.end, settings.step);
+
+        self.set_ui($handle, norm);
+      });
+    },
+
+    set_ui : function($handle, value) {
+      var settings = $.extend({}, this.settings, this.data_options($handle.parent())),
+          handle_w = $.data($handle[0], 'handle_w'),
+          bar_w = $.data($handle[0], 'bar_w'),
+          norm_pct = this.normalized_percentage(value, settings.start, settings.end),
+          handle_offset = norm_pct*(bar_w-handle_w)-1,
+          progress_bar_width = norm_pct*100;
+
+      if (Foundation.rtl) {
+        handle_offset = -handle_offset;
+      }
+
+      this.set_translate($handle, handle_offset);
+      $handle.siblings('.range-slider-active-segment').css('width', progress_bar_width+'%');
+
+      $handle.parent().attr(this.attr_name(), value);
+      $handle.parent().trigger('change');
+
+      $handle.parent().children('input[type=hidden]').val(value);
+
+      if (settings.input_id != '') {
+        $(settings.display_selector).each(function(){
+          if (this.hasOwnProperty('value')) {
+            $(this).val(value);
+          } else {
+            $(this).text(value);
+          }
+        });
+      }
+
+    },
+
+    normalized_percentage : function(val, start, end) {
+      return (val - start)/(end - start);
+    },
+
+    normalized_value : function(val, start, end, step) {
+      var range = end - start,
+          step = step,
+          point = val*range,
+          mod = (point-(point%step)) / step,
+          rem = point % step,
+          round = ( rem >= step*0.5 ? step : 0);
+      return (mod*step + round) + start;
+    },
+
+    set_translate : function(ele, offset, vertical) {
+      if (vertical) {
+        $(ele)
+          .css('-webkit-transform', 'translateY('+offset+'px)')
+          .css('-moz-transform', 'translateY('+offset+'px)')
+          .css('-ms-transform', 'translateY('+offset+'px)')
+          .css('-o-transform', 'translateY('+offset+'px)')
+          .css('transform', 'translateY('+offset+'px)');
+      } else {
+        $(ele)
+          .css('-webkit-transform', 'translateX('+offset+'px)')
+          .css('-moz-transform', 'translateX('+offset+'px)')
+          .css('-ms-transform', 'translateX('+offset+'px)')
+          .css('-o-transform', 'translateX('+offset+'px)')
+          .css('transform', 'translateX('+offset+'px)');
+      }
+    },
+
+    limit_to : function(val, min, max) {
+      return Math.min(Math.max(val, min), max);
+    },
+
+    initialize_settings : function(handle) {
+      $.data(handle, 'bar', $(handle).parent());
+      $.data(handle, 'bar_o', $(handle).parent().offset().left);
+      $.data(handle, 'bar_w', $(handle).parent().outerWidth());
+      $.data(handle, 'handle_o', $(handle).offset().left);
+      $.data(handle, 'handle_w', $(handle).outerWidth());
+      $.data(handle, 'settings', $.extend({}, this.settings, this.data_options($(handle).parent())));
+    },
+
+    set_initial_position : function($ele) {
+      var settings = $.data($ele.children('.range-slider-handle')[0], 'settings'),
+          initial = (!!settings.initial ? settings.initial : Math.floor((settings.end-settings.start)*0.5/settings.step)*settings.step+settings.start),
+          $handle = $ele.children('.range-slider-handle');
+      this.set_ui($handle, initial);
+    },
+
+    set_value : function(value) {
+      var self = this;
+      $('[' + self.attr_name() + ']', this.scope).each(function(){
+        $(this).attr(self.attr_name(), value);
+      });
+      if (!!$(this.scope).attr(self.attr_name())) {
+        $(this.scope).attr(self.attr_name(), value);
+      }
+      self.reflow();
+    },
+
+    reflow : function() {
+      var self = this;
+      self.S('[' + this.attr_name() + ']').each(function() {
+        var handle = $(this).children('.range-slider-handle')[0],
+            val = $(this).attr(self.attr_name());
+        self.initialize_settings(handle);
+
+        if (val) {
+          self.set_ui($(handle), parseFloat(val));
+        } else {
+          self.set_initial_position($(this));
+        }
+      });
+    }
+
+  };
+
 }(jQuery, this, this.document));
 
 /*jslint unparam: true, browser: true, indent: 2 */
@@ -14186,42 +15083,152 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.tab = {
     name : 'tab',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       active_class: 'active',
-      callback : function () {}
+      callback : function () {},
+      deep_linking: false,
+      scroll_to_content: true,
+      is_hover: false
     },
 
+    default_tab_hashes: [],
+
     init : function (scope, method, options) {
+      var self = this,
+          S = this.S;
+
       this.bindings(method, options);
+      this.handle_location_hash_change();
+
+      // Store the default active tabs which will be referenced when the
+      // location hash is absent, as in the case of navigating the tabs and
+      // returning to the first viewing via the browser Back button.
+      S('[' + this.attr_name() + '] > dd.active > a', this.scope).each(function () {
+        self.default_tab_hashes.push(this.hash);
+      });
     },
 
     events : function () {
       var self = this,
           S = this.S;
 
-      S(this.scope).off('.tab').on('click.fndtn.tab', '[' + this.attr_name() + '] > dd > a', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
+      S(this.scope)
+        .off('.tab')
+        // Click event: tab title
+        .on('click.fndtn.tab', '[' + this.attr_name() + '] > dd > a', function (e) {
+          var settings = S(this).closest('[' + self.attr_name() +']').data(self.attr_name(true) + '-init');
+          if (!settings.is_hover || Modernizr.touch) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.toggle_active_tab(S(this).parent());
+          }
+        })
+        // Hover event: tab title
+        .on('mouseenter.fndtn.tab', '[' + this.attr_name() + '] > dd > a', function (e) {
+          var settings = S(this).closest('[' + self.attr_name() +']').data(self.attr_name(true) + '-init');
+          if (settings.is_hover) self.toggle_active_tab(S(this).parent());
+        });
 
-        var tab = S(this).parent(),
-            tabs = tab.closest('[' + self.attr_name() + ']'),
-            target = S('#' + this.href.split('#')[1]),
-            siblings = tab.siblings(),
-            settings = tabs.data(self.attr_name(true) + '-init');
-        
-        // allow usage of data-tab-content attribute instead of href
-        if (S(this).data(self.data_attr('tab-content'))) {
-          target = S('#' + S(this).data(self.data_attr('tab-content')).split('#')[1]);
-        }
-        
-        tab.addClass(settings.active_class).triggerHandler('opened');
-        siblings.removeClass(settings.active_class);
-        target.siblings().removeClass(settings.active_class).end().addClass(settings.active_class);
-        settings.callback(tab);
-        tabs.triggerHandler('toggled', [tab]);
+      // Location hash change event
+      S(window).on('hashchange.fndtn.tab', function (e) {
+        e.preventDefault();
+        self.handle_location_hash_change();
       });
+    },
+
+    handle_location_hash_change : function () {
+      var self = this,
+          S = this.S;
+
+      S('[' + this.attr_name() + ']', this.scope).each(function () {
+        var settings = S(this).data(self.attr_name(true) + '-init');
+        if (settings.deep_linking) {
+          // Match the location hash to a label
+          var hash = self.scope.location.hash;
+          if (hash != '') {
+            // Check whether the location hash references a tab content div or
+            // another element on the page (inside or outside the tab content div)
+            var hash_element = S(hash);
+            if (hash_element.hasClass('content') && hash_element.parent().hasClass('tab-content')) {
+              // Tab content div
+              self.toggle_active_tab($('[' + self.attr_name() + '] > dd > a[href=' + hash + ']').parent());
+            } else {
+              // Not the tab content div. If inside the tab content, find the
+              // containing tab and toggle it as active.
+              var hash_tab_container_id = hash_element.closest('.content').attr('id');
+              if (hash_tab_container_id != undefined) {
+                self.toggle_active_tab($('[' + self.attr_name() + '] > dd > a[href=#' + hash_tab_container_id + ']').parent(), hash);
+              }
+            }
+          } else {
+            // Reference the default tab hashes which were initialized in the init function
+            for (var ind in self.default_tab_hashes) {
+              self.toggle_active_tab($('[' + self.attr_name() + '] > dd > a[href=' + self.default_tab_hashes[ind] + ']').parent());
+            }
+          }
+        }
+       });
+     },
+
+    toggle_active_tab: function (tab, location_hash) {
+      var S = this.S,
+          tabs = tab.closest('[' + this.attr_name() + ']'),
+          anchor = tab.children('a').first(),
+          target_hash = '#' + anchor.attr('href').split('#')[1],
+          target = S(target_hash),
+          siblings = tab.siblings(),
+          settings = tabs.data(this.attr_name(true) + '-init');
+
+      // allow usage of data-tab-content attribute instead of href
+      if (S(this).data(this.data_attr('tab-content'))) {
+        target_hash = '#' + S(this).data(this.data_attr('tab-content')).split('#')[1];
+        target = S(target_hash);
+      }
+
+      if (settings.deep_linking) {
+        // Get the scroll Y position prior to moving to the hash ID
+        var cur_ypos = $('body,html').scrollTop();
+
+        // Update the location hash to preserve browser history
+        // Note that the hash does not need to correspond to the
+        // tab content ID anchor; it can be an ID inside or outside of the tab
+        // content div.
+        if (location_hash != undefined) {
+          window.location.hash = location_hash;
+        } else {
+          window.location.hash = target_hash;
+        }
+
+        if (settings.scroll_to_content) {
+          // If the user is requesting the content of a tab, then scroll to the
+          // top of the title area; otherwise, scroll to the element within
+          // the content area as defined by the hash value.
+          if (location_hash == undefined || location_hash == target_hash) {
+            tab.parent()[0].scrollIntoView();
+          } else {
+            S(target_hash)[0].scrollIntoView();
+          }
+        } else {
+          // Adjust the scrollbar to the Y position prior to setting the hash
+          // Only do this for the tab content anchor, otherwise there will be
+          // conflicts with in-tab anchor links nested in the tab-content div
+          if (location_hash == undefined || location_hash == target_hash) {
+            $('body,html').scrollTop(cur_ypos);
+          }
+        }
+      }
+
+      // WARNING: The activation and deactivation of the tab content must
+      // occur after the deep linking in order to properly refresh the browser
+      // window (notably in Chrome).
+      tab.addClass(settings.active_class).triggerHandler('opened');
+      siblings.removeClass(settings.active_class);
+      target.siblings().removeClass(settings.active_class).end().addClass(settings.active_class);
+      settings.callback(tab);
+      target.triggerHandler('toggled', [tab]);
+      tabs.triggerHandler('toggled', [target]);
     },
 
     data_attr: function (str) {
@@ -14244,7 +15251,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.tooltip = {
     name : 'tooltip',
 
-    version : '5.1.1',
+    version : '5.2.2',
 
     settings : {
       additional_inheritable_classes : [],
@@ -14254,8 +15261,8 @@ window.Modernizr = (function( window, document, undefined ) {
       disable_for_touch: false,
       hover_delay: 200,
       tip_template : function (selector, content) {
-        return '<span data-selector="' + selector + '" class="' 
-          + Foundation.libs.tooltip.settings.tooltip_class.substring(1) 
+        return '<span data-selector="' + selector + '" class="'
+          + Foundation.libs.tooltip.settings.tooltip_class.substring(1)
           + '">' + content + '<span class="nub"></span></span>';
       }
     },
@@ -14267,62 +15274,85 @@ window.Modernizr = (function( window, document, undefined ) {
       this.bindings(method, options);
     },
 
-    events : function () {
+    events : function (instance) {
       var self = this,
           S = self.S;
 
-      if (Modernizr.touch) {
-        S(document)
-          .off('.tooltip')
-          .on('click.fndtn.tooltip touchstart.fndtn.tooltip touchend.fndtn.tooltip', 
-            '[' + this.attr_name() + ']:not(a)', function (e) {
-            var settings = $.extend({}, self.settings, self.data_options(S(this)));
-            if (!settings.disable_for_touch) {
+      self.create(this.S(instance));
+
+      $(this.scope)
+        .off('.tooltip')
+        .on('mouseenter.fndtn.tooltip mouseleave.fndtn.tooltip touchstart.fndtn.tooltip MSPointerDown.fndtn.tooltip',
+          '[' + this.attr_name() + ']', function (e) {
+          var $this = S(this),
+              settings = $.extend({}, self.settings, self.data_options($this)),
+              is_touch = false;
+
+          if (Modernizr.touch && /touchstart|MSPointerDown/i.test(e.type) && S(e.target).is('a')) {
+            return false;
+          }
+
+          if (/mouse/i.test(e.type) && self.ie_touch(e)) return false;
+
+          if ($this.hasClass('open')) {
+            if (Modernizr.touch && /touchstart|MSPointerDown/i.test(e.type)) e.preventDefault();
+            self.hide($this);
+          } else {
+            if (settings.disable_for_touch && Modernizr.touch && /touchstart|MSPointerDown/i.test(e.type)) {
+              return;
+            } else if(!settings.disable_for_touch && Modernizr.touch && /touchstart|MSPointerDown/i.test(e.type)) {
               e.preventDefault();
-              S(settings.tooltip_class).hide();
-              self.showOrCreateTip(S(this));
+              S(settings.tooltip_class + '.open').hide();
+              is_touch = true;
             }
-          })
-          .on('click.fndtn.tooltip touchstart.fndtn.tooltip touchend.fndtn.tooltip', 
-            this.settings.tooltip_class, function (e) {
-            e.preventDefault();
-            S(this).fadeOut(150);
-          });
-      } else {
-        S(document)
-          .off('.tooltip')
-          .on('mouseenter.fndtn.tooltip mouseleave.fndtn.tooltip', 
-            '[' + this.attr_name() + ']', function (e) {
-            var $this = S(this);
 
             if (/enter|over/i.test(e.type)) {
               this.timer = setTimeout(function () {
-                var tip = self.showOrCreateTip($this);
+                var tip = self.showTip($this);
               }.bind(this), self.settings.hover_delay);
             } else if (e.type === 'mouseout' || e.type === 'mouseleave') {
               clearTimeout(this.timer);
               self.hide($this);
+            } else {
+              self.showTip($this);
             }
-          });
-      }
+          }
+        })
+        .on('mouseleave.fndtn.tooltip touchstart.fndtn.tooltip MSPointerDown.fndtn.tooltip', '[' + this.attr_name() + '].open', function (e) {
+          if (/mouse/i.test(e.type) && self.ie_touch(e)) return false;
+
+          if($(this).data('tooltip-open-event-type') == 'touch' && e.type == 'mouseleave') {
+            return;
+          }
+          else if($(this).data('tooltip-open-event-type') == 'mouse' && /MSPointerDown|touchstart/i.test(e.type)) {
+            self.convert_to_touch($(this));
+          } else {
+            self.hide($(this));
+          }
+        })
+        .on('DOMNodeRemoved DOMAttrModified', '[' + this.attr_name() + ']:not(a)', function (e) {
+          self.hide(S(this));
+        });
     },
 
-    showOrCreateTip : function ($target) {
+    ie_touch : function (e) {
+      // How do I distinguish between IE11 and Windows Phone 8?????
+      return false;
+    },
+
+    showTip : function ($target) {
       var $tip = this.getTip($target);
 
-      if ($tip && $tip.length > 0) {
         return this.show($target);
-      }
-
-      return this.create($target);
     },
 
     getTip : function ($target) {
       var selector = this.selector($target),
+          settings = $.extend({}, this.settings, this.data_options($target)),
           tip = null;
 
       if (selector) {
-        tip = this.S('span[data-selector="' + selector + '"]' + this.settings.tooltip_class);
+        tip = this.S('span[data-selector="' + selector + '"]' + settings.tooltip_class);
       }
 
       return (typeof tip === 'object') ? tip : false;
@@ -14333,7 +15363,7 @@ window.Modernizr = (function( window, document, undefined ) {
           dataSelector = $target.attr(this.attr_name()) || $target.attr('data-selector');
 
       if ((id && id.length < 1 || !id) && typeof dataSelector != 'string') {
-        dataSelector = 'tooltip' + this.random_str(6);
+        dataSelector = this.random_str(6);
         $target.attr('data-selector', dataSelector);
       }
 
@@ -14341,15 +15371,27 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     create : function ($target) {
-      var $tip = $(this.settings.tip_template(this.selector($target), $('<div></div>').html($target.attr('title')).html())),
+      var self = this,
+          settings = $.extend({}, this.settings, this.data_options($target)),
+          tip_template = this.settings.tip_template;
+
+      if (typeof settings.tip_template === 'string' && window.hasOwnProperty(settings.tip_template)) {
+        tip_template = window[settings.tip_template];
+      }
+
+      var $tip = $(tip_template(this.selector($target), $('<div></div>').html($target.attr('title')).html())),
           classes = this.inheritable_classes($target);
 
-      $tip.addClass(classes).appendTo(this.settings.append_to);
+      $tip.addClass(classes).appendTo(settings.append_to);
+
       if (Modernizr.touch) {
-        $tip.append('<span class="tap-to-close">'+this.settings.touch_close_text+'</span>');
+        $tip.append('<span class="tap-to-close">'+settings.touch_close_text+'</span>');
+        $tip.on('touchstart.fndtn.tooltip MSPointerDown.fndtn.tooltip', function(e) {
+          self.hide($target);
+        });
       }
+
       $target.removeAttr('title').attr('title','');
-      this.show($target);
     },
 
     reposition : function (target, tip, classes) {
@@ -14362,45 +15404,47 @@ window.Modernizr = (function( window, document, undefined ) {
       nubHeight = nub.outerHeight();
       nubWidth = nub.outerHeight();
 
-      if(this.small()) {
+      if (this.small()) {
         tip.css({'width' : '100%' });
       } else {
         tip.css({'width' : (width) ? width : 'auto'});
       }
-      
+
       objPos = function (obj, top, right, bottom, left, width) {
         return obj.css({
           'top' : (top) ? top : 'auto',
           'bottom' : (bottom) ? bottom : 'auto',
           'left' : (left) ? left : 'auto',
-          'right' : (right) ? right : 'auto'
+          'right' : (right) ? right : 'auto',
         }).end();
       };
 
       objPos(tip, (target.offset().top + target.outerHeight() + 10), 'auto', 'auto', target.offset().left);
 
       if (this.small()) {
-        objPos(tip, (target.offset().top + target.outerHeight() + 10), 'auto', 'auto', 12.5, this.S(this.scope).width());
+        objPos(tip, (target.offset().top + target.outerHeight() + 10), 'auto', 'auto', 12.5, $(this.scope).width());
         tip.addClass('tip-override');
-        objPos(nub, -nubHeight, 'auto', 'auto', target.offset().left + 10);
+        objPos(nub, -nubHeight, 'auto', 'auto', target.offset().left);
       } else {
         var left = target.offset().left;
         if (Foundation.rtl) {
+          nub.addClass('rtl');
           left = target.offset().left + target.outerWidth() - tip.outerWidth();
         }
-
         objPos(tip, (target.offset().top + target.outerHeight() + 10), 'auto', 'auto', left);
         tip.removeClass('tip-override');
-        nub.removeAttr( 'style' );
         if (classes && classes.indexOf('tip-top') > -1) {
-          objPos(tip, (target.offset().top - tip.outerHeight() - 10), 'auto', 'auto', left)
+          if (Foundation.rtl) nub.addClass('rtl');
+          objPos(tip, (target.offset().top - tip.outerHeight()), 'auto', 'auto', left)
             .removeClass('tip-override');
         } else if (classes && classes.indexOf('tip-left') > -1) {
           objPos(tip, (target.offset().top + (target.outerHeight() / 2) - (tip.outerHeight() / 2)), 'auto', 'auto', (target.offset().left - tip.outerWidth() - nubHeight))
             .removeClass('tip-override');
+          nub.removeClass('rtl');
         } else if (classes && classes.indexOf('tip-right') > -1) {
           objPos(tip, (target.offset().top + (target.outerHeight() / 2) - (tip.outerHeight() / 2)), 'auto', 'auto', (target.offset().left + target.outerWidth() + nubHeight))
             .removeClass('tip-override');
+          nub.removeClass('rtl');
         }
       }
 
@@ -14408,12 +15452,14 @@ window.Modernizr = (function( window, document, undefined ) {
     },
 
     small : function () {
-      return matchMedia(Foundation.media_queries.small).matches;
+      return matchMedia(Foundation.media_queries.small).matches &&
+        !matchMedia(Foundation.media_queries.medium).matches;
     },
 
-    inheritable_classes : function (target) {
-      var inheritables = ['tip-top', 'tip-left', 'tip-bottom', 'tip-right', 'radius', 'round'].concat(this.settings.additional_inheritable_classes),
-          classes = target.attr('class'),
+    inheritable_classes : function ($target) {
+      var settings = $.extend({}, this.settings, this.data_options($target)),
+          inheritables = ['tip-top', 'tip-left', 'tip-bottom', 'tip-right', 'radius', 'round'].concat(settings.additional_inheritable_classes),
+          classes = $target.attr('class'),
           filtered = classes ? $.map(classes.split(' '), function (el, i) {
             if ($.inArray(el, inheritables) !== -1) {
               return el;
@@ -14423,30 +15469,48 @@ window.Modernizr = (function( window, document, undefined ) {
       return $.trim(filtered);
     },
 
+    convert_to_touch : function($target) {
+      var self = this,
+          $tip = self.getTip($target),
+          settings = $.extend({}, self.settings, self.data_options($target));
+
+      if ($tip.find('.tap-to-close').length === 0) {
+        $tip.append('<span class="tap-to-close">'+settings.touch_close_text+'</span>');
+        $tip.on('click.fndtn.tooltip.tapclose touchstart.fndtn.tooltip.tapclose MSPointerDown.fndtn.tooltip.tapclose', function(e) {
+          self.hide($target);
+        });
+      }
+
+      $target.data('tooltip-open-event-type', 'touch');
+    },
+
     show : function ($target) {
       var $tip = this.getTip($target);
 
+      if ($target.data('tooltip-open-event-type') == 'touch') {
+        this.convert_to_touch($target);
+      }
+
       this.reposition($target, $tip, $target.attr('class'));
-      return $tip.fadeIn(150);
+      $target.addClass('open');
+      $tip.fadeIn(150);
     },
 
     hide : function ($target) {
       var $tip = this.getTip($target);
 
-      return $tip.fadeOut(150);
-    },
-
-    // deprecate reload
-    reload : function () {
-      var $self = $(this);
-
-      return ($self.data('fndtn-tooltips')) ? $self.foundationTooltips('destroy').foundationTooltips('init') : $self.foundationTooltips('init');
+      $tip.fadeOut(150, function() {
+        $tip.find('.tap-to-close').remove();
+        $tip.off('click.fndtn.tooltip.tapclose touchstart.fndtn.tooltip.tapclose MSPointerDown.fndtn.tapclose');
+        $target.removeClass('open');
+      });
     },
 
     off : function () {
+      var self = this;
       this.S(this.scope).off('.fndtn.tooltip');
       this.S(this.settings.tooltip_class).each(function (i) {
-        $('[' + this.attr_name() + ']').get(i).attr('title', $(this).text());
+        $('[' + self.attr_name() + ']').eq(i).attr('title', $(this).text());
       }).remove();
     },
 
@@ -14460,7 +15524,7 @@ window.Modernizr = (function( window, document, undefined ) {
   Foundation.libs.topbar = {
     name : 'topbar',
 
-    version: '5.1.1',
+    version: '5.2.2',
 
     settings : {
       index : 0,
@@ -14469,7 +15533,8 @@ window.Modernizr = (function( window, document, undefined ) {
       back_text: 'Back',
       is_hover: true,
       mobile_show_parent_link: false,
-      scrolltop : true // jump to top when sticky nav menu toggle is clicked
+      scrolltop : true, // jump to top when sticky nav menu toggle is clicked
+      sticky_on : 'all'
     },
 
     init : function (section, method, options) {
@@ -14481,15 +15546,13 @@ window.Modernizr = (function( window, document, undefined ) {
       this.bindings(method, options);
 
       self.S('[' + this.attr_name() + ']', this.scope).each(function () {
-        var topbar = self.S(this),
+        var topbar = $(this),
             settings = topbar.data(self.attr_name(true) + '-init'),
             section = self.S('section', this),
-            titlebar = $('> ul', this).first();
-
+            titlebar = topbar.children().filter('ul').first();
         topbar.data('index', 0);
-
         var topbarContainer = topbar.parent();
-        if(topbarContainer.hasClass('fixed') || topbarContainer.hasClass(settings.sticky_class)) {
+        if(topbarContainer.hasClass('fixed') || self.is_sticky(topbar, topbarContainer, settings) ) {
           self.settings.sticky_class = settings.sticky_class;
           self.settings.sticky_topbar = topbar;
           topbar.data('height', topbarContainer.outerHeight());
@@ -14514,6 +15577,22 @@ window.Modernizr = (function( window, document, undefined ) {
         }
       });
 
+    },
+
+    is_sticky: function (topbar, topbarContainer, settings) {
+      var sticky = topbarContainer.hasClass(settings.sticky_class);
+
+      if (sticky && settings.sticky_on === 'all') {
+        return true;
+      } else if (sticky && this.small() && settings.sticky_on === 'small') {
+        return true;
+      } else if (sticky && this.medium() && settings.sticky_on === 'medium') {
+        return true;
+      } else if (sticky && this.large() && settings.sticky_on === 'large') {
+        return true;
+      }
+
+      return false;
     },
 
     toggle: function (toggleEl) {
@@ -14565,7 +15644,7 @@ window.Modernizr = (function( window, document, undefined ) {
           }
         }
       } else {
-        if(topbar.parent().hasClass(self.settings.sticky_class)) {
+        if(self.is_sticky(topbar, topbar.parent(), settings)) {
           topbar.parent().addClass('fixed');
         }
 
@@ -14595,6 +15674,13 @@ window.Modernizr = (function( window, document, undefined ) {
           e.preventDefault();
           self.toggle(this);
         })
+        .on('click.fndtn.topbar','.top-bar .top-bar-section li a[href^="#"],[' + this.attr_name() + '] .top-bar-section li a[href^="#"]',function (e) {
+            var li = $(this).closest('li');
+            if(self.breakpoint() && !li.hasClass('back') && !li.hasClass('has-dropdown'))
+            {
+            self.toggle();
+            }
+        })
         .on('click.fndtn.topbar', '[' + this.attr_name() + '] li.has-dropdown', function (e) {
           var li = S(this),
               target = S(e.target),
@@ -14621,6 +15707,8 @@ window.Modernizr = (function( window, document, undefined ) {
               .removeClass('hover');
           } else {
             li.addClass('hover');
+
+            $(li).siblings().removeClass('hover');
 
             if (target[0].nodeName === 'A' && target.parent().hasClass('has-dropdown')) {
               e.preventDefault();
@@ -14664,7 +15752,7 @@ window.Modernizr = (function( window, document, undefined ) {
           return;
         }
 
-        S('[' + self.attr_name() + '] li').removeClass('hover');
+        S('[' + self.attr_name() + '] li.hover').removeClass('hover');
       });
 
       // Go up a level on Click
@@ -14722,7 +15810,7 @@ window.Modernizr = (function( window, document, undefined ) {
             }
         }
 
-        if(stickyContainer.length > 0) {
+        if(self.is_sticky(topbar, stickyContainer, settings)) {
           if(stickyContainer.hasClass('fixed')) {
             // Remove the fixed to allow for correct calculation of the offset.
             stickyContainer.removeClass('fixed');
@@ -14747,11 +15835,23 @@ window.Modernizr = (function( window, document, undefined ) {
       return !matchMedia(Foundation.media_queries['topbar']).matches;
     },
 
+    small : function () {
+      return matchMedia(Foundation.media_queries['small']).matches;
+    },
+
+    medium : function () {
+      return matchMedia(Foundation.media_queries['medium']).matches;
+    },
+
+    large : function () {
+      return matchMedia(Foundation.media_queries['large']).matches;
+    },
+
     assemble : function (topbar) {
       var self = this,
           settings = topbar.data(this.attr_name(true) + '-init'),
           section = self.S('section', topbar),
-          titlebar = $('> ul', topbar).first();
+          titlebar = $(this).children().filter('ul').first();
 
       // Pull element out of the DOM for manipulation
       section.detach();
@@ -14811,11 +15911,10 @@ window.Modernizr = (function( window, document, undefined ) {
 
     update_sticky_positioning: function() {
       var klass = '.' + this.settings.sticky_class,
-          $window = this.S(window),
+          $window = this.S(window), 
           self = this;
 
-
-      if (self.S(klass).length > 0) {
+      if (self.settings.sticky_topbar && self.is_sticky(this.settings.sticky_topbar,this.settings.sticky_topbar.parent(), this.settings)) {
         var distance = this.settings.sticky_topbar.data('stickyoffset');
         if (!self.S(klass).hasClass('expanded')) {
           if ($window.scrollTop() > (distance)) {
@@ -17596,7 +18695,7 @@ var __module0__ = (function(__dependency1__, __dependency2__, __dependency3__, _
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   1.3.2
+ * @version   1.5.0
  */
 
 
@@ -17661,11 +18760,6 @@ if (!('MANDATORY_SETTER' in Ember.ENV)) {
 */
 Ember.assert = function(desc, test) {
   if (!test) {
-    Ember.Logger.assert(test, desc);
-  }
-
-  if (Ember.testing && !test) {
-    // when testing, ensure test failures when assertions fail
     throw new Ember.Error("Assertion Failed: " + desc);
   }
 };
@@ -17713,9 +18807,6 @@ Ember.debug = function(message) {
     will be displayed.
 */
 Ember.deprecate = function(message, test) {
-  if (Ember.TESTING_DEPRECATION) { return; }
-
-  if (arguments.length === 1) { test = false; }
   if (test) { return; }
 
   if (Ember.ENV.RAISE_ON_DEPRECATION) { throw new Ember.Error(message); }
@@ -17774,12 +18865,44 @@ Ember.deprecateFunc = function(message, func) {
 };
 
 
+/**
+  Run a function meant for debugging. Ember build tools will remove any calls to
+  `Ember.runInDebug()` when doing a production build.
+
+  ```javascript
+  Ember.runInDebug( function() {
+    Ember.Handlebars.EachView.reopen({
+      didInsertElement: function() {
+        console.log("I'm happy");
+      }
+    });
+  });
+  ```
+
+  @method runInDebug
+  @param {Function} func The function to be executed.
+*/
+Ember.runInDebug = function(func) {
+  func()
+};
+
 // Inform the developer about the Ember Inspector if not installed.
 if (!Ember.testing) {
-  if (typeof window !== 'undefined' && window.chrome && window.addEventListener) {
+  var isFirefox = typeof InstallTrigger !== 'undefined';
+  var isChrome = !!window.chrome && !window.opera;
+
+  if (typeof window !== 'undefined' && (isFirefox || isChrome) && window.addEventListener) {
     window.addEventListener("load", function() {
-      if (document.body && document.body.dataset && !document.body.dataset.emberExtension) {
-        Ember.debug('For more advanced debugging, install the Ember Inspector from https://chrome.google.com/webstore/detail/ember-inspector/bmdblncegkenkacieihfhpjfppoconhi');
+      if (document.documentElement && document.documentElement.dataset && !document.documentElement.dataset.emberExtension) {
+        var downloadURL;
+
+        if(isChrome) {
+          downloadURL = 'https://chrome.google.com/webstore/detail/ember-inspector/bmdblncegkenkacieihfhpjfppoconhi';
+        } else if(isFirefox) {
+          downloadURL = 'https://addons.mozilla.org/en-US/firefox/addon/ember-inspector/';
+        }
+
+        Ember.debug('For more advanced debugging, install the Ember Inspector from ' + downloadURL);
       }
     }, false);
   }
@@ -17794,7 +18917,7 @@ if (!Ember.testing) {
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   1.3.2
+ * @version   1.5.0
  */
 
 
@@ -17877,7 +19000,7 @@ var define, requireModule, require, requirejs;
 
   @class Ember
   @static
-  @version 1.3.2
+  @version 1.5.0
 */
 
 if ('undefined' === typeof Ember) {
@@ -17904,10 +19027,10 @@ Ember.toString = function() { return "Ember"; };
 /**
   @property VERSION
   @type String
-  @default '1.3.2'
+  @default '1.5.0'
   @static
 */
-Ember.VERSION = '1.3.2';
+Ember.VERSION = '1.5.0';
 
 /**
   Standard environmental variables. You can define these in a global `EmberENV`
@@ -18050,6 +19173,7 @@ Ember.K = function() { return this; };
 if ('undefined' === typeof Ember.assert) { Ember.assert = Ember.K; }
 if ('undefined' === typeof Ember.warn) { Ember.warn = Ember.K; }
 if ('undefined' === typeof Ember.debug) { Ember.debug = Ember.K; }
+if ('undefined' === typeof Ember.runInDebug) { Ember.runInDebug = Ember.K; }
 if ('undefined' === typeof Ember.deprecate) { Ember.deprecate = Ember.K; }
 if ('undefined' === typeof Ember.deprecateFunc) {
   Ember.deprecateFunc = function(_, func) { return func; };
@@ -18137,7 +19261,34 @@ Ember.none = Ember.deprecateFunc("Ember.none is deprecated. Please use Ember.isN
 Ember.isEmpty = function(obj) {
   return Ember.isNone(obj) || (obj.length === 0 && typeof obj !== 'function') || (typeof obj === 'object' && Ember.get(obj, 'length') === 0);
 };
-Ember.empty = Ember.deprecateFunc("Ember.empty is deprecated. Please use Ember.isEmpty instead.", Ember.isEmpty) ;
+Ember.empty = Ember.deprecateFunc("Ember.empty is deprecated. Please use Ember.isEmpty instead.", Ember.isEmpty);
+
+
+  /**
+    A value is blank if it is empty or a whitespace string.
+
+    ```javascript
+    Ember.isBlank();                // true
+    Ember.isBlank(null);            // true
+    Ember.isBlank(undefined);       // true
+    Ember.isBlank('');              // true
+    Ember.isBlank([]);              // true
+    Ember.isBlank('\n\t');          // true
+    Ember.isBlank('  ');            // true
+    Ember.isBlank({});              // false
+    Ember.isBlank('\n\t Hello');    // false
+    Ember.isBlank('Hello world');   // false
+    Ember.isBlank([1,2,3]);         // false
+    ```
+
+    @method isBlank
+    @for Ember
+    @param {Object} obj Value to test
+    @return {Boolean}
+  */
+  Ember.isBlank = function(obj) {
+    return Ember.isEmpty(obj) || (typeof obj === 'string' && obj.match(/\S/) === null);
+  };
 
 
 })();
@@ -18382,6 +19533,23 @@ var arrayIndexOf = isNativeFunc(Array.prototype.indexOf) ? Array.prototype.index
   return -1;
 };
 
+var arrayFilter = isNativeFunc(Array.prototype.filter) ? Array.prototype.filter : function (fn, context) {
+  var i,
+  value,
+  result = [],
+  length = this.length;
+
+  for (i = 0; i < length; i++) {
+    if (this.hasOwnProperty(i)) {
+      value = this[i];
+      if (fn.call(context, value, i, this)) {
+        result.push(value);
+      }
+    }
+  }
+  return result;
+};
+
 /**
   Array polyfills to support ES5 features in older browsers.
 
@@ -18391,6 +19559,7 @@ var arrayIndexOf = isNativeFunc(Array.prototype.indexOf) ? Array.prototype.index
 Ember.ArrayPolyfills = {
   map: arrayMap,
   forEach: arrayForEach,
+  filter: arrayFilter,
   indexOf: arrayIndexOf
 };
 
@@ -18401,6 +19570,10 @@ if (Ember.SHIM_ES5) {
 
   if (!Array.prototype.forEach) {
     Array.prototype.forEach = arrayForEach;
+  }
+
+  if (!Array.prototype.filter) {
+    Array.prototype.filter = arrayFilter;
   }
 
   if (!Array.prototype.indexOf) {
@@ -18468,29 +19641,6 @@ Ember.Error.prototype = Ember.create(Error.prototype);
 */
 Ember.onerror = null;
 
-/**
-  Wrap code block in a try/catch if `Ember.onerror` is set.
-
-  @private
-  @method handleErrors
-  @for Ember
-  @param {Function} func
-  @param [context]
-*/
-Ember.handleErrors = function(func, context) {
-  // Unfortunately in some browsers we lose the backtrace if we rethrow the existing error,
-  // so in the event that we don't have an `onerror` handler we don't wrap in a try/catch
-  if ('function' === typeof Ember.onerror) {
-    try {
-      return func.call(context || this);
-    } catch (error) {
-      Ember.onerror(error);
-    }
-  } else {
-    return func.call(context || this);
-  }
-};
-
 })();
 
 
@@ -18511,9 +19661,9 @@ var o_defineProperty = Ember.platform.defineProperty,
     o_create = Ember.create,
     // Used for guid generation...
     GUID_KEY = '__ember'+ (+ new Date()),
-    uuid         = 0,
     numberCache  = [],
-    stringCache  = {};
+    stringCache  = {},
+    uuid = 0;
 
 var MANDATORY_SETTER = Ember.ENV.MANDATORY_SETTER;
 
@@ -18561,8 +19711,12 @@ Ember.generateGuid = function generateGuid(obj, prefix) {
   if (!prefix) prefix = Ember.GUID_PREFIX;
   var ret = (prefix + (uuid++));
   if (obj) {
-    GUID_DESC.value = ret;
-    o_defineProperty(obj, GUID_KEY, GUID_DESC);
+    if (obj[GUID_KEY] === null) {
+      obj[GUID_KEY] = ret;
+    } else {
+      GUID_DESC.value = ret;
+      o_defineProperty(obj, GUID_KEY, GUID_DESC);
+    }
   }
   return ret;
 };
@@ -18609,9 +19763,14 @@ Ember.guidFor = function guidFor(obj) {
       if (obj[GUID_KEY]) return obj[GUID_KEY];
       if (obj === Object) return '(Object)';
       if (obj === Array)  return '(Array)';
-      ret = 'ember'+(uuid++);
-      GUID_DESC.value = ret;
-      o_defineProperty(obj, GUID_KEY, GUID_DESC);
+      ret = 'ember' + (uuid++);
+
+      if (obj[GUID_KEY] === null) {
+        obj[GUID_KEY] = ret;
+      } else {
+        GUID_DESC.value = ret;
+        o_defineProperty(obj, GUID_KEY, GUID_DESC);
+      }
       return ret;
   }
 };
@@ -18620,7 +19779,7 @@ Ember.guidFor = function guidFor(obj) {
 // META
 //
 
-var META_DESC = {
+var META_DESC = Ember.META_DESC = {
   writable:    true,
   configurable: false,
   enumerable:  false,
@@ -18646,6 +19805,7 @@ function Meta(obj) {
   this.descs = {};
   this.watching = {};
   this.cache = {};
+  this.cacheMeta = {};
   this.source = obj;
 }
 
@@ -18655,12 +19815,14 @@ Meta.prototype = {
   watching: null,
   listeners: null,
   cache: null,
+  cacheMeta: null,
   source: null,
   mixins: null,
   bindings: null,
   chains: null,
   chainWatchers: null,
-  values: null
+  values: null,
+  proto: null
 };
 
 if (isDefinePropertySimulated) {
@@ -18721,10 +19883,11 @@ Ember.meta = function meta(obj, writable) {
     if (!isDefinePropertySimulated) o_defineProperty(obj, META_KEY, META_DESC);
 
     ret = o_create(ret);
-    ret.descs    = o_create(ret.descs);
-    ret.watching = o_create(ret.watching);
-    ret.cache    = {};
-    ret.source   = obj;
+    ret.descs     = o_create(ret.descs);
+    ret.watching  = o_create(ret.watching);
+    ret.cache     = {};
+    ret.cacheMeta = {};
+    ret.source    = obj;
 
     if (MANDATORY_SETTER) { ret.values = o_create(ret.values); }
 
@@ -18813,13 +19976,11 @@ Ember.metaPath = function metaPath(obj, path, writable) {
   @return {Function} wrapped function.
 */
 Ember.wrap = function(func, superFunc) {
-  function K() {}
-
   function superWrapper() {
-    var ret, sup = this._super;
-    this._super = superFunc || K;
+    var ret, sup = this.__nextSuper;
+    this.__nextSuper = superFunc;
     ret = func.apply(this, arguments);
-    this._super = sup;
+    this.__nextSuper = sup;
     return ret;
   }
 
@@ -19167,6 +20328,41 @@ Ember.typeOf = function(item) {
   return ret;
 };
 
+/**
+  Convenience method to inspect an object. This method will attempt to
+  convert the object into a useful string description.
+
+  It is a pretty simple implementation. If you want something more robust,
+  use something like JSDump: https://github.com/NV/jsDump
+
+  @method inspect
+  @for Ember
+  @param {Object} obj The object you want to inspect.
+  @return {String} A description of the object
+*/
+Ember.inspect = function(obj) {
+  var type = Ember.typeOf(obj);
+  if (type === 'array') {
+    return '[' + obj + ']';
+  }
+  if (type !== 'object') {
+    return obj + '';
+  }
+
+  var v, ret = [];
+  for(var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      v = obj[key];
+      if (v === 'toString') { continue; } // ignore useless items
+      if (Ember.typeOf(v) === 'function') { v = "function() { ... }"; }
+      ret.push(key + ": " + v);
+    }
+  }
+  return "{" + ret.join(", ") + "}";
+};
+
+
+
 })();
 
 
@@ -19381,36 +20577,130 @@ Ember.subscribe = Ember.Instrumentation.subscribe;
 
 
 (function() {
-var map, forEach, indexOf, splice;
+var map, forEach, indexOf, splice, filter;
 map     = Array.prototype.map     || Ember.ArrayPolyfills.map;
 forEach = Array.prototype.forEach || Ember.ArrayPolyfills.forEach;
 indexOf = Array.prototype.indexOf || Ember.ArrayPolyfills.indexOf;
+filter = Array.prototype.filter || Ember.ArrayPolyfills.filter;
 splice = Array.prototype.splice;
 
+/**
+ * Defines some convenience methods for working with Enumerables.
+ * `Ember.EnumerableUtils` uses `Ember.ArrayPolyfills` when necessary.
+ *
+ * @class EnumerableUtils
+ * @namespace Ember
+ * @static
+ * */
 var utils = Ember.EnumerableUtils = {
+  /**
+   * Calls the map function on the passed object with a specified callback. This
+   * uses `Ember.ArrayPolyfill`'s-map method when necessary.
+   *
+   * @method map
+   * @param {Object} obj The object that should be mapped
+   * @param {Function} callback The callback to execute
+   * @param {Object} thisArg Value to use as this when executing *callback*
+   *
+   * @return {Array} An array of mapped values.
+   */
   map: function(obj, callback, thisArg) {
     return obj.map ? obj.map.call(obj, callback, thisArg) : map.call(obj, callback, thisArg);
   },
 
+  /**
+   * Calls the forEach function on the passed object with a specified callback. This
+   * uses `Ember.ArrayPolyfill`'s-forEach method when necessary.
+   *
+   * @method forEach
+   * @param {Object} obj The object to call forEach on
+   * @param {Function} callback The callback to execute
+   * @param {Object} thisArg Value to use as this when executing *callback*
+   *
+   */
   forEach: function(obj, callback, thisArg) {
     return obj.forEach ? obj.forEach.call(obj, callback, thisArg) : forEach.call(obj, callback, thisArg);
   },
 
+  /**
+   * Calls the filter function on the passed object with a specified callback. This
+   * uses `Ember.ArrayPolyfill`'s-filter method when necessary.
+   *
+   * @method filter
+   * @param {Object} obj The object to call filter on
+   * @param {Function} callback The callback to execute
+   * @param {Object} thisArg Value to use as this when executing *callback*
+   *
+   * @return {Array} An array containing the filtered values
+   */
+  filter: function(obj, callback, thisArg) {
+    return obj.filter ? obj.filter.call(obj, callback, thisArg) : filter.call(obj, callback, thisArg);
+  },
+
+  /**
+   * Calls the indexOf function on the passed object with a specified callback. This
+   * uses `Ember.ArrayPolyfill`'s-indexOf method when necessary.
+   *
+   * @method indexOf
+   * @param {Object} obj The object to call indexOn on
+   * @param {Function} callback The callback to execute
+   * @param {Object} index The index to start searching from
+   *
+   */
   indexOf: function(obj, element, index) {
     return obj.indexOf ? obj.indexOf.call(obj, element, index) : indexOf.call(obj, element, index);
   },
 
+  /**
+   * Returns an array of indexes of the first occurrences of the passed elements
+   * on the passed object.
+   *
+   * ```javascript
+   *  var array = [1, 2, 3, 4, 5];
+   *  Ember.EnumerableUtils.indexesOf(array, [2, 5]); // [1, 4]
+   *
+   *  var fubar = "Fubarr";
+   *  Ember.EnumerableUtils.indexesOf(fubar, ['b', 'r']); // [2, 4]
+   * ```
+   *
+   * @method indexesOf
+   * @param {Object} obj The object to check for element indexes
+   * @param {Array} elements The elements to search for on *obj*
+   *
+   * @return {Array} An array of indexes.
+   *
+   */
   indexesOf: function(obj, elements) {
     return elements === undefined ? [] : utils.map(elements, function(item) {
       return utils.indexOf(obj, item);
     });
   },
 
+  /** 
+   * Adds an object to an array. If the array already includes the object this
+   * method has no effect.
+   *
+   * @method addObject
+   * @param {Array} array The array the passed item should be added to
+   * @param {Object} item The item to add to the passed array
+   *
+   * @return 'undefined'
+   */
   addObject: function(array, item) {
     var index = utils.indexOf(array, item);
     if (index === -1) { array.push(item); }
   },
 
+  /**
+   * Removes an object from an array. If the array does not contain the passed
+   * object this method has no effect.
+   *
+   * @method removeObject
+   * @param {Array} array The array to remove the item from.
+   * @param {Object} item The item to remove from the passed array.
+   *
+   * @return 'undefined'
+   */
   removeObject: function(array, item) {
     var index = utils.indexOf(array, item);
     if (index !== -1) { array.splice(index, 1); }
@@ -19436,6 +20726,31 @@ var utils = Ember.EnumerableUtils = {
     return ret;
   },
 
+  /**
+   * Replaces objects in an array with the passed objects.
+   *
+   * ```javascript
+   *   var array = [1,2,3];
+   *   Ember.EnumerableUtils.replace(array, 1, 2, [4, 5]); // [1, 4, 5]
+   *
+   *   var array = [1,2,3];
+   *   Ember.EnumerableUtils.replace(array, 1, 1, [4, 5]); // [1, 4, 5, 3]
+   *
+   *   var array = [1,2,3];
+   *   Ember.EnumerableUtils.replace(array, 10, 1, [4, 5]); // [1, 2, 3, 4, 5]
+   * ```
+   * 
+   * @method replace
+   * @param {Array} array The array the objects should be inserted into.
+   * @param {Number} idx Starting index in the array to replace. If *idx* >=
+   * length, then append to the end of the array.
+   * @param {Number} amt Number of elements that should be removed from the array,
+   * starting at *idx*
+   * @param {Array} objects An array of zero or more objects that should be
+   * inserted into the array at *idx*
+   *
+   * @return {Array} The modified array.
+   */
   replace: function(array, idx, amt, objects) {
     if (array.replace) {
       return array.replace(idx, amt, objects);
@@ -19444,6 +20759,29 @@ var utils = Ember.EnumerableUtils = {
     }
   },
 
+  /**
+   * Calculates the intersection of two arrays. This method returns a new array
+   * filled with the records that the two passed arrays share with each other. 
+   * If there is no intersection, an empty array will be returned.
+   *
+   * ```javascript
+   * var array1 = [1, 2, 3, 4, 5];
+   * var array2 = [1, 3, 5, 6, 7];
+   *
+   * Ember.EnumerableUtils.intersection(array1, array2); // [1, 3, 5]
+   *
+   * var array1 = [1, 2, 3];
+   * var array2 = [4, 5, 6];
+   *
+   * Ember.EnumerableUtils.intersection(array1, array2); // []
+   * ```
+   *
+   * @method intersection
+   * @param {Array} array1 The first array
+   * @param {Array} array2 The second array
+   *
+   * @return {Array} The intersection of the two passed arrays.
+   */
   intersection: function(array1, array2) {
     var intersection = [];
 
@@ -19577,7 +20915,7 @@ var normalizeTuple = Ember.normalizeTuple = function(target, path) {
   }
 
   // must return some kind of path to be valid else other things will break.
-  if (!path || path.length===0) throw new Ember.Error('Invalid Path');
+  if (!path || path.length===0) throw new Ember.Error('Path cannot be empty');
 
   return [ target, path ];
 };
@@ -19655,8 +20993,13 @@ var o_create = Ember.create,
 
 function indexOf(array, target, method) {
   var index = -1;
-  for (var i = 0, l = array.length; i < l; i += 3) {
-    if (target === array[i] && method === array[i+1]) { index = i; break; }
+  // hashes are added to the end of the event array
+  // so it makes sense to start searching at the end
+  // of the array and search in reverse
+  for (var i = array.length - 3 ; i >=0; i -= 3) {
+    if (target === array[i] && method === array[i + 1]) {
+         index = i; break;
+    }
   }
   return index;
 }
@@ -19811,9 +21154,10 @@ function removeListener(obj, eventName, target, method) {
   an object might suspend its property change listener while it is
   setting that property.
 
-  @private
   @method suspendListener
   @for Ember
+
+  @private
   @param obj
   @param {String} eventName
   @param {Object|Function} targetOrMethod A target object or a function
@@ -19842,9 +21186,10 @@ function suspendListener(obj, eventName, target, method, callback) {
 /**
   Suspends multiple listeners during a callback.
 
-  @private
   @method suspendListeners
   @for Ember
+
+  @private
   @param obj
   @param {Array} eventName Array of event names
   @param {Object|Function} targetOrMethod A target object or a function
@@ -20096,7 +21441,7 @@ ObserverSet.prototype.clear = function() {
 
 
 (function() {
-var metaFor = Ember.meta,
+var META_KEY = Ember.META_KEY,
     guidFor = Ember.guidFor,
     tryFinally = Ember.tryFinally,
     sendEvent = Ember.sendEvent,
@@ -20127,10 +21472,10 @@ var metaFor = Ember.meta,
   @return {void}
 */
 function propertyWillChange(obj, keyName) {
-  var m = metaFor(obj, false),
-      watching = m.watching[keyName] > 0 || keyName === 'length',
-      proto = m.proto,
-      desc = m.descs[keyName];
+  var m = obj[META_KEY],
+      watching = (m && m.watching[keyName] > 0) || keyName === 'length',
+      proto = m && m.proto,
+      desc = m && m.descs[keyName];
 
   if (!watching) { return; }
   if (proto === obj) { return; }
@@ -20157,10 +21502,10 @@ Ember.propertyWillChange = propertyWillChange;
   @return {void}
 */
 function propertyDidChange(obj, keyName) {
-  var m = metaFor(obj, false),
-      watching = m.watching[keyName] > 0 || keyName === 'length',
-      proto = m.proto,
-      desc = m.descs[keyName];
+  var m = obj[META_KEY],
+      watching = (m && m.watching[keyName] > 0) || keyName === 'length',
+      proto = m && m.proto,
+      desc = m && m.descs[keyName];
 
   if (proto === obj) { return; }
 
@@ -20233,7 +21578,7 @@ function chainsWillChange(obj, keyName, m) {
 }
 
 function chainsDidChange(obj, keyName, m, suppressEvents) {
-  if (!(m.hasOwnProperty('chainWatchers') &&
+  if (!(m && m.hasOwnProperty('chainWatchers') &&
         m.chainWatchers[keyName])) {
     return;
   }
@@ -20348,16 +21693,6 @@ var META_KEY = Ember.META_KEY,
   and notifying observers and other listeners of the change. If the
   property is not defined but the object implements the `setUnknownProperty`
   method then that will be invoked as well.
-
-  If you plan to run on IE8 and older browsers then you should use this
-  method anytime you want to set a property on an object that you don't
-  know for sure is private. (Properties beginning with an underscore '_'
-  are considered private.)
-
-  On all newer browsers, you only need to use this method to set
-  properties if the property might not be defined on the object and you want
-  to respect the `setUnknownProperty` handler. Otherwise you can ignore this
-  method.
 
   @method set
   @for Ember
@@ -20871,7 +22206,7 @@ function consoleMethod(name) {
 
   if (method) {
     // Older IE doesn't support apply, but Chrome needs it
-    if (method.apply) {
+    if (typeof method.apply === 'function') {
       logToConsole = function() {
         method.apply(consoleObj, arguments);
       };
@@ -20913,7 +22248,8 @@ Ember.Logger = {
 
     ```javascript
     var foo = 1;
-    Ember.Logger.log('log value of foo:', foo); // "log value of foo: 1" will be printed to the console
+    Ember.Logger.log('log value of foo:', foo);
+    // "log value of foo: 1" will be printed to the console
     ```
 
    @method log
@@ -20927,7 +22263,8 @@ Ember.Logger = {
    You can pass as many arguments as you want and they will be joined together with a space.
 
     ```javascript
-    Ember.Logger.warn('Something happened!'); // "Something happened!" will be printed to the console with a warning icon.
+    Ember.Logger.warn('Something happened!');
+    // "Something happened!" will be printed to the console with a warning icon.
     ```
 
    @method warn
@@ -20941,7 +22278,8 @@ Ember.Logger = {
    You can pass as many arguments as you want and they will be joined together with a space.
 
     ```javascript
-    Ember.Logger.error('Danger! Danger!'); // "Danger! Danger!" will be printed to the console in red text.
+    Ember.Logger.error('Danger! Danger!');
+    // "Danger! Danger!" will be printed to the console in red text.
     ```
 
    @method error
@@ -20956,7 +22294,8 @@ Ember.Logger = {
 
     ```javascript
     var foo = 1;
-    Ember.Logger.info('log value of foo:', foo); // "log value of foo: 1" will be printed to the console
+    Ember.Logger.info('log value of foo:', foo);
+    // "log value of foo: 1" will be printed to the console
     ```
 
    @method info
@@ -20971,7 +22310,8 @@ Ember.Logger = {
 
     ```javascript
     var foo = 1;
-    Ember.Logger.debug('log value of foo:', foo); // "log value of foo: 1" will be printed to the console
+    Ember.Logger.debug('log value of foo:', foo);
+    // "log value of foo: 1" will be printed to the console
     ```
 
    @method debug
@@ -21114,6 +22454,12 @@ Ember.defineProperty = function(obj, keyName, desc, data, meta) {
     } else {
       obj[keyName] = undefined; // make enumerable
     }
+
+    if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+      if (desc.func && desc._dependentCPs) {
+        addImplicitCPs(obj, desc._dependentCPs, meta);
+      }
+    }
   } else {
     descs[keyName] = undefined; // shadow descriptor in proto
     if (desc == null) {
@@ -21149,6 +22495,22 @@ Ember.defineProperty = function(obj, keyName, desc, data, meta) {
   return this;
 };
 
+if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+  var addImplicitCPs = function defineImplicitCPs(obj, implicitCPs, meta) {
+    var cp, key, length = implicitCPs.length;
+
+    for (var i=0; i<length; ++i) {
+      cp = implicitCPs[i];
+      key = cp.implicitCPKey;
+
+      Ember.defineProperty(obj, key, cp, undefined, meta);
+
+      if (cp._dependentCPs) {
+        addImplicitCPs(obj, cp._dependentCPs, meta);
+      }
+    }
+  };
+}
 
 })();
 
@@ -21162,13 +22524,15 @@ var get = Ember.get;
   with an object followed by a list of strings or an array:
 
   ```javascript
-  Ember.getProperties(record, 'firstName', 'lastName', 'zipCode');  // { firstName: 'John', lastName: 'Doe', zipCode: '10011' }
+  Ember.getProperties(record, 'firstName', 'lastName', 'zipCode');
+  // { firstName: 'John', lastName: 'Doe', zipCode: '10011' }
   ```
 
   is equivalent to:
 
   ```javascript
-  Ember.getProperties(record, ['firstName', 'lastName', 'zipCode']);  // { firstName: 'John', lastName: 'Doe', zipCode: '10011' }
+  Ember.getProperties(record, ['firstName', 'lastName', 'zipCode']);
+  // { firstName: 'John', lastName: 'Doe', zipCode: '10011' }
   ```
 
   @method getProperties
@@ -21236,11 +22600,11 @@ var metaFor = Ember.meta, // utils.js
     MANDATORY_SETTER = Ember.ENV.MANDATORY_SETTER,
     o_defineProperty = Ember.platform.defineProperty;
 
-Ember.watchKey = function(obj, keyName) {
+Ember.watchKey = function(obj, keyName, meta) {
   // can't watch length on Array - it is special...
   if (keyName === 'length' && typeOf(obj) === 'array') { return; }
 
-  var m = metaFor(obj), watching = m.watching;
+  var m = meta || metaFor(obj), watching = m.watching;
 
   // activate watching first time
   if (!watching[keyName]) {
@@ -21265,8 +22629,8 @@ Ember.watchKey = function(obj, keyName) {
 };
 
 
-Ember.unwatchKey = function(obj, keyName) {
-  var m = metaFor(obj), watching = m.watching;
+Ember.unwatchKey = function(obj, keyName, meta) {
+  var m = meta || metaFor(obj), watching = m.watching;
 
   if (watching[keyName] === 1) {
     watching[keyName] = 0;
@@ -21309,7 +22673,8 @@ var metaFor = Ember.meta, // utils.js
     warn = Ember.warn,
     watchKey = Ember.watchKey,
     unwatchKey = Ember.unwatchKey,
-    FIRST_KEY = /^([^\.\*]+)/;
+    FIRST_KEY = /^([^\.\*]+)/,
+    META_KEY = Ember.META_KEY;
 
 function firstKey(path) {
   return path.match(FIRST_KEY)[0];
@@ -21343,24 +22708,24 @@ function addChainWatcher(obj, keyName, node) {
 
   if (!nodes[keyName]) { nodes[keyName] = []; }
   nodes[keyName].push(node);
-  watchKey(obj, keyName);
+  watchKey(obj, keyName, m);
 }
 
 var removeChainWatcher = Ember.removeChainWatcher = function(obj, keyName, node) {
   if (!obj || 'object' !== typeof obj) { return; } // nothing to do
 
-  var m = metaFor(obj, false);
-  if (!m.hasOwnProperty('chainWatchers')) { return; } // nothing to do
+  var m = obj[META_KEY];
+  if (m && !m.hasOwnProperty('chainWatchers')) { return; } // nothing to do
 
-  var nodes = m.chainWatchers;
+  var nodes = m && m.chainWatchers;
 
-  if (nodes[keyName]) {
+  if (nodes && nodes[keyName]) {
     nodes = nodes[keyName];
     for (var i = 0, l = nodes.length; i < l; i++) {
       if (nodes[i] === node) { nodes.splice(i, 1); }
     }
   }
-  unwatchKey(obj, keyName);
+  unwatchKey(obj, keyName, m);
 };
 
 // A ChainNode watches a single key on an object. If you provide a starting
@@ -21400,14 +22765,14 @@ var ChainNodePrototype = ChainNode.prototype;
 function lazyGet(obj, key) {
   if (!obj) return undefined;
 
-  var meta = metaFor(obj, false);
+  var meta = obj[META_KEY];
   // check if object meant only to be a prototype
-  if (meta.proto === obj) return undefined;
+  if (meta && meta.proto === obj) return undefined;
 
   if (key === "@each") return get(obj, key);
 
   // if a CP only return cached value
-  var desc = meta.descs[key];
+  var desc = meta && meta.descs[key];
   if (desc && desc._cacheable) {
     if (key in meta.cache) {
       return meta.cache[key];
@@ -21619,12 +22984,14 @@ ChainNodePrototype.didChange = function(events) {
 };
 
 Ember.finishChains = function(obj) {
-  var m = metaFor(obj, false), chains = m.chains;
+  // We only create meta if we really have to
+  var m = obj[META_KEY], chains = m && m.chains;
   if (chains) {
     if (chains.value() !== obj) {
-      m.chains = chains = chains.copy(obj);
+      metaFor(obj).chains = chains = chains.copy(obj);
+    } else {
+      chains.didChange(null);
     }
-    chains.didChange(null);
   }
 };
 
@@ -21633,6 +23000,50 @@ Ember.finishChains = function(obj) {
 
 
 (function() {
+/**
+  @module ember-metal
+  */
+
+var forEach = Ember.EnumerableUtils.forEach,
+BRACE_EXPANSION = /^((?:[^\.]*\.)*)\{(.*)\}$/;
+
+/**
+  Expands `pattern`, invoking `callback` for each expansion.
+
+  The only pattern supported is brace-expansion, anything else will be passed
+  once to `callback` directly. Brace expansion can only appear at the end of a
+  pattern, for example as the last item in a chain.
+
+  Example
+  ```js
+  function echo(arg){ console.log(arg); }
+
+  Ember.expandProperties('foo.bar', echo);        //=> 'foo.bar'
+  Ember.expandProperties('{foo,bar}', echo);      //=> 'foo', 'bar'
+  Ember.expandProperties('foo.{bar,baz}', echo);  //=> 'foo.bar', 'foo.baz'
+  Ember.expandProperties('{foo,bar}.baz', echo);  //=> '{foo,bar}.baz'
+  ```
+
+  @method
+  @private
+  @param {string} pattern The property pattern to expand.
+  @param {function} callback The callback to invoke.  It is invoked once per
+  expansion, and is passed the expansion.
+  */
+Ember.expandProperties = function (pattern, callback) {
+  var match, prefix, list;
+
+  if (match = BRACE_EXPANSION.exec(pattern)) {
+    prefix = match[1];
+    list = match[2];
+
+    forEach(list.split(','), function (suffix) {
+      callback(prefix + suffix);
+    });
+  } else {
+    callback(pattern);
+  }
+};
 
 })();
 
@@ -21646,8 +23057,8 @@ var metaFor = Ember.meta, // utils.js
 // get the chains for the current object. If the current object has
 // chains inherited from the proto they will be cloned and reconfigured for
 // the current object.
-function chainsFor(obj) {
-  var m = metaFor(obj), ret = m.chains;
+function chainsFor(obj, meta) {
+  var m = meta || metaFor(obj), ret = m.chains;
   if (!ret) {
     ret = m.chains = new ChainNode(null, null, obj);
   } else if (ret.value() !== obj) {
@@ -21656,26 +23067,26 @@ function chainsFor(obj) {
   return ret;
 }
 
-Ember.watchPath = function(obj, keyPath) {
+Ember.watchPath = function(obj, keyPath, meta) {
   // can't watch length on Array - it is special...
   if (keyPath === 'length' && typeOf(obj) === 'array') { return; }
 
-  var m = metaFor(obj), watching = m.watching;
+  var m = meta || metaFor(obj), watching = m.watching;
 
   if (!watching[keyPath]) { // activate watching first time
     watching[keyPath] = 1;
-    chainsFor(obj).add(keyPath);
+    chainsFor(obj, m).add(keyPath);
   } else {
     watching[keyPath] = (watching[keyPath] || 0) + 1;
   }
 };
 
-Ember.unwatchPath = function(obj, keyPath) {
-  var m = metaFor(obj), watching = m.watching;
+Ember.unwatchPath = function(obj, keyPath, meta) {
+  var m = meta || metaFor(obj), watching = m.watching;
 
   if (watching[keyPath] === 1) {
     watching[keyPath] = 0;
-    chainsFor(obj).remove(keyPath);
+    chainsFor(obj, m).remove(keyPath);
   } else if (watching[keyPath] > 1) {
     watching[keyPath]--;
   }
@@ -21719,14 +23130,14 @@ function isKeyName(path) {
   @param obj
   @param {String} keyName
 */
-Ember.watch = function(obj, _keyPath) {
+Ember.watch = function(obj, _keyPath, m) {
   // can't watch length on Array - it is special...
   if (_keyPath === 'length' && typeOf(obj) === 'array') { return; }
 
   if (isKeyName(_keyPath)) {
-    watchKey(obj, _keyPath);
+    watchKey(obj, _keyPath, m);
   } else {
-    watchPath(obj, _keyPath);
+    watchPath(obj, _keyPath, m);
   }
 };
 
@@ -21737,14 +23148,14 @@ Ember.isWatching = function isWatching(obj, key) {
 
 Ember.watch.flushPending = Ember.flushPendingChains;
 
-Ember.unwatch = function(obj, _keyPath) {
+Ember.unwatch = function(obj, _keyPath, m) {
   // can't watch length on Array - it is special...
   if (_keyPath === 'length' && typeOf(obj) === 'array') { return; }
 
   if (isKeyName(_keyPath)) {
-    unwatchKey(obj, _keyPath);
+    unwatchKey(obj, _keyPath, m);
   } else {
-    unwatchPath(obj, _keyPath);
+    unwatchPath(obj, _keyPath, m);
   }
 };
 
@@ -21759,7 +23170,7 @@ Ember.unwatch = function(obj, _keyPath) {
   @param obj
 */
 Ember.rewatch = function(obj) {
-  var m = metaFor(obj, false), chains = m.chains;
+  var m = obj[META_KEY], chains = m && m.chains;
 
   // make sure the object has its own guid.
   if (GUID_KEY in obj && !obj.hasOwnProperty(GUID_KEY)) {
@@ -21836,6 +23247,8 @@ var get = Ember.get,
     watch = Ember.watch,
     unwatch = Ember.unwatch;
 
+var expandProperties = Ember.expandProperties;
+
 
 // ..........................................................
 // DEPENDENT KEYS
@@ -21885,7 +23298,7 @@ function addDependentKeys(desc, obj, keyName, meta) {
     // Increment the number of times depKey depends on keyName.
     keys[keyName] = (keys[keyName] || 0) + 1;
     // Watch the depKey
-    watch(obj, depKey);
+    watch(obj, depKey, meta);
   }
 }
 
@@ -21904,7 +23317,7 @@ function removeDependentKeys(desc, obj, keyName, meta) {
     // Increment the number of times depKey depends on keyName.
     keys[keyName] = (keys[keyName] || 0) - 1;
     // Watch the depKey
-    unwatch(obj, depKey);
+    unwatch(obj, depKey, meta);
   }
 }
 
@@ -21995,16 +23408,36 @@ function removeDependentKeys(desc, obj, keyName, meta) {
 */
 function ComputedProperty(func, opts) {
   this.func = func;
+  if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+    setDependentKeys(this, opts && opts.dependentKeys);
+  } else {
+    this._dependentKeys = opts && opts.dependentKeys;
+  }
 
   this._cacheable = (opts && opts.cacheable !== undefined) ? opts.cacheable : true;
-  this._dependentKeys = opts && opts.dependentKeys;
   this._readOnly = opts && (opts.readOnly !== undefined || !!opts.readOnly);
 }
 
 Ember.ComputedProperty = ComputedProperty;
+
 ComputedProperty.prototype = new Ember.Descriptor();
 
 var ComputedPropertyPrototype = ComputedProperty.prototype;
+ComputedPropertyPrototype._dependentKeys = undefined;
+ComputedPropertyPrototype._suspended = undefined;
+ComputedPropertyPrototype._meta = undefined;
+
+if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+  ComputedPropertyPrototype._dependentCPs = undefined;
+  ComputedPropertyPrototype.implicitCPKey = undefined;
+
+  ComputedPropertyPrototype.toString = function() {
+    if (this.implicitCPKey) {
+      return this.implicitCPKey;
+    }
+    return Ember.Descriptor.prototype.toString.apply(this, arguments);
+  };
+}
 
 /**
   Properties are cacheable by default. Computed property will automatically
@@ -22100,11 +23533,21 @@ ComputedPropertyPrototype.readOnly = function(readOnly) {
 ComputedPropertyPrototype.property = function() {
   var args;
 
-  
-    args = a_slice.call(arguments);
-  
+  var addArg = function (property) {
+    args.push(property);
+  };
 
-  this._dependentKeys = args;
+  args = [];
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    expandProperties(arguments[i], addArg);
+  }
+
+  if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+    setDependentKeys(this, args);
+  } else {
+    this._dependentKeys = args;
+  }
+
   return this;
 };
 
@@ -22231,7 +23674,7 @@ ComputedPropertyPrototype.set = function(obj, keyName, value) {
       funcArgLength, cachedValue, ret;
 
   if (this._readOnly) {
-    throw new Ember.Error('Cannot Set: ' + keyName + ' on: ' + obj.toString() );
+    throw new Ember.Error('Cannot set read-only property "' + keyName + '" on object: ' + Ember.inspect(obj));
   }
 
   this._suspended = obj;
@@ -22347,7 +23790,8 @@ Ember.computed = function(func) {
   @return {Object} the cached value
 */
 Ember.cacheFor = function cacheFor(obj, key) {
-  var cache = metaFor(obj, false).cache;
+  var meta = obj[META_KEY],
+      cache = meta && meta.cache;
 
   if (cache && key in cache) {
     return cache[key];
@@ -22362,56 +23806,138 @@ function getProperties(self, propertyNames) {
   return ret;
 }
 
-function registerComputed(name, macro) {
-  Ember.computed[name] = function(dependentKey) {
-    var args = a_slice.call(arguments);
-    return Ember.computed(dependentKey, function() {
-      return macro.apply(this, args);
+var registerComputed, registerComputedWithProperties;
+
+if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+  var guidFor = Ember.guidFor,
+      map = Ember.EnumerableUtils.map,
+      filter = Ember.EnumerableUtils.filter,
+      typeOf = Ember.typeOf;
+
+  var implicitKey = function (cp) {
+    return [guidFor(cp)].concat(cp._dependentKeys).join('_').replace(/\./g, '_DOT_');
+  };
+
+  var normalizeDependentKey = function (key) {
+    if (key instanceof Ember.ComputedProperty) {
+      return implicitKey(key);
+    } else {
+      return key;
+    }
+  };
+
+  var normalizeDependentKeys = function (keys) {
+    return map(keys, function (key) {
+      return normalizeDependentKey(key);
+    });
+  };
+
+  var selectDependentCPs = function (keys) {
+    return filter(keys, function (key) {
+      return key instanceof Ember.ComputedProperty;
+    });
+  };
+
+  var setDependentKeys = function(cp, dependentKeys) {
+    if (dependentKeys) {
+      cp._dependentKeys = normalizeDependentKeys(dependentKeys);
+      cp._dependentCPs = selectDependentCPs(dependentKeys);
+    } else {
+      cp._dependentKeys = cp._dependentCPs = [];
+    }
+    cp.implicitCPKey = implicitKey(cp);
+  };
+  // expose `normalizeDependentKey[s]` so user CP macros can easily support
+  // composition
+  Ember.computed.normalizeDependentKey = normalizeDependentKey;
+  Ember.computed.normalizeDependentKeys = normalizeDependentKeys;
+
+  registerComputed = function (name, macro) {
+    Ember.computed[name] = function(dependentKey) {
+      var args = normalizeDependentKeys(a_slice.call(arguments));
+      return Ember.computed(dependentKey, function() {
+        return macro.apply(this, args);
+      });
+    };
+  };
+}
+
+if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+  registerComputedWithProperties = function(name, macro) {
+    Ember.computed[name] = function() {
+      var args = a_slice.call(arguments);
+      var properties = normalizeDependentKeys(args);
+
+      var computed = Ember.computed(function() {
+        return macro.apply(this, [getProperties(this, properties)]);
+      });
+
+      return computed.property.apply(computed, args);
+    };
+  };
+} else {
+  registerComputed = function (name, macro) {
+    Ember.computed[name] = function(dependentKey) {
+      var args = a_slice.call(arguments);
+      return Ember.computed(dependentKey, function() {
+        return macro.apply(this, args);
+      });
+    };
+  };
+
+  registerComputedWithProperties = function(name, macro) {
+    Ember.computed[name] = function() {
+      var properties = a_slice.call(arguments);
+
+      var computed = Ember.computed(function() {
+        return macro.apply(this, [getProperties(this, properties)]);
+      });
+
+      return computed.property.apply(computed, properties);
+    };
+  };
+}
+
+
+if (Ember.FEATURES.isEnabled('composable-computed-properties')) {
+  Ember.computed.literal = function (value) {
+    return Ember.computed(function () {
+      return value;
     });
   };
 }
 
-function registerComputedWithProperties(name, macro) {
-  Ember.computed[name] = function() {
-    var properties = a_slice.call(arguments);
 
-    var computed = Ember.computed(function() {
-      return macro.apply(this, [getProperties(this, properties)]);
+  /**
+    A computed property that returns true if the value of the dependent
+    property is null, an empty string, empty array, or empty function.
+
+    Note: When using `Ember.computed.empty` to watch an array make sure to
+    use the `array.[]` syntax so the computed can subscribe to transitions
+    from empty to non-empty states.
+
+    Example
+
+    ```javascript
+    var ToDoList = Ember.Object.extend({
+      done: Ember.computed.empty('todos.[]') // detect array changes
     });
+    var todoList = ToDoList.create({todos: ['Unit Test', 'Documentation', 'Release']});
+    todoList.get('done'); // false
+    todoList.get('todos').clear(); // []
+    todoList.get('done'); // true
+    ```
 
-    return computed.property.apply(computed, properties);
-  };
-}
-
-/**
-  A computed property that returns true if the value of the dependent
-  property is null, an empty string, empty array, or empty function.
-
-  Note: When using `Ember.computed.empty` to watch an array make sure to
-  use the `array.[]` syntax so the computed can subscribe to transitions
-  from empty to non-empty states.
-
-  Example
-
-  ```javascript
-  var ToDoList = Ember.Object.extend({
-    done: Ember.computed.empty('todos.[]') // detect array changes
+    @method computed.empty
+    @for Ember
+    @param {String} dependentKey
+    @return {Ember.ComputedProperty} computed property which negate
+    the original value for property
+  */
+  registerComputed('empty', function(dependentKey) {
+    return Ember.isEmpty(get(this, dependentKey));
   });
-  var todoList = ToDoList.create({todos: ['Unit Test', 'Documentation', 'Release']});
-  todoList.get('done'); // false
-  todoList.get('todos').clear(); // []
-  todoList.get('done'); // true
-  ```
 
-  @method computed.empty
-  @for Ember
-  @param {String} dependentKey
-  @return {Ember.ComputedProperty} computed property which negate
-  the original value for property
-*/
-registerComputed('empty', function(dependentKey) {
-  return Ember.isEmpty(get(this, dependentKey));
-});
 
 /**
   A computed property that returns true if the value of the dependent
@@ -22913,6 +24439,51 @@ Ember.computed.oneWay = function(dependentKey) {
 };
 
 
+
+/**
+  Where `computed.oneWay` provides oneWay bindings, `computed.readOnly` provides
+  a readOnly one way binding. Very often when using `computed.oneWay` one does
+  not also want changes to propogate back up, as they will replace the value.
+
+  This prevents the reverse flow, and also throws an exception when it occurs.
+
+  Example
+
+  ```javascript
+  User = Ember.Object.extend({
+    firstName: null,
+    lastName: null,
+    nickName: Ember.computed.readOnly('firstName')
+  });
+
+  user = User.create({
+    firstName: 'Teddy',
+    lastName:  'Zeenny'
+  });
+
+  user.get('nickName');
+  # 'Teddy'
+
+  user.set('nickName', 'TeddyBear');
+  # throws Exception
+  # throw new Ember.Error('Cannot Set: nickName on: <User:ember27288>' );`
+
+  user.get('firstName');
+  # 'Teddy'
+  ```
+
+  @method computed.readOnly
+  @for Ember
+  @param {String} dependentKey
+  @return {Ember.ComputedProperty} computed property which creates a
+  one way computed property to the original value for property.
+*/
+Ember.computed.readOnly = function(dependentKey) {
+  return Ember.computed(dependentKey, function() {
+    return get(this, dependentKey);
+  }).readOnly();
+};
+
 /**
   A computed property that acts like a standard getter and setter,
   but returns the value at the provided `defaultPath` if the
@@ -22970,6 +24541,7 @@ function beforeEvent(keyName) {
 
 /**
   @method addObserver
+  @for Ember
   @param obj
   @param {String} path
   @param {Object|Function} targetOrMethod
@@ -22988,6 +24560,7 @@ Ember.observersFor = function(obj, path) {
 
 /**
   @method removeObserver
+  @for Ember
   @param obj
   @param {String} path
   @param {Object|Function} targetOrMethod
@@ -23002,6 +24575,7 @@ Ember.removeObserver = function(obj, _path, target, method) {
 
 /**
   @method addBeforeObserver
+  @for Ember
   @param obj
   @param {String} path
   @param {Object|Function} targetOrMethod
@@ -23044,6 +24618,7 @@ Ember.beforeObserversFor = function(obj, path) {
 
 /**
   @method removeBeforeObserver
+  @for Ember
   @param obj
   @param {String} path
   @param {Object|Function} targetOrMethod
@@ -23061,7 +24636,7 @@ Ember.removeBeforeObserver = function(obj, _path, target, method) {
 
 
 (function() {
-define("backburner/queue",
+define("backburner/queue", 
   ["exports"],
   function(__exports__) {
     "use strict";
@@ -23168,11 +24743,10 @@ define("backburner/queue",
       }
     };
 
-
     __exports__.Queue = Queue;
   });
 
-define("backburner/deferred_action_queues",
+define("backburner/deferred_action_queues", 
   ["backburner/queue","exports"],
   function(__dependency1__, __exports__) {
     "use strict";
@@ -23271,11 +24845,10 @@ define("backburner/deferred_action_queues",
       return -1;
     }
 
-
     __exports__.DeferredActionQueues = DeferredActionQueues;
   });
 
-define("backburner",
+define("backburner", 
   ["backburner/deferred_action_queues","exports"],
   function(__dependency1__, __exports__) {
     "use strict";
@@ -23476,23 +25049,38 @@ define("backburner",
         return fn;
       },
 
-      throttle: function(target, method /* , args, wait */) {
+      throttle: function(target, method /* , args, wait, [immediate] */) {
         var self = this,
             args = arguments,
-            wait = parseInt(pop.call(args), 10),
+            immediate = pop.call(args),
+            wait,
             throttler,
             index,
             timer;
+
+        if (typeof immediate === "number" || typeof immediate === "string") {
+          wait = immediate;
+          immediate = true;
+        } else {
+          wait = pop.call(args);
+        }
+
+        wait = parseInt(wait, 10);
 
         index = findThrottler(target, method);
         if (index > -1) { return throttlers[index]; } // throttled
 
         timer = global.setTimeout(function() {
-          self.run.apply(self, args);
-
+          if (!immediate) {
+            self.run.apply(self, args);
+          }
           var index = findThrottler(target, method);
           if (index > -1) { throttlers.splice(index, 1); }
         }, wait);
+
+        if (immediate) {
+          self.run.apply(self, args);
+        }
 
         throttler = [target, method, timer];
 
@@ -23589,8 +25177,8 @@ define("backburner",
               return true;
             }
           }
-        } else if (window.toString.call(timer) === "[object Array]"){ // we're cancelling a throttle or debounce
-          return this._cancelItem(findThrottler, throttlers, timer) || 
+        } else if (Object.prototype.toString.call(timer) === "[object Array]"){ // we're cancelling a throttle or debounce
+          return this._cancelItem(findThrottler, throttlers, timer) ||
                    this._cancelItem(findDebouncee, debouncees, timer);
         } else {
           return; // timer was null or not a timer
@@ -23700,7 +25288,6 @@ define("backburner",
       return index;
     }
 
-
     __exports__.Backburner = Backburner;
   });
 })();
@@ -23726,7 +25313,8 @@ var Backburner = requireModule('backburner').Backburner,
       onBegin: onBegin,
       onEnd: onEnd
     }),
-    slice = [].slice;
+    slice = [].slice,
+    concat = [].concat;
 
 // ..........................................................
 // Ember.run - this is ideally the only public API the dev sees
@@ -23759,22 +25347,21 @@ var Backburner = requireModule('backburner').Backburner,
   @param {Object} [args*] Any additional arguments you wish to pass to the method.
   @return {Object} return value from invoking the passed function.
 */
-Ember.run = function(target, method) {
-  var ret;
-
+Ember.run = function() {
   if (Ember.onerror) {
-    try {
-      ret = backburner.run.apply(backburner, arguments);
-    } catch (e) {
-      Ember.onerror(e);
-    }
+    return onerror(arguments);
   } else {
-    ret = backburner.run.apply(backburner, arguments);
+    return backburner.run.apply(backburner, arguments);
   }
-
-  return ret;
 };
 
+function onerror(args) {
+  try {
+    return backburner.run.apply(backburner, args);
+  } catch(error) {
+    Ember.onerror(error);
+  }
+}
 /**
   If no run-loop is present, it creates a new one. If a run loop is
   present it will queue itself to run on the existing run-loops action
@@ -23812,7 +25399,7 @@ Ember.run = function(target, method) {
   @return {Object} Return value from invoking the passed function. Please note,
   when called within an existing loop, no return value is possible.
 */
-Ember.run.join = function(target, method) {
+Ember.run.join = function(target, method /* args */) {
   if (!Ember.run.currentRunLoop) {
     return Ember.run.apply(Ember.run, arguments);
   }
@@ -23820,6 +25407,53 @@ Ember.run.join = function(target, method) {
   var args = slice.call(arguments);
   args.unshift('actions');
   Ember.run.schedule.apply(Ember.run, args);
+};
+
+/**
+  Provides a useful utility for when integrating with non-Ember libraries
+  that provide asynchronous callbacks.
+
+  Ember utilizes a run-loop to batch and coalesce changes. This works by
+  marking the start and end of Ember-related Javascript execution.
+
+  When using events such as a View's click handler, Ember wraps the event
+  handler in a run-loop, but when integrating with non-Ember libraries this
+  can be tedious.
+
+  For example, the following is rather verbose but is the correct way to combine
+  third-party events and Ember code.
+
+  ```javascript
+  var that = this;
+  jQuery(window).on('resize', function(){
+    Ember.run(function(){
+      that.handleResize();
+    });
+  });
+  ```
+
+  To reduce the boilerplate, the following can be used to construct a
+  run-loop-wrapped callback handler.
+
+  ```javascript
+  jQuery(window).on('resize', Ember.run.bind(this, this.handleResize));
+  ```
+
+  @method bind
+  @namespace Ember.run
+  @param {Object} [target] target of method to call
+  @param {Function|String} method Method to invoke.
+    May be a function or a string. If you pass a string
+    then it will be looked up on the passed target.
+  @param {Object} [args*] Any additional arguments you wish to pass to the method.
+  @return {Object} return value from invoking the passed function. Please note,
+  when called within an existing loop, no return value is possible.
+*/
+Ember.run.bind = function(target, method /* args*/) {
+  var args = slice.call(arguments);
+  return function() {
+    return Ember.run.join.apply(Ember.run, args.concat(slice.call(arguments)));
+  };
 };
 
 Ember.run.backburner = backburner;
@@ -23991,7 +25625,7 @@ Ember.run.later = function(target, method) {
     If you pass a string it will be resolved on the
     target at the time the method is invoked.
   @param {Object} [args*] Optional arguments to pass to the timeout.
-  @return {Object} timer
+  @return {Object} Timer information for use in cancelling, see `Ember.run.cancel`.
 */
 Ember.run.once = function(target, method) {
   checkAutoRun();
@@ -24042,7 +25676,7 @@ Ember.run.once = function(target, method) {
     If you pass a string it will be resolved on the
     target at the time the method is invoked.
   @param {Object} [args*] Optional arguments to pass to the timeout.
-  @return {Object} timer
+  @return {Object} Timer information for use in cancelling, see `Ember.run.cancel`.
 */
 Ember.run.scheduleOnce = function(queue, target, method) {
   checkAutoRun();
@@ -24105,7 +25739,7 @@ Ember.run.scheduleOnce = function(queue, target, method) {
     If you pass a string it will be resolved on the
     target at the time the method is invoked.
   @param {Object} [args*] Optional arguments to pass to the timeout.
-  @return {Object} timer
+  @return {Object} Timer information for use in cancelling, see `Ember.run.cancel`.
 */
 Ember.run.next = function() {
   var args = slice.call(arguments);
@@ -24115,7 +25749,8 @@ Ember.run.next = function() {
 
 /**
   Cancels a scheduled item. Must be a value returned by `Ember.run.later()`,
-  `Ember.run.once()`, or `Ember.run.next()`.
+  `Ember.run.once()`, `Ember.run.next()`, `Ember.run.debounce()`, or
+  `Ember.run.throttle()`.
 
   ```javascript
   var runNext = Ember.run.next(myContext, function() {
@@ -24132,11 +25767,27 @@ Ember.run.next = function() {
     // will not be executed
   });
   Ember.run.cancel(runOnce);
+
+  var throttle = Ember.run.throttle(myContext, function() {
+    // will not be executed
+  }, 1, false);
+  Ember.run.cancel(throttle);
+
+  var debounce = Ember.run.debounce(myContext, function() {
+    // will not be executed
+  }, 1);
+  Ember.run.cancel(debounce);
+
+  var debounceImmediate = Ember.run.debounce(myContext, function() {
+    // will be executed since we passed in true (immediate)
+  }, 100, true);
+  // the 100ms delay until this method can be called again will be cancelled
+  Ember.run.cancel(debounceImmediate);
   ```
 
   @method cancel
   @param {Object} timer Timer object to cancel
-  @return {void}
+  @return {Boolean} true if cancelled or false/undefined if it wasn't found
 */
 Ember.run.cancel = function(timer) {
   return backburner.cancel(timer);
@@ -24168,6 +25819,34 @@ Ember.run.cancel = function(timer) {
     // console logs 'debounce ran.' one time.
   ```
 
+  Immediate allows you to run the function immediately, but debounce
+  other calls for this function until the wait time has elapsed. If
+  `debounce` is called again before the specified time has elapsed,
+  the timer is reset and the entire period must pass again before
+  the method can be called again.
+
+  ```javascript
+    var myFunc = function() { console.log(this.name + ' ran.'); };
+    var myContext = {name: 'debounce'};
+
+    Ember.run.debounce(myContext, myFunc, 150, true);
+
+    // console logs 'debounce ran.' one time immediately.
+    // 100ms passes
+
+    Ember.run.debounce(myContext, myFunc, 150, true);
+
+    // 150ms passes and nothing else is logged to the console and
+    // the debouncee is no longer being watched
+
+    Ember.run.debounce(myContext, myFunc, 150, true);
+
+    // console logs 'debounce ran.' one time immediately.
+    // 150ms passes and nothing else is logged tot he console and
+    // the debouncee is no longer being watched
+
+  ```
+
   @method debounce
   @param {Object} [target] target of method to invoke
   @param {Function|String} method The method to invoke.
@@ -24175,8 +25854,9 @@ Ember.run.cancel = function(timer) {
     then it will be looked up on the passed target.
   @param {Object} [args*] Optional arguments to pass to the timeout.
   @param {Number} wait Number of milliseconds to wait.
-  @param {Boolean} immediate Trigger the function on the leading instead of the trailing edge of the wait interval.
-  @return {void}
+  @param {Boolean} immediate Trigger the function on the leading instead
+    of the trailing edge of the wait interval. Defaults to false.
+  @return {Array} Timer information for use in cancelling, see `Ember.run.cancel`.
 */
 Ember.run.debounce = function() {
   return backburner.debounce.apply(backburner, arguments);
@@ -24191,9 +25871,7 @@ Ember.run.debounce = function() {
     var myContext = {name: 'throttle'};
 
     Ember.run.throttle(myContext, myFunc, 150);
-
-    // 50ms passes
-    Ember.run.throttle(myContext, myFunc, 150);
+    // myFunc is invoked with context myContext
 
     // 50ms passes
     Ember.run.throttle(myContext, myFunc, 150);
@@ -24202,8 +25880,9 @@ Ember.run.debounce = function() {
     Ember.run.throttle(myContext, myFunc, 150);
 
     // 150ms passes
+    Ember.run.throttle(myContext, myFunc, 150);
     // myFunc is invoked with context myContext
-    // console logs 'throttle ran.' twice, 150ms apart.
+    // console logs 'throttle ran.' twice, 250ms apart.
   ```
 
   @method throttle
@@ -24213,7 +25892,7 @@ Ember.run.debounce = function() {
     then it will be looked up on the passed target.
   @param {Object} [args*] Optional arguments to pass to the timeout.
   @param {Number} spacing Number of milliseconds to space out requests.
-  @return {void}
+  @return {Array} Timer information for use in cancelling, see `Ember.run.cancel`.
 */
 Ember.run.throttle = function() {
   return backburner.throttle.apply(backburner, arguments);
@@ -24721,11 +26400,24 @@ var Mixin, REQUIRED, Alias,
     a_slice = [].slice,
     o_create = Ember.create,
     defineProperty = Ember.defineProperty,
-    guidFor = Ember.guidFor;
+    guidFor = Ember.guidFor,
+    metaFor = Ember.meta,
+    META_KEY = Ember.META_KEY;
 
+var expandProperties = Ember.expandProperties;
+
+function superFunction(){
+  var ret, func = this.__nextSuper;
+  if (func) {
+    this.__nextSuper = null;
+    ret = func.apply(this, arguments);
+    this.__nextSuper = func;
+  }
+  return ret;
+}
 
 function mixinsMeta(obj) {
-  var m = Ember.meta(obj, true), ret = m.mixins;
+  var m = metaFor(obj, true), ret = m.mixins;
   if (!ret) {
     ret = m.mixins = {};
   } else if (!m.hasOwnProperty('mixins')) {
@@ -24849,17 +26541,24 @@ function applyMergedProperties(obj, key, value, values) {
 
   if (!baseValue) { return value; }
 
-  var newBase = Ember.merge({}, baseValue);
+  var newBase = Ember.merge({}, baseValue),
+      hasFunction = false;
+
   for (var prop in value) {
     if (!value.hasOwnProperty(prop)) { continue; }
 
     var propValue = value[prop];
     if (isMethod(propValue)) {
       // TODO: support for Computed Properties, etc?
+      hasFunction = true;
       newBase[prop] = giveMethodSuper(obj, prop, propValue, baseValue, {});
     } else {
       newBase[prop] = propValue;
     }
+  }
+
+  if (hasFunction) {
+    newBase._super = superFunction;
   }
 
   return newBase;
@@ -24870,7 +26569,7 @@ function addNormalizedProperty(base, key, value, meta, descs, values, concats, m
     if (value === REQUIRED && descs[key]) { return CONTINUE; }
 
     // Wrap descriptor function to implement
-    // _super() if needed
+    // __nextSuper() if needed
     if (value.func) {
       value = giveDescriptorSuper(meta, key, value, values, descs);
     }
@@ -24910,7 +26609,7 @@ function mergeMixins(mixins, m, descs, values, base, keys) {
     if (props === CONTINUE) { continue; }
 
     if (props) {
-      meta = Ember.meta(base);
+      meta = metaFor(base);
       if (base.willMergeMixin) { base.willMergeMixin(props); }
       concats = concatenatedMixinProperties('concatenatedProperties', props, values, base);
       mergings = concatenatedMixinProperties('mergedProperties', props, values, base);
@@ -24968,7 +26667,7 @@ function connectBindings(obj, m) {
 }
 
 function finishPartial(obj, m) {
-  connectBindings(obj, m || Ember.meta(obj));
+  connectBindings(obj, m || metaFor(obj));
   return obj;
 }
 
@@ -25015,8 +26714,10 @@ function replaceObserversAndListeners(obj, key, observerOrListener) {
 }
 
 function applyMixin(obj, mixins, partial) {
-  var descs = {}, values = {}, m = Ember.meta(obj),
+  var descs = {}, values = {}, m = metaFor(obj),
       key, value, desc, keys = [];
+
+  obj._super = superFunction;
 
   // Go through all mixins and hashes passed in, and:
   //
@@ -25097,7 +26798,7 @@ Ember.mixin = function(obj) {
 
   Note that mixins extend a constructor's prototype so arrays and object literals
   defined as properties will be shared amongst objects that implement the mixin.
-  If you want to define an property in a mixin that is not shared, you can define
+  If you want to define a property in a mixin that is not shared, you can define
   it either as a computed property or have it be created on initialization of the object.
 
   ```javascript
@@ -25227,7 +26928,8 @@ function _detect(curMixin, targetMixin, seen) {
 MixinPrototype.detect = function(obj) {
   if (!obj) { return false; }
   if (obj instanceof Mixin) { return _detect(obj, this, {}); }
-  var mixins = Ember.meta(obj, false).mixins;
+  var m = obj[META_KEY],
+      mixins = m && m.mixins;
   if (mixins) {
     return !!mixins[guidFor(this)];
   }
@@ -25266,7 +26968,8 @@ MixinPrototype.keys = function() {
 // returns the mixins currently applied to the specified object
 // TODO: Make Ember.mixin
 Mixin.mixins = function(obj) {
-  var mixins = Ember.meta(obj, false).mixins, ret = [];
+  var m = obj[META_KEY],
+      mixins = m && m.mixins, ret = [];
 
   if (!mixins) { return ret; }
 
@@ -25297,35 +27000,6 @@ Alias = function(methodName) {
   this.methodName = methodName;
 };
 Alias.prototype = new Ember.Descriptor();
-
-/**
-  Makes a property or method available via an additional name.
-
-  ```javascript
-  App.PaintSample = Ember.Object.extend({
-    color: 'red',
-    colour: Ember.alias('color'),
-    name: function() {
-      return "Zed";
-    },
-    moniker: Ember.alias("name")
-  });
-
-  var paintSample = App.PaintSample.create()
-  paintSample.get('colour');  // 'red'
-  paintSample.moniker();      // 'Zed'
-  ```
-
-  @method alias
-  @for Ember
-  @param {String} methodName name of the method or property to alias
-  @return {Ember.Descriptor}
-  @deprecated Use `Ember.aliasMethod` or `Ember.computed.alias` instead
-*/
-Ember.alias = function(methodName) {
-  Ember.deprecate("Ember.alias is deprecated. Please use Ember.aliasMethod or Ember.computed.alias instead.");
-  return new Alias(methodName);
-};
 
 /**
   Makes a method available via an additional name.
@@ -25381,16 +27055,21 @@ Ember.observer = function() {
   var func  = a_slice.call(arguments, -1)[0];
   var paths;
 
-  
-    paths = a_slice.call(arguments, 0, -1);
+  var addWatchedProperty = function (path) { paths.push(path); };
+  var _paths = a_slice.call(arguments, 0, -1);
 
-    if (typeof func !== "function") {
-      // revert to old, soft-deprecated argument ordering
+  if (typeof func !== "function") {
+    // revert to old, soft-deprecated argument ordering
 
-      func  = arguments[0];
-      paths = a_slice.call(arguments, 1);
-    }
-  
+    func  = arguments[0];
+    _paths = a_slice.call(arguments, 1);
+  }
+
+  paths = [];
+
+  for (var i=0; i<_paths.length; ++i) {
+    expandProperties(_paths[i], addWatchedProperty);
+  }
 
   if (typeof func !== "function") {
     throw new Ember.Error("Ember.observer called without a function");
@@ -25479,16 +27158,22 @@ Ember.beforeObserver = function() {
   var func  = a_slice.call(arguments, -1)[0];
   var paths;
 
-  
-    paths = a_slice.call(arguments, 0, -1);
+  var addWatchedProperty = function(path) { paths.push(path); };
 
-    if (typeof func !== "function") {
-      // revert to old, soft-deprecated argument ordering
+  var _paths = a_slice.call(arguments, 0, -1);
 
-      func  = arguments[0];
-      paths = a_slice.call(arguments, 1);
-    }
-  
+  if (typeof func !== "function") {
+    // revert to old, soft-deprecated argument ordering
+
+    func  = arguments[0];
+    _paths = a_slice.call(arguments, 1);
+  }
+
+  paths = [];
+
+  for (var i=0; i<_paths.length; ++i) {
+    expandProperties(_paths[i], addWatchedProperty);
+  }
 
   if (typeof func !== "function") {
     throw new Ember.Error("Ember.beforeObserver called without a function");
@@ -27162,7 +28847,7 @@ define("rsvp/promise/all",
       ```
 
       @method all
-      @for RSVP.Promise
+      @for Ember.RSVP.Promise
       @param {Array} entries array of promises
       @param {String} label optional string for labeling the promise.
       Useful for tooling.
@@ -27709,132 +29394,11 @@ define("rsvp",
 })();
 
 (function() {
-/**
-Public api for the container is still in flux.
-The public api, specified on the application namespace should be considered the stable api.
-// @module container
-  @private
-*/
-
-/*
- Flag to enable/disable model factory injections (disabled by default)
- If model factory injections are enabled, models should not be
- accessed globally (only through `container.lookupFactory('model:modelName'))`);
-*/
-Ember.MODEL_FACTORY_INJECTIONS = false || !!Ember.ENV.MODEL_FACTORY_INJECTIONS;
-
-define("container",
-  [],
-  function() {
-
-    // A safe and simple inheriting object.
-    function InheritingDict(parent) {
-      this.parent = parent;
-      this.dict = {};
-    }
-
-    InheritingDict.prototype = {
-
-      /**
-        @property parent
-        @type InheritingDict
-        @default null
-      */
-
-      parent: null,
-
-      /**
-        Object used to store the current nodes data.
-
-        @property dict
-        @type Object
-        @default Object
-      */
-      dict: null,
-
-      /**
-        Retrieve the value given a key, if the value is present at the current
-        level use it, otherwise walk up the parent hierarchy and try again. If
-        no matching key is found, return undefined.
-
-        @method get
-        @param {String} key
-        @return {any}
-      */
-      get: function(key) {
-        var dict = this.dict;
-
-        if (dict.hasOwnProperty(key)) {
-          return dict[key];
-        }
-
-        if (this.parent) {
-          return this.parent.get(key);
-        }
-      },
-
-      /**
-        Set the given value for the given key, at the current level.
-
-        @method set
-        @param {String} key
-        @param {Any} value
-      */
-      set: function(key, value) {
-        this.dict[key] = value;
-      },
-
-      /**
-        Delete the given key
-
-        @method remove
-        @param {String} key
-      */
-      remove: function(key) {
-        delete this.dict[key];
-      },
-
-      /**
-        Check for the existence of given a key, if the key is present at the current
-        level return true, otherwise walk up the parent hierarchy and try again. If
-        no matching key is found, return false.
-
-        @method has
-        @param {String} key
-        @return {Boolean}
-      */
-      has: function(key) {
-        var dict = this.dict;
-
-        if (dict.hasOwnProperty(key)) {
-          return true;
-        }
-
-        if (this.parent) {
-          return this.parent.has(key);
-        }
-
-        return false;
-      },
-
-      /**
-        Iterate and invoke a callback for each local key-value pair.
-
-        @method eachLocal
-        @param {Function} callback
-        @param {Object} binding
-      */
-      eachLocal: function(callback, binding) {
-        var dict = this.dict;
-
-        for (var prop in dict) {
-          if (dict.hasOwnProperty(prop)) {
-            callback.call(binding, prop, dict[prop]);
-          }
-        }
-      }
-    };
-
+define("container/container", 
+  ["container/inheriting_dict","exports"],
+  function(__dependency1__, __exports__) {
+    "use strict";
+    var InheritingDict = __dependency1__["default"];
 
     // A lightweight container that helps to assemble and decouple components.
     // Public api for the container is still in flux.
@@ -27847,7 +29411,8 @@ define("container",
 
       this.registry = new InheritingDict(parent && parent.registry);
       this.cache = new InheritingDict(parent && parent.cache);
-      this.factoryCache = new InheritingDict(parent && parent.cache);
+      this.factoryCache = new InheritingDict(parent && parent.factoryCache);
+      this.resolveCache = new InheritingDict(parent && parent.resolveCache);
       this.typeInjections = new InheritingDict(parent && parent.typeInjections);
       this.injections = {};
 
@@ -27968,9 +29533,7 @@ define("container",
         @param {Object} options
       */
       register: function(fullName, factory, options) {
-        if (fullName.indexOf(':') === -1) {
-          throw new TypeError("malformed fullName, expected: `type:name` got: " + fullName + "");
-        }
+        validateFullName(fullName);
 
         if (factory === undefined) {
           throw new TypeError('Attempting to register an unknown factory: `' + fullName + '`');
@@ -28003,11 +29566,14 @@ define("container",
         @param {String} fullName
        */
       unregister: function(fullName) {
+        validateFullName(fullName);
+
         var normalizedName = this.normalize(fullName);
 
         this.registry.remove(normalizedName);
         this.cache.remove(normalizedName);
         this.factoryCache.remove(normalizedName);
+        this.resolveCache.remove(normalizedName);
         this._options.remove(normalizedName);
       },
 
@@ -28044,7 +29610,18 @@ define("container",
         @return {Function} fullName's factory
       */
       resolve: function(fullName) {
-        return this.resolver(fullName) || this.registry.get(fullName);
+        validateFullName(fullName);
+
+        var normalizedName = this.normalize(fullName);
+        var cached = this.resolveCache.get(normalizedName);
+
+        if (cached) { return cached; }
+
+        var resolved = this.resolver(normalizedName) || this.registry.get(normalizedName);
+
+        this.resolveCache.set(normalizedName, resolved);
+
+        return resolved;
       },
 
       /**
@@ -28125,23 +29702,8 @@ define("container",
         @return {any}
       */
       lookup: function(fullName, options) {
-        fullName = this.normalize(fullName);
-
-        options = options || {};
-
-        if (this.cache.has(fullName) && options.singleton !== false) {
-          return this.cache.get(fullName);
-        }
-
-        var value = instantiate(this, fullName);
-
-        if (value === undefined) { return; }
-
-        if (isSingleton(this, fullName) && options.singleton !== false) {
-          this.cache.set(fullName, value);
-        }
-
-        return value;
+        validateFullName(fullName);
+        return lookup(this, this.normalize(fullName), options);
       },
 
       /**
@@ -28152,7 +29714,8 @@ define("container",
         @return {any}
       */
       lookupFactory: function(fullName) {
-        return factoryFor(this, fullName);
+        validateFullName(fullName);
+        return factoryFor(this, this.normalize(fullName));
       },
 
       /**
@@ -28164,11 +29727,8 @@ define("container",
         @return {Boolean}
       */
       has: function(fullName) {
-        if (this.cache.has(fullName)) {
-          return true;
-        }
-
-        return !!this.resolve(fullName);
+        validateFullName(fullName);
+        return has(this, this.normalize(fullName));
       },
 
       /**
@@ -28249,6 +29809,7 @@ define("container",
         @param {String} fullName
       */
       typeInjection: function(type, property, fullName) {
+        validateFullName(fullName);
         if (this.parent) { illegalChildOperation('typeInjection'); }
 
         addTypeInjection(this.typeInjections, type, property, fullName);
@@ -28298,14 +29859,20 @@ define("container",
         @param {String} property
         @param {String} injectionName
       */
-      injection: function(factoryName, property, injectionName) {
+      injection: function(fullName, property, injectionName) {
         if (this.parent) { illegalChildOperation('injection'); }
 
-        if (factoryName.indexOf(':') === -1) {
-          return this.typeInjection(factoryName, property, injectionName);
+        validateFullName(injectionName);
+        var normalizedInjectionName = this.normalize(injectionName);
+
+        if (fullName.indexOf(':') === -1) {
+          return this.typeInjection(fullName, property, normalizedInjectionName);
         }
 
-        addInjection(this.injections, factoryName, property, injectionName);
+        validateFullName(fullName);
+        var normalizedName = this.normalize(fullName);
+
+        addInjection(this.injections, normalizedName, property, normalizedInjectionName);
       },
 
 
@@ -28341,7 +29908,7 @@ define("container",
       factoryTypeInjection: function(type, property, fullName) {
         if (this.parent) { illegalChildOperation('factoryTypeInjection'); }
 
-        addTypeInjection(this.factoryTypeInjections, type, property, fullName);
+        addTypeInjection(this.factoryTypeInjections, type, property, this.normalize(fullName));
       },
 
       /**
@@ -28393,14 +29960,21 @@ define("container",
         @param {String} property
         @param {String} injectionName
       */
-      factoryInjection: function(factoryName, property, injectionName) {
+      factoryInjection: function(fullName, property, injectionName) {
         if (this.parent) { illegalChildOperation('injection'); }
 
-        if (factoryName.indexOf(':') === -1) {
-          return this.factoryTypeInjection(factoryName, property, injectionName);
+        var normalizedName = this.normalize(fullName);
+        var normalizedInjectionName = this.normalize(injectionName);
+
+        validateFullName(injectionName);
+
+        if (fullName.indexOf(':') === -1) {
+          return this.factoryTypeInjection(normalizedName, property, normalizedInjectionName);
         }
 
-        addInjection(this.factoryInjections, factoryName, property, injectionName);
+        validateFullName(fullName);
+
+        addInjection(this.factoryInjections, normalizedName, property, normalizedInjectionName);
       },
 
       /**
@@ -28410,7 +29984,6 @@ define("container",
         @method destroy
       */
       destroy: function() {
-
         for (var i=0, l=this.children.length; i<l; i++) {
           this.children[i].destroy();
         }
@@ -28436,6 +30009,32 @@ define("container",
       }
     };
 
+    function has(container, fullName){
+      if (container.cache.has(fullName)) {
+        return true;
+      }
+
+      return !!container.resolve(fullName);
+    }
+
+    function lookup(container, fullName, options) {
+      options = options || {};
+
+      if (container.cache.has(fullName) && options.singleton !== false) {
+        return container.cache.get(fullName);
+      }
+
+      var value = instantiate(container, fullName);
+
+      if (value === undefined) { return; }
+
+      if (isSingleton(container, fullName) && options.singleton !== false) {
+        container.cache.set(fullName, value);
+      }
+
+      return value;
+    }
+
     function illegalChildOperation(operation) {
       throw new Error(operation + " is not currently supported on child containers");
     }
@@ -28451,14 +30050,14 @@ define("container",
 
       if (!injections) { return hash; }
 
-      var injection, lookup;
+      var injection, injectable;
 
       for (var i=0, l=injections.length; i<l; i++) {
         injection = injections[i];
-        lookup = container.lookup(injection.fullName);
+        injectable = lookup(container, injection.fullName);
 
-        if (lookup !== undefined) {
-          hash[injection.property] = lookup;
+        if (injectable !== undefined) {
+          hash[injection.property] = injectable;
         } else {
           throw new Error('Attempting to inject an unknown injection: `' + injection.fullName + '`');
         }
@@ -28483,7 +30082,7 @@ define("container",
     }
 
     function factoryFor(container, fullName) {
-      var name = container.normalize(fullName);
+      var name = fullName;
       var factory = container.resolve(name);
       var injectedFactory;
       var cache = container.factoryCache;
@@ -28515,7 +30114,7 @@ define("container",
       }
     }
 
-    function injectionsFor(container ,fullName) {
+    function injectionsFor(container, fullName) {
       var splitName = fullName.split(":"),
         type = splitName[0],
         injections = [];
@@ -28593,14 +30192,156 @@ define("container",
       });
     }
 
+    var VALID_FULL_NAME_REGEXP = /^[^:]+.+:[^:]+$/;
+    function validateFullName(fullName) {
+      if (!VALID_FULL_NAME_REGEXP.test(fullName)) {
+        throw new TypeError('Invalid Fullname, expected: `type:name` got: ' + fullName);
+      }
+    }
+
     function addInjection(rules, factoryName, property, injectionName) {
       var injections = rules[factoryName] = rules[factoryName] || [];
       injections.push({ property: property, fullName: injectionName });
     }
 
-    return Container;
-});
+    __exports__["default"] = Container;
+  });
+define("container/inheriting_dict", 
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    // A safe and simple inheriting object.
+    function InheritingDict(parent) {
+      this.parent = parent;
+      this.dict = {};
+    }
 
+    InheritingDict.prototype = {
+
+      /**
+        @property parent
+        @type InheritingDict
+        @default null
+      */
+
+      parent: null,
+
+      /**
+        Object used to store the current nodes data.
+
+        @property dict
+        @type Object
+        @default Object
+      */
+      dict: null,
+
+      /**
+        Retrieve the value given a key, if the value is present at the current
+        level use it, otherwise walk up the parent hierarchy and try again. If
+        no matching key is found, return undefined.
+
+        @method get
+        @param {String} key
+        @return {any}
+      */
+      get: function(key) {
+        var dict = this.dict;
+
+        if (dict.hasOwnProperty(key)) {
+          return dict[key];
+        }
+
+        if (this.parent) {
+          return this.parent.get(key);
+        }
+      },
+
+      /**
+        Set the given value for the given key, at the current level.
+
+        @method set
+        @param {String} key
+        @param {Any} value
+      */
+      set: function(key, value) {
+        this.dict[key] = value;
+      },
+
+      /**
+        Delete the given key
+
+        @method remove
+        @param {String} key
+      */
+      remove: function(key) {
+        delete this.dict[key];
+      },
+
+      /**
+        Check for the existence of given a key, if the key is present at the current
+        level return true, otherwise walk up the parent hierarchy and try again. If
+        no matching key is found, return false.
+
+        @method has
+        @param {String} key
+        @return {Boolean}
+      */
+      has: function(key) {
+        var dict = this.dict;
+
+        if (dict.hasOwnProperty(key)) {
+          return true;
+        }
+
+        if (this.parent) {
+          return this.parent.has(key);
+        }
+
+        return false;
+      },
+
+      /**
+        Iterate and invoke a callback for each local key-value pair.
+
+        @method eachLocal
+        @param {Function} callback
+        @param {Object} binding
+      */
+      eachLocal: function(callback, binding) {
+        var dict = this.dict;
+
+        for (var prop in dict) {
+          if (dict.hasOwnProperty(prop)) {
+            callback.call(binding, prop, dict[prop]);
+          }
+        }
+      }
+    };
+
+    __exports__["default"] = InheritingDict;
+  });
+define("container", 
+  ["container/container","exports"],
+  function(__dependency1__, __exports__) {
+    "use strict";
+    /**
+    Public api for the container is still in flux.
+    The public api, specified on the application namespace should be considered the stable api.
+    // @module container
+      @private
+    */
+
+    /*
+     Flag to enable/disable model factory injections (disabled by default)
+     If model factory injections are enabled, models should not be
+     accessed globally (only through `container.lookupFactory('model:modelName'))`);
+    */
+    Ember.MODEL_FACTORY_INJECTIONS = false || !!Ember.ENV.MODEL_FACTORY_INJECTIONS;
+
+    var Container = __dependency1__["default"];
+
+    __exports__["default"] = Container;
+  });
 })();
 
 (function() {
@@ -28745,6 +30486,8 @@ function _copy(obj, deep, seen, copies) {
     }
   } else if (Ember.Copyable && Ember.Copyable.detect(obj)) {
     ret = obj.copy(deep, seen, copies);
+  } else if (obj instanceof Date) {
+    ret = new Date(obj.getTime());
   } else {
     ret = {};
     for(key in obj) {
@@ -28785,39 +30528,6 @@ Ember.copy = function(obj, deep) {
   if ('object' !== typeof obj || obj===null) return obj; // can't copy primitives
   if (Ember.Copyable && Ember.Copyable.detect(obj)) return obj.copy(deep);
   return _copy(obj, deep, deep ? [] : null, deep ? [] : null);
-};
-
-/**
-  Convenience method to inspect an object. This method will attempt to
-  convert the object into a useful string description.
-
-  It is a pretty simple implementation. If you want something more robust,
-  use something like JSDump: https://github.com/NV/jsDump
-
-  @method inspect
-  @for Ember
-  @param {Object} obj The object you want to inspect.
-  @return {String} A description of the object
-*/
-Ember.inspect = function(obj) {
-  var type = Ember.typeOf(obj);
-  if (type === 'array') {
-    return '[' + obj + ']';
-  }
-  if (type !== 'object') {
-    return obj + '';
-  }
-
-  var v, ret = [];
-  for(var key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      v = obj[key];
-      if (v === 'toString') { continue; } // ignore useless items
-      if (Ember.typeOf(v) === 'function') { v = "function() { ... }"; }
-      ret.push(key + ": " + v);
-    }
-  }
-  return "{" + ret.join(", ") + "}";
 };
 
 /**
@@ -28924,6 +30634,10 @@ var STRING_DECAMELIZE_REGEXP = (/([a-z\d])([A-Z])/g);
 var STRING_CAMELIZE_REGEXP = (/(\-|_|\.|\s)+(.)?/g);
 var STRING_UNDERSCORE_REGEXP_1 = (/([a-z\d])([A-Z]+)/g);
 var STRING_UNDERSCORE_REGEXP_2 = (/\-|\s+/g);
+var STRING_PARAMETERIZE_REGEXP_1 = (/[_|\/|\s]+/g);
+var STRING_PARAMETERIZE_REGEXP_2 = (/[^a-z0-9\-]+/gi);
+var STRING_PARAMETERIZE_REGEXP_3 = (/[\-]+/g);
+var STRING_PARAMETERIZE_REGEXP_4 = (/^-+|-+$/g);
 
 /**
   Defines the hash of localized strings for the current language. Used by
@@ -29162,8 +30876,6 @@ Ember.String = {
   }
 };
 
-
-
 })();
 
 
@@ -29185,7 +30897,6 @@ var fmt = Ember.String.fmt,
     underscore = Ember.String.underscore,
     capitalize = Ember.String.capitalize,
     classify = Ember.String.classify;
-
 
 if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 
@@ -29278,10 +30989,7 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
   String.prototype.capitalize = function() {
     return capitalize(this);
   };
-
-  
 }
-
 
 })();
 
@@ -29798,6 +31506,7 @@ var set = Ember.set, get = Ember.get,
     guidFor = Ember.guidFor,
     generateGuid = Ember.generateGuid,
     meta = Ember.meta,
+    META_KEY = Ember.META_KEY,
     rewatch = Ember.rewatch,
     finishChains = Ember.finishChains,
     sendEvent = Ember.sendEvent,
@@ -29817,6 +31526,13 @@ var undefinedDescriptor = {
   value: undefined
 };
 
+var nullDescriptor = {
+  configurable: true,
+  writable: true,
+  enumerable: false,
+  value: null
+};
+
 function makeCtor() {
 
   // Note: avoid accessing any properties on the object since it makes the
@@ -29829,8 +31545,8 @@ function makeCtor() {
     if (!wasApplied) {
       Class.proto(); // prepare prototype...
     }
-    o_defineProperty(this, GUID_KEY, undefinedDescriptor);
-    o_defineProperty(this, '_super', undefinedDescriptor);
+    o_defineProperty(this, GUID_KEY, nullDescriptor);
+    o_defineProperty(this, '__nextSuper', undefinedDescriptor);
     var m = meta(this), proto = m.proto;
     m.proto = this;
     if (initMixins) {
@@ -29878,7 +31594,7 @@ function makeCtor() {
 
           var desc = m.descs[keyName];
 
-          Ember.assert("Ember.Object.create no longer supports defining computed properties.", !(value instanceof Ember.ComputedProperty));
+          Ember.assert("Ember.Object.create no longer supports defining computed properties. Define computed properties using extend() or reopen() before calling create().", !(value instanceof Ember.ComputedProperty));
           Ember.assert("Ember.Object.create no longer supports defining methods that call _super.", !(typeof value === 'function' && value.toString().indexOf('._super') !== -1));
           Ember.assert("`actions` must be provided at extend time, not at create " +
                        "time, when Ember.ActionHandler is used (i.e. views, " +
@@ -30491,7 +32207,8 @@ var ClassMixin = Mixin.create({
     @param key {String} property name
   */
   metaForProperty: function(key) {
-    var desc = meta(this.proto(), false).descs[key];
+    var meta = this.proto()[META_KEY],
+        desc = meta && meta.descs[key];
 
     Ember.assert("metaForProperty() could not find a computed property with key '"+key+"'.", !!desc && desc instanceof Ember.ComputedProperty);
     return desc._meta || {};
@@ -30607,7 +32324,9 @@ var Namespace = Ember.Namespace = Ember.Object.extend({
 
   destroy: function() {
     var namespaces = Ember.Namespace.NAMESPACES;
+
     Ember.lookup[this.toString()] = undefined;
+    delete Ember.Namespace.NAMESPACES_BY_ID[this.toString()];
     namespaces.splice(indexOf.call(namespaces, this), 1);
     this._super();
   }
@@ -30970,13 +32689,13 @@ function iter(key, value) {
   To make your own custom class enumerable, you need two items:
 
   1. You must have a length property. This property should change whenever
-     the number of items in your enumerable object changes. If you using this
+     the number of items in your enumerable object changes. If you use this
      with an `Ember.Object` subclass, you should be sure to change the length
      property using `set().`
 
   2. You must implement `nextObject().` See documentation.
 
-  Once you have these two methods implement, apply the `Ember.Enumerable` mixin
+  Once you have these two methods implemented, apply the `Ember.Enumerable` mixin
   to your class and you will be able to enumerate the contents of your object
   like any other collection.
 
@@ -31311,7 +33030,7 @@ Ember.Enumerable = Ember.Mixin.create({
 
     @method filterBy
     @param {String} key the property to test
-    @param {String} [value] optional value to test against.
+    @param {*} [value] optional value to test against.
     @return {Array} filtered array
   */
   filterBy: function(key, value) {
@@ -31540,11 +33259,23 @@ Ember.Enumerable = Ember.Mixin.create({
     @return {Boolean} `true` if the passed function returns `true` for any item
   */
   any: function(callback, target) {
-    var found = this.find(function(x, idx, i) {
-      return !!callback.call(target, x, idx, i);
-    });
+    var len     = get(this, 'length'),
+        context = popCtx(),
+        found   = false,
+        last    = null,
+        next, idx;
 
-    return typeof found !== 'undefined';
+    if (target === undefined) { target = null; }
+
+    for (idx = 0; idx < len && !found; idx++) {
+      next  = this.nextObject(idx, last, context);
+      found = callback.call(target, next, idx, this);
+      last  = next;
+    }
+
+    next = last = null;
+    context = pushCtx(context);
+    return found;
   },
 
   /**
@@ -31653,7 +33384,7 @@ Ember.Enumerable = Ember.Mixin.create({
     var ret = initialValue;
 
     this.forEach(function(item, i) {
-      ret = callback.call(null, ret, item, i, this, reducerProperty);
+      ret = callback(ret, item, i, this, reducerProperty);
     }, this);
 
     return ret;
@@ -31676,7 +33407,7 @@ Ember.Enumerable = Ember.Mixin.create({
     this.forEach(function(x, idx) {
       var method = x && x[methodName];
       if ('function' === typeof method) {
-        ret[idx] = args ? method.apply(x, args) : method.call(x);
+        ret[idx] = args ? method.apply(x, args) : x[methodName]();
       }
     }, this);
 
@@ -31871,8 +33602,6 @@ Ember.Enumerable = Ember.Mixin.create({
     notify range observers.
 
     @method enumerableContentDidChange
-    @param {Number} [start] optional start offset for the content change.
-      For unordered enumerables, you should always pass -1.
     @param {Ember.Enumerable|Number} removing An enumerable of the objects to
       be removed or the number of items to be removed.
     @param {Ember.Enumerable|Number} adding  An enumerable of the objects to
@@ -31948,9 +33677,14 @@ var get = Ember.get, set = Ember.set, isNone = Ember.isNone, map = Ember.Enumera
 // ARRAY
 //
 /**
-  This module implements Observer-friendly Array-like behavior. This mixin is
-  picked up by the Array class as well as other controllers, etc. that want to
-  appear to be arrays.
+  This mixin implements Observer-friendly Array-like behavior. It is not a
+  concrete implementation, but it can be used up by other classes that want
+  to appear like arrays.
+
+  For example, ArrayProxy and ArrayController are both concrete classes that can
+  be instantiated to implement array-like behavior. Both of these classes use
+  the Array Mixin by way of the MutableArray mixin, which allows observable
+  changes to be made to the underlying array.
 
   Unlike `Ember.Enumerable,` this mixin defines methods specifically for
   collections that provide index-ordered access to their contents. When you
@@ -32082,7 +33816,7 @@ Ember.Array = Ember.Mixin.create(Ember.Enumerable, {
 
     @method slice
     @param {Integer} beginIndex (Optional) index to begin slicing from.
-    @param {Integer} endIndex (Optional) index to end the slice at.
+    @param {Integer} endIndex (Optional) index to end the slice at (but not included).
     @return {Array} New array with specified slice
   */
   slice: function(beginIndex, endIndex) {
@@ -32233,7 +33967,7 @@ Ember.Array = Ember.Mixin.create(Ember.Enumerable, {
     Becomes true whenever the array currently has observers watching changes
     on the array.
 
-    @property Boolean
+    @property {Boolean} hasArrayObservers
   */
   hasArrayObservers: Ember.computed(function() {
     return Ember.hasListeners(this, '@array:change') || Ember.hasListeners(this, '@array:before');
@@ -32376,12 +34110,16 @@ var e_get = Ember.get,
     a_slice = [].slice,
     o_create = Ember.create,
     forEach = Ember.EnumerableUtils.forEach,
+    cacheSet = Ember.cacheFor.set,
+    cacheGet = Ember.cacheFor.get,
+    cacheRemove = Ember.cacheFor.remove,
     // Here we explicitly don't allow `@each.foo`; it would require some special
     // testing, but there's no particular reason why it should be disallowed.
     eachPropertyPattern = /^(.*)\.@each\.(.*)/,
     doubleEachPropertyPattern = /(.*\.@each){2,}/,
     arrayBracketPattern = /\.\[\]$/;
 
+var expandProperties = Ember.expandProperties;
 
 function get(obj, key) {
   if (key === '@this') {
@@ -32450,8 +34188,6 @@ DependentArraysObserver.prototype = {
   },
 
   setupObservers: function (dependentArray, dependentKey) {
-    Ember.assert("dependent array must be an `Ember.Array`", Ember.Array.detect(dependentArray));
-
     this.dependentKeysByGuid[guidFor(dependentArray)] = dependentKey;
 
     dependentArray.addArrayObserver(this, {
@@ -32782,20 +34518,22 @@ ReduceComputedPropertyInstanceMeta.prototype = {
   setValue: function(newValue, triggerObservers) {
     // This lets sugars force a recomputation, handy for very simple
     // implementations of eg max.
-    if (newValue !== undefined) {
-      var fireObservers = triggerObservers && (newValue !== this.cache[this.propertyName]);
+    if (newValue === this.cache[this.propertyName]) {
+      return;
+    }
 
-      if (fireObservers) {
-        propertyWillChange(this.context, this.propertyName);
-      }
+    if (triggerObservers) {
+      propertyWillChange(this.context, this.propertyName);
+    }
 
-      this.cache[this.propertyName] = newValue;
-
-      if (fireObservers) {
-        propertyDidChange(this.context, this.propertyName);
-      }
-    } else {
+    if (newValue === undefined) {
       delete this.cache[this.propertyName];
+    } else {
+      this.cache[this.propertyName] = newValue;
+    }
+
+    if (triggerObservers) {
+      propertyDidChange(this.context, this.propertyName);
     }
   }
 };
@@ -32813,7 +34551,6 @@ function ReduceComputedProperty(options) {
   var cp = this;
 
   this.options = options;
-  this._instanceMetas = {};
 
   this._dependentKeys = null;
   // A map of dependentKey -> [itemProperty, ...] that tracks what properties of
@@ -32825,11 +34562,10 @@ function ReduceComputedProperty(options) {
   this.cacheable();
 
   this.recomputeOnce = function(propertyName) {
-    // What we really want to do is coalesce by <cp, propertyName>.
-    // We need a form of `scheduleOnce` that accepts an arbitrary token to
-    // coalesce by, in addition to the target and method.
-    Ember.run.once(this, recompute, propertyName);
+    // TODO: Coalesce recomputation by <this, propertyName, cp>.
+    recompute.call(this, propertyName);
   };
+
   var recompute = function(propertyName) {
     var dependentKeys = cp._dependentKeys,
         meta = cp._instanceMeta(this, propertyName),
@@ -32839,6 +34575,11 @@ function ReduceComputedProperty(options) {
 
     meta.dependentArraysObserver.suspendArrayObservers(function () {
       forEach(cp._dependentKeys, function (dependentKey) {
+        Ember.assert(
+          "dependent array " + dependentKey + " must be an `Ember.Array`.  " +
+          "If you are not extending arrays, you will need to wrap native arrays with `Ember.A`",
+          !(Ember.isArray(get(this, dependentKey)) && !Ember.Array.detect(get(this, dependentKey))));
+
         if (!partiallyRecomputeFor(this, dependentKey)) { return; }
 
         var dependentArray = get(this, dependentKey),
@@ -32877,6 +34618,7 @@ function ReduceComputedProperty(options) {
     }, this);
   };
 
+
   this.func = function (propertyName) {
     Ember.assert("Computed reduce values require at least one dependent key", cp._dependentKeys);
 
@@ -32905,19 +34647,15 @@ ReduceComputedProperty.prototype._callbacks = function () {
 };
 
 ReduceComputedProperty.prototype._hasInstanceMeta = function (context, propertyName) {
-  var guid = guidFor(context),
-      key = guid + ':' + propertyName;
-
-  return !!this._instanceMetas[key];
+  return !!metaFor(context).cacheMeta[propertyName];
 };
 
 ReduceComputedProperty.prototype._instanceMeta = function (context, propertyName) {
-  var guid = guidFor(context),
-      key = guid + ':' + propertyName,
-      meta = this._instanceMetas[key];
+  var cacheMeta = metaFor(context).cacheMeta,
+      meta = cacheMeta[propertyName];
 
   if (!meta) {
-    meta = this._instanceMetas[key] = new ReduceComputedPropertyInstanceMeta(context, propertyName, this.initialValue());
+    meta = cacheMeta[propertyName] = new ReduceComputedPropertyInstanceMeta(context, propertyName, this.initialValue());
     meta.dependentArraysObserver = new DependentArraysObserver(this._callbacks(), this, meta, context, propertyName, meta.sugarMeta);
   }
 
@@ -32957,16 +34695,18 @@ ReduceComputedProperty.prototype.property = function () {
       dependentArrayKey,
       itemPropertyKey;
 
-  forEach(a_slice.call(arguments), function (dependentKey) {
+  forEach(args, function (dependentKey) {
     if (doubleEachPropertyPattern.test(dependentKey)) {
       throw new Ember.Error("Nested @each properties not supported: " + dependentKey);
     } else if (match = eachPropertyPattern.exec(dependentKey)) {
       dependentArrayKey = match[1];
 
-      
-        itemPropertyKey = match[2];
-        cp.itemPropertyKey(dependentArrayKey, itemPropertyKey);
-      
+      var itemPropertyKeyPattern = match[2],
+          addItemPropertyKey = function (itemPropertyKey) {
+            cp.itemPropertyKey(dependentArrayKey, itemPropertyKey);
+          };
+
+      expandProperties(itemPropertyKeyPattern, addItemPropertyKey);
       propertyArgs.add(dependentArrayKey);
     } else {
       propertyArgs.add(dependentKey);
@@ -33077,7 +34817,7 @@ ReduceComputedProperty.prototype.property = function () {
 
   ```javascript
   Ember.computed.max = function (dependentKey) {
-    return Ember.reduceComputed.call(null, dependentKey, {
+    return Ember.reduceComputed(dependentKey, {
       initialValue: -Infinity,
 
       addedItem: function (accumulatedValue, item, changeMeta, instanceMeta) {
@@ -33387,6 +35127,30 @@ var get = Ember.get,
     SearchProxy;
 
 /**
+ A computed property that returns the sum of the value
+ in the dependent array.
+
+ @method computed.sum
+ @for Ember
+ @param {String} dependentKey
+ @return {Ember.ComputedProperty} computes the sum of all values in the dependentKey's array
+*/
+
+Ember.computed.sum = function(dependentKey){
+  return Ember.reduceComputed(dependentKey, {
+    initialValue: 0,
+
+    addedItem: function(accumulatedValue, item, changeMeta, instanceMeta){
+      return accumulatedValue + item;
+    },
+
+    removedItem: function(accumulatedValue, item, changeMeta, instanceMeta){
+      return accumulatedValue - item;
+    }
+  });
+};
+
+/**
   A computed property that calculates the maximum value in the
   dependent array. This will return `-Infinity` when the dependent
   array is empty.
@@ -33419,7 +35183,7 @@ var get = Ember.get,
   @return {Ember.ComputedProperty} computes the largest value in the dependentKey's array
 */
 Ember.computed.max = function (dependentKey) {
-  return Ember.reduceComputed.call(null, dependentKey, {
+  return Ember.reduceComputed(dependentKey, {
     initialValue: -Infinity,
 
     addedItem: function (accumulatedValue, item, changeMeta, instanceMeta) {
@@ -33467,7 +35231,7 @@ Ember.computed.max = function (dependentKey) {
   @return {Ember.ComputedProperty} computes the smallest value in the dependentKey's array
 */
 Ember.computed.min = function (dependentKey) {
-  return Ember.reduceComputed.call(null, dependentKey, {
+  return Ember.reduceComputed(dependentKey, {
     initialValue: Infinity,
 
     addedItem: function (accumulatedValue, item, changeMeta, instanceMeta) {
@@ -33653,7 +35417,7 @@ Ember.computed.filter = function(dependentKey, callback) {
   @for Ember
   @param {String} dependentKey
   @param {String} propertyKey
-  @param {String} value
+  @param {*} value
   @return {Ember.ComputedProperty} the filtered array
 */
 Ember.computed.filterBy = function(dependentKey, propertyKey, value) {
@@ -33752,7 +35516,7 @@ Ember.computed.union = Ember.computed.uniq;
 
 /**
   A computed property which returns a new array with all the duplicated
-  elements from two or more dependeny arrays.
+  elements from two or more dependent arrays.
 
   Example
 
@@ -33858,7 +35622,7 @@ Ember.computed.setDiff = function (setAProperty, setBProperty) {
   if (arguments.length !== 2) {
     throw new Ember.Error("setDiff requires exactly two dependent arrays.");
   }
-  return Ember.arrayComputed.call(null, setAProperty, setBProperty, {
+  return Ember.arrayComputed(setAProperty, setBProperty, {
     addedItem: function (array, item, changeMeta, instanceMeta) {
       var setA = get(this, setAProperty),
           setB = get(this, setBProperty);
@@ -33948,9 +35712,12 @@ SearchProxy = Ember.ObjectProxy.extend();
   - `itemA` the first item to compare.
   - `itemB` the second item to compare.
 
-  This function should return `-1` when `itemA` should come before
-  `itemB`. It should return `1` when `itemA` should come after
+  This function should return negative number (e.g. `-1`) when `itemA` should come before
+  `itemB`. It should return positive number (e.g. `1`) when `itemA` should come after
   `itemB`. If the `itemA` and `itemB` are equal this function should return `0`.
+  
+  Therefore, if this function is comparing some numeric values, simple `itemA - itemB` or
+  `itemA.get( 'foo' ) - itemB.get( 'foo' )` can be used instead of series of `if`.
 
   Example
 
@@ -34042,10 +35809,12 @@ Ember.computed.sort = function (itemsKey, sortDefinition) {
 
 
       instanceMeta.order = function (itemA, itemB) {
-        var sortProperty, result, asc;
+        var isProxy = itemB instanceof SearchProxy,
+            sortProperty, result, asc;
+
         for (var i = 0; i < this.sortProperties.length; ++i) {
           sortProperty = this.sortProperties[i];
-          result = Ember.compare(get(itemA, sortProperty), get(itemB, sortProperty));
+          result = Ember.compare(get(itemA, sortProperty), isProxy ? itemB[sortProperty] : get(itemB, sortProperty));
 
           if (result !== 0) {
             asc = this.sortPropertyAscending[sortProperty];
@@ -34060,7 +35829,7 @@ Ember.computed.sort = function (itemsKey, sortDefinition) {
     };
   }
 
-  return Ember.arrayComputed.call(null, itemsKey, {
+  return Ember.arrayComputed(itemsKey, {
     initialize: initFn,
 
     addedItem: function (array, item, changeMeta, instanceMeta) {
@@ -34123,6 +35892,7 @@ Ember.RSVP.on('error', Ember.RSVP.onerrorDefault);
 
 var a_slice = Array.prototype.slice;
 
+var expandProperties = Ember.expandProperties;
 
 if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.Function) {
 
@@ -34219,9 +35989,14 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.Function) {
     @for Function
   */
   Function.prototype.observes = function() {
-    
-      this.__ember_observes__ = a_slice.call(arguments);
-    
+    var addWatchedProperty = function (obs) { watched.push(obs); };
+    var watched = [];
+
+    for (var i=0; i<arguments.length; ++i) {
+      expandProperties(arguments[i], addWatchedProperty);
+    }
+
+    this.__ember_observes__ = watched;
 
     return this;
   };
@@ -34284,9 +36059,14 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.Function) {
     @for Function
   */
   Function.prototype.observesBefore = function() {
-    
-      this.__ember_observesBefore__ = a_slice.call(arguments);
-    
+    var addWatchedProperty = function (obs) { watched.push(obs); };
+    var watched = [];
+
+    for (var i=0; i<arguments.length; ++i) {
+      expandProperties(arguments[i], addWatchedProperty);
+    }
+
+    this.__ember_observesBefore__ = watched;
 
     return this;
   };
@@ -34671,6 +36451,12 @@ var get = Ember.get, set = Ember.set;
 /**
   This mixin defines the API for modifying array-like objects. These methods
   can be applied only to a collection that keeps its items in an ordered set.
+  It builds upon the Array mixin and adds methods to modify the array.
+  Concrete implementations of this class include ArrayProxy and ArrayController.
+
+  It is important to use the methods in this class to modify arrays so that
+  changes are observable. This allows the binding system in Ember to function
+  correctly.
 
   Note that an Array can change even if it does not implement this mixin.
   For example, one might implement a SparseArray that cannot be directly
@@ -35010,7 +36796,7 @@ Ember.TargetActionSupport = Ember.Mixin.create({
   }).property('actionContext'),
 
   /**
-  Send an "action" with an "actionContext" to a "target". The action, actionContext
+  Send an `action` with an `actionContext` to a `target`. The action, actionContext
   and target will be retrieved from properties of the object. For example:
 
   ```javascript
@@ -35253,9 +37039,37 @@ Ember.Evented = Ember.Mixin.create({
 (function() {
 var RSVP = requireModule("rsvp");
 
-RSVP.configure('async', function(callback, promise) {
-  Ember.run.schedule('actions', promise, callback, promise);
-});
+if (Ember.FEATURES['ember-runtime-test-friendly-promises']) {
+
+  var asyncStart = function() {
+    if (Ember.Test && Ember.Test.adapter) {
+      Ember.Test.adapter.asyncStart();
+    }
+  };
+
+  var asyncEnd = function() {
+    if (Ember.Test && Ember.Test.adapter) {
+      Ember.Test.adapter.asyncEnd();
+    }
+  };
+
+  RSVP.configure('async', function(callback, promise) {
+    var async = !Ember.run.currentRunLoop;
+
+    if (Ember.testing && async) { asyncStart(); }
+
+    Ember.run.backburner.schedule('actions', function(){
+      if (Ember.testing && async) { asyncEnd(); }
+      callback(promise);
+    });
+  });
+} else {
+  RSVP.configure('async', function(callback, promise) {
+    Ember.run.backburner.schedule('actions', function(){
+      callback(promise);
+    });
+  });
+}
 
 RSVP.Promise.prototype.fail = function(callback, label){
   Ember.deprecate('RSVP.Promise.fail has been renamed as RSVP.Promise.catch');
@@ -35349,8 +37163,12 @@ var get = Ember.get, typeOf = Ember.typeOf;
   property to an `_actions` property at extend time, and adding `_actions`
   to the object's mergedProperties list.
 
-  `Ember.ActionHandler` is used internally by Ember in  `Ember.View`,
-  `Ember.Controller`, and `Ember.Route`.
+  `Ember.ActionHandler` is available on some familiar classes including
+  `Ember.Route`, `Ember.View`, `Ember.Component`, and controllers such as
+  `Ember.Controller` and `Ember.ObjectController`.
+  (Internally the mixin is used by `Ember.CoreView`, `Ember.ControllerMixin`,
+  and `Ember.Route` and available to the above classes through
+  inheritance.)
 
   @class ActionHandler
   @namespace Ember
@@ -35490,6 +37308,8 @@ Ember.ActionHandler = Ember.Mixin.create({
     var hashName;
 
     if (!props._actions) {
+      Ember.assert("'actions' should not be a function", typeof(props.actions) !== 'function');
+
       if (typeOf(props.actions) === 'object') {
         hashName = 'actions';
       } else if (typeOf(props.events) === 'object') {
@@ -35505,6 +37325,35 @@ Ember.ActionHandler = Ember.Mixin.create({
     }
   },
 
+  /**
+    Triggers a named action on the `ActionHandler`. Any parameters
+    supplied after the `actionName` string will be passed as arguments
+    to the action target function.
+
+    If the `ActionHandler` has its `target` property set, actions may
+    bubble to the `target`. Bubbling happens when an `actionName` can
+    not be found in the `ActionHandler`'s `actions` hash or if the
+    action target function returns `true`.
+
+    Example
+
+    ```js
+    App.WelcomeRoute = Ember.Route.extend({
+      actions: {
+        playTheme: function() {
+           this.send('playMusic', 'theme.mp3');
+        },
+        playMusic: function(track) {
+          // ...
+        }
+      }
+    });
+    ```
+
+    @method send
+    @param {String} actionName The action to trigger
+    @param {*} context a context to send with the action
+  */
   send: function(actionName) {
     var args = [].slice.call(arguments, 1), target;
 
@@ -35514,7 +37363,8 @@ Ember.ActionHandler = Ember.Mixin.create({
       } else {
         return;
       }
-    } else if (this.deprecatedSend && this.deprecatedSendHandles && this.deprecatedSendHandles(actionName)) {
+    } else if (!Ember.FEATURES.isEnabled('ember-routing-drop-deprecated-action-style') && this.deprecatedSend && this.deprecatedSendHandles && this.deprecatedSendHandles(actionName)) {
+      Ember.warn("The current default is deprecated but will prefer to handle actions directly on the controller instead of a similarly named action in the actions hash. To turn off this deprecated feature set: Ember.FEATURES['ember-routing-drop-deprecated-action-style'] = true");
       if (this.deprecatedSend.apply(this, [].slice.call(arguments)) === true) {
         // handler return true, so this action will bubble
       } else {
@@ -35536,8 +37386,6 @@ Ember.ActionHandler = Ember.Mixin.create({
 
 (function() {
 var set = Ember.set, get = Ember.get,
-    resolve = Ember.RSVP.resolve,
-    rethrow = Ember.RSVP.rethrow,
     not = Ember.computed.not,
     or = Ember.computed.or;
 
@@ -35546,14 +37394,18 @@ var set = Ember.set, get = Ember.get,
   @submodule ember-runtime
  */
 
-function observePromise(proxy, promise) {
-  promise.then(function(value) {
+function tap(proxy, promise) {
+  set(proxy, 'isFulfilled', false);
+  set(proxy, 'isRejected', false);
+
+  return promise.then(function(value) {
     set(proxy, 'isFulfilled', true);
     set(proxy, 'content', value);
+    return value;
   }, function(reason) {
     set(proxy, 'isRejected', true);
     set(proxy, 'reason', reason);
-    // don't re-throw, as we are merely observing
+    throw reason;
   }, "Ember: PromiseProxy");
 }
 
@@ -35682,9 +37534,7 @@ Ember.PromiseProxyMixin = Ember.Mixin.create({
   */
   promise: Ember.computed(function(key, promise) {
     if (arguments.length === 2) {
-      promise = resolve(promise);
-      observePromise(this, promise);
-      return promise.then(); // fork the promise.
+      return tap(this, promise);
     } else {
       throw new Ember.Error("PromiseProxy's promise must be set");
     }
@@ -36262,7 +38112,7 @@ Ember.SubArray.prototype = {
 
 
 (function() {
-Ember.Container = requireModule('container');
+Ember.Container = requireModule('container')['default'];
 Ember.Container.set = Ember.set;
 
 })();
@@ -36422,6 +38272,10 @@ Ember.ArrayProxy = Ember.Object.extend(Ember.MutableArray, {
     var content = get(this, 'content');
 
     if (content) {
+      Ember.assert(Ember.String.fmt('ArrayProxy expects an Array or ' + 
+        'Ember.ArrayProxy, but you passed %@', [typeof content]), 
+        Ember.isArray(content) || content.isDestroyed);
+
       content.addArrayObserver(this, {
         willChange: 'contentArrayWillChange',
         didChange: 'contentArrayDidChange'
@@ -36455,6 +38309,10 @@ Ember.ArrayProxy = Ember.Object.extend(Ember.MutableArray, {
     var arrangedContent = get(this, 'arrangedContent');
 
     if (arrangedContent) {
+      Ember.assert(Ember.String.fmt('ArrayProxy expects an Array or ' + 
+        'Ember.ArrayProxy, but you passed %@', [typeof arrangedContent]), 
+        Ember.isArray(arrangedContent) || arrangedContent.isDestroyed);
+
       arrangedContent.addArrayObserver(this, {
         willChange: 'arrangedContentArrayWillChange',
         didChange: 'arrangedContentArrayDidChange'
@@ -37478,6 +39336,8 @@ Ember.Deferred = Deferred;
 
 
 (function() {
+/*globals CustomEvent */
+
 var forEach = Ember.ArrayPolyfills.forEach;
 
 /**
@@ -37528,6 +39388,11 @@ Ember.onLoad = function(name, callback) {
 */
 Ember.runLoadHooks = function(name, object) {
   loaded[name] = object;
+
+  if (typeof window === 'object' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === "function") {
+    var event = new CustomEvent(name, {detail: object, name: name});
+    window.dispatchEvent(event);
+  }
 
   if (loadHooks[name]) {
     forEach.call(loadHooks[name], function(callback) {
@@ -37596,7 +39461,7 @@ Ember.ControllerMixin = Ember.Mixin.create(Ember.ActionHandler, {
   deprecatedSend: function(actionName) {
     var args = [].slice.call(arguments, 1);
     Ember.assert('' + this + " has the action " + actionName + " but it is not a function", typeof this[actionName] === 'function');
-    Ember.deprecate('Action handlers implemented directly on controllers are deprecated in favor of action handlers on an `actions` object (' + actionName + ' on ' + this + ')', false);
+    Ember.deprecate('Action handlers implemented directly on controllers are deprecated in favor of action handlers on an `actions` object ( action: `' + actionName + '` on ' + this + ')', false);
     this[actionName].apply(this, args);
     return;
   }
@@ -37983,8 +39848,7 @@ var get = Ember.get, set = Ember.set, forEach = Ember.EnumerableUtils.forEach,
   ```
 
   The itemController instances will have a `parentController` property set to
-  either the the `parentController` property of the `ArrayController`
-  or to the `ArrayController` instance itself.
+  the `ArrayController` instance.
 
   @class ArrayController
   @namespace Ember
@@ -38085,11 +39949,20 @@ Ember.ArrayController = Ember.ArrayProxy.extend(Ember.ControllerMixin,
     return Ember.A();
   }),
 
+  /**
+   * Flag to mark as being "virtual". Used to keep this instance
+   * from participating in the parentController hierarchy.
+   *
+   * @private
+   * @type Boolean
+   */
+  _isVirtual: false,
+
   controllerAt: function(idx, object, controllerClass) {
     var container = get(this, 'container'),
         subControllers = get(this, '_subControllers'),
         subController = subControllers[idx],
-        factory, fullName;
+        fullName;
 
     if (subController) { return subController; }
 
@@ -38098,10 +39971,14 @@ Ember.ArrayController = Ember.ArrayProxy.extend(Ember.ControllerMixin,
     if (!container.has(fullName)) {
       throw new Ember.Error('Could not resolve itemController: "' + controllerClass + '"');
     }
-
+    var parentController;
+    if (this._isVirtual) {
+      parentController = get(this, 'parentController');
+    }
+    parentController = parentController || this;
     subController = container.lookupFactory(fullName).create({
       target: this,
-      parentController: get(this, 'parentController') || this,
+      parentController: parentController,
       content: object
     });
 
@@ -38176,12 +40053,12 @@ Ember Runtime
 @submodule ember-views
 */
 
-var jQuery = this.jQuery || (Ember.imports && Ember.imports.jQuery);
+var jQuery = (Ember.imports && Ember.imports.jQuery) || (this && this.jQuery);
 if (!jQuery && typeof require === 'function') {
   jQuery = require('jquery');
 }
 
-Ember.assert("Ember Views require jQuery 1.7, 1.8, 1.9, 1.10, or 2.0", jQuery && (jQuery().jquery.match(/^((1\.(7|8|9|10))|2.0)(\.\d+)?(pre|rc\d?)?/) || Ember.ENV.FORCE_JQUERY));
+Ember.assert("Ember Views require jQuery between 1.7 and 2.1", jQuery && (jQuery().jquery.match(/^((1\.(7|8|9|10|11))|(2\.(0|1)))(\.\d+)?(pre|rc\d?)?/) || Ember.ENV.FORCE_JQUERY));
 
 /**
   Alias for jQuery
@@ -38227,7 +40104,7 @@ if (Ember.$) {
 // is a "zero-scope" element. This problem can be worked around by making
 // the first node an invisible text node. We, like Modernizr, use &shy;
 
-var needsShy = this.document && (function() {
+var needsShy = typeof document !== 'undefined' && (function() {
   var testEl = document.createElement('div');
   testEl.innerHTML = "<div></div>";
   testEl.firstChild.innerHTML = "<script></script>";
@@ -38237,7 +40114,7 @@ var needsShy = this.document && (function() {
 // IE 8 (and likely earlier) likes to move whitespace preceeding
 // a script tag to appear after it. This means that we can
 // accidentally remove whitespace when updating a morph.
-var movesWhitespace = this.document && (function() {
+var movesWhitespace = typeof document !== 'undefined' && (function() {
   var testEl = document.createElement('div');
   testEl.innerHTML = "Test: <script type='text/x-placeholder'></script>Value";
   return testEl.childNodes[0].nodeValue === 'Test:' &&
@@ -38422,7 +40299,7 @@ function escapeAttribute(value) {
   return string.replace(BAD_CHARS_REGEXP, escapeChar);
 }
 
-// IE 6/7 have bugs arond setting names on inputs during creation.
+// IE 6/7 have bugs around setting names on inputs during creation.
 // From http://msdn.microsoft.com/en-us/library/ie/ms536389(v=vs.85).aspx:
 // "To include the NAME attribute at run time on objects created with the createElement method, use the eTag."
 var canSetNameOnInputs = (function() {
@@ -38600,7 +40477,11 @@ Ember._RenderBuffer.prototype = {
   },
 
   setClasses: function(classNames) {
-    this.classes = classNames;
+    this.elementClasses = null;
+    var len = classNames.length, i;
+    for (i = 0; i < len; i++) {
+      this.addClass(classNames[i]);
+    }
   },
 
   /**
@@ -38654,7 +40535,7 @@ Ember._RenderBuffer.prototype = {
   },
 
   /**
-    Adds an property which will be rendered to the element.
+    Adds a property which will be rendered to the element.
 
     @method prop
     @param {String} name The name of the property
@@ -38734,6 +40615,7 @@ Ember._RenderBuffer.prototype = {
     if (classes) {
       buffer += ' class="' + escapeAttribute(classes.join(' ')) + '"';
       this.classes = null;
+      this.elementClasses = null;
     }
 
     if (style) {
@@ -38816,6 +40698,7 @@ Ember._RenderBuffer.prototype = {
     if (classes) {
       $element.attr('class', classes.join(' '));
       this.classes = null;
+      this.elementClasses = null;
     }
 
     if (style) {
@@ -39038,36 +40921,32 @@ Ember.EventDispatcher = Ember.Object.extend({
     var self = this;
 
     rootElement.on(event + '.ember', '.ember-view', function(evt, triggeringManager) {
-      return Ember.handleErrors(function handleViewEvent() {
-        var view = Ember.View.views[this.id],
-            result = true, manager = null;
+      var view = Ember.View.views[this.id],
+          result = true, manager = null;
 
-        manager = self._findNearestEventManager(view,eventName);
+      manager = self._findNearestEventManager(view, eventName);
 
-        if (manager && manager !== triggeringManager) {
-          result = self._dispatchEvent(manager, evt, eventName, view);
-        } else if (view) {
-          result = self._bubbleEvent(view,evt,eventName);
-        } else {
-          evt.stopPropagation();
-        }
+      if (manager && manager !== triggeringManager) {
+        result = self._dispatchEvent(manager, evt, eventName, view);
+      } else if (view) {
+        result = self._bubbleEvent(view, evt, eventName);
+      } else {
+        evt.stopPropagation();
+      }
 
-        return result;
-      }, this);
+      return result;
     });
 
     rootElement.on(event + '.ember', '[data-ember-action]', function(evt) {
-      return Ember.handleErrors(function handleActionEvent() {
-        var actionId = Ember.$(evt.currentTarget).attr('data-ember-action'),
-            action   = Ember.Handlebars.ActionHelper.registeredActions[actionId];
+      var actionId = Ember.$(evt.currentTarget).attr('data-ember-action'),
+          action   = Ember.Handlebars.ActionHelper.registeredActions[actionId];
 
-        // We have to check for action here since in some cases, jQuery will trigger
-        // an event on `removeChild` (i.e. focusout) after we've already torn down the
-        // action handlers for the view.
-        if (action && action.eventName === eventName) {
-          return action.handler(evt);
-        }
-      }, this);
+      // We have to check for action here since in some cases, jQuery will trigger
+      // an event on `removeChild` (i.e. focusout) after we've already torn down the
+      // action handlers for the view.
+      if (action && action.eventName === eventName) {
+        return action.handler(evt);
+      }
     });
   },
 
@@ -39089,9 +40968,7 @@ Ember.EventDispatcher = Ember.Object.extend({
 
     var handler = object[eventName];
     if (Ember.typeOf(handler) === 'function') {
-      result = Ember.run(function() {
-        return handler.call(object, evt, view);
-      });
+      result = Ember.run(object, handler, evt, view);
       // Do not preventDefault in eventManagers.
       evt.stopPropagation();
     }
@@ -39103,9 +40980,7 @@ Ember.EventDispatcher = Ember.Object.extend({
   },
 
   _bubbleEvent: function(view, evt, eventName) {
-    return Ember.run(function bubbleEvent() {
-      return view.handleEvent(eventName, evt);
-    });
+    return Ember.run(view, view.handleEvent, eventName, evt);
   },
 
   destroy: function() {
@@ -39137,51 +41012,6 @@ queues.splice(indexOf.call(queues, 'actions')+1, 0, 'render', 'afterRender');
 
 
 (function() {
-/**
-@module ember
-@submodule ember-views
-*/
-
-var get = Ember.get, set = Ember.set;
-
-// Original class declaration and documentation in runtime/lib/controllers/controller.js
-// NOTE: It may be possible with YUIDoc to combine docs in two locations
-
-/**
-Additional methods for the ControllerMixin
-
-@class ControllerMixin
-@namespace Ember
-*/
-Ember.ControllerMixin.reopen({
-  target: null,
-  namespace: null,
-  view: null,
-  container: null,
-  _childContainers: null,
-
-  init: function() {
-    this._super();
-    set(this, '_childContainers', {});
-  },
-
-  _modelDidChange: Ember.observer('model', function() {
-    var containers = get(this, '_childContainers');
-
-    for (var prop in containers) {
-      if (!containers.hasOwnProperty(prop)) { continue; }
-      containers[prop].destroy();
-    }
-
-    set(this, '_childContainers', {});
-  })
-});
-
-})();
-
-
-
-(function() {
 
 })();
 
@@ -39195,11 +41025,16 @@ var states = {};
 @submodule ember-views
 */
 
-var get = Ember.get, set = Ember.set;
-var guidFor = Ember.guidFor;
-var a_forEach = Ember.EnumerableUtils.forEach;
-var a_addObject = Ember.EnumerableUtils.addObject;
-var meta = Ember.meta;
+var get = Ember.get, set = Ember.set,
+    guidFor = Ember.guidFor,
+    a_forEach = Ember.EnumerableUtils.forEach,
+    a_addObject = Ember.EnumerableUtils.addObject,
+    meta = Ember.meta,
+    defineProperty = Ember.defineProperty;
+
+function nullViewsBuffer(view) {
+  view.buffer = null;
+}
 
 var childViewsProperty = Ember.computed(function() {
   var childViews = this._childViews, ret = Ember.A(), view = this;
@@ -39263,6 +41098,7 @@ Ember.CoreView = Ember.Object.extend(Ember.Evented, Ember.ActionHandler, {
   init: function() {
     this._super();
     this.transitionTo('preRender');
+    this._isVisible = get(this, 'isVisible');
   },
 
   /**
@@ -39273,7 +41109,7 @@ Ember.CoreView = Ember.Object.extend(Ember.Evented, Ember.ActionHandler, {
     @type Ember.View
     @default null
   */
-  parentView: Ember.computed(function() {
+  parentView: Ember.computed('_parentView', function() {
     var parent = this._parentView;
 
     if (parent && parent.isVirtual) {
@@ -39281,17 +41117,17 @@ Ember.CoreView = Ember.Object.extend(Ember.Evented, Ember.ActionHandler, {
     } else {
       return parent;
     }
-  }).property('_parentView'),
+  }),
 
   state: null,
 
   _parentView: null,
 
   // return the current view, not including virtual views
-  concreteView: Ember.computed(function() {
+  concreteView: Ember.computed('parentView', function() {
     if (!this.isVirtual) { return this; }
     else { return get(this, 'parentView'); }
-  }).property('parentView'),
+  }),
 
   instrumentName: 'core_view',
 
@@ -39375,7 +41211,7 @@ Ember.CoreView = Ember.Object.extend(Ember.Evented, Ember.ActionHandler, {
   deprecatedSend: function(actionName) {
     var args = [].slice.call(arguments, 1);
     Ember.assert('' + this + " has the action " + actionName + " but it is not a function", typeof this[actionName] === 'function');
-    Ember.deprecate('Action handlers implemented directly on views are deprecated in favor of action handlers on an `actions` object (' + actionName + ' on ' + this + ')', false);
+    Ember.deprecate('Action handlers implemented directly on views are deprecated in favor of action handlers on an `actions` object ( action: `' + actionName + '` on ' + this + ')', false);
     this[actionName].apply(this, args);
     return;
   },
@@ -40091,7 +41927,7 @@ Ember.View = Ember.CoreView.extend({
     @property template
     @type Function
   */
-  template: Ember.computed(function(key, value) {
+  template: Ember.computed('templateName', function(key, value) {
     if (value !== undefined) { return value; }
 
     var templateName = get(this, 'templateName'),
@@ -40100,7 +41936,7 @@ Ember.View = Ember.CoreView.extend({
     Ember.assert("You specified the templateName " + templateName + " for " + this + ", but it did not exist.", !templateName || template);
 
     return template || get(this, 'defaultTemplate');
-  }).property('templateName'),
+  }),
 
   /**
     The controller managing this view. If this property is set, it will be
@@ -40109,10 +41945,10 @@ Ember.View = Ember.CoreView.extend({
     @property controller
     @type Object
   */
-  controller: Ember.computed(function(key) {
+  controller: Ember.computed('_parentView', function(key) {
     var parentView = get(this, '_parentView');
     return parentView ? get(parentView, 'controller') : null;
-  }).property('_parentView'),
+  }),
 
   /**
     A view may contain a layout. A layout is a regular template but
@@ -40260,7 +42096,7 @@ Ember.View = Ember.CoreView.extend({
     Return the nearest ancestor that is an instance of the provided
     class.
 
-    @property nearestInstanceOf
+    @method nearestInstanceOf
     @param {Class} klass Subclass of Ember.View (or Ember.View itself)
     @return Ember.View
     @deprecated
@@ -40279,7 +42115,7 @@ Ember.View = Ember.CoreView.extend({
     Return the nearest ancestor that is an instance of the provided
     class or mixin.
 
-    @property nearestOfType
+    @method nearestOfType
     @param {Class,Mixin} klass Subclass of Ember.View (or Ember.View itself),
            or an instance of Ember.Mixin.
     @return Ember.View
@@ -40465,6 +42301,8 @@ Ember.View = Ember.CoreView.extend({
     // ('content.isUrgent')
     a_forEach(classBindings, function(binding) {
 
+      Ember.assert("classNameBindings must not have spaces in them. Multiple class name bindings can be provided as elements of an array, e.g. ['foo', ':bar']", binding.indexOf(' ') === -1);
+
       // Variable in which the old class value is saved. The observer function
       // closes over this variable, so it knows which string to remove when
       // the property changes.
@@ -40524,6 +42362,8 @@ Ember.View = Ember.CoreView.extend({
     }, this);
   },
 
+  _unspecifiedAttributeBindings: null,
+
   /**
     Iterates through the view's attribute bindings, sets up observers for each,
     then applies the current value of the attributes to the passed render buffer.
@@ -40533,30 +42373,67 @@ Ember.View = Ember.CoreView.extend({
     @private
   */
   _applyAttributeBindings: function(buffer, attributeBindings) {
-    var attributeValue, elem;
+    var attributeValue,
+        unspecifiedAttributeBindings = this._unspecifiedAttributeBindings = this._unspecifiedAttributeBindings || {};
 
     a_forEach(attributeBindings, function(binding) {
       var split = binding.split(':'),
           property = split[0],
           attributeName = split[1] || property;
 
-      // Create an observer to add/remove/change the attribute if the
-      // JavaScript property changes.
-      var observer = function() {
-        elem = this.$();
+      if (property in this) {
+        this._setupAttributeBindingObservation(property, attributeName);
 
+        // Determine the current value and add it to the render buffer
+        // if necessary.
         attributeValue = get(this, property);
-
-        Ember.View.applyAttributeBindings(elem, attributeName, attributeValue);
-      };
-
-      this.registerObserver(this, property, observer);
-
-      // Determine the current value and add it to the render buffer
-      // if necessary.
-      attributeValue = get(this, property);
-      Ember.View.applyAttributeBindings(buffer, attributeName, attributeValue);
+        Ember.View.applyAttributeBindings(buffer, attributeName, attributeValue);
+      } else {
+        unspecifiedAttributeBindings[property] = attributeName;
+      }
     }, this);
+
+    // Lazily setup setUnknownProperty after attributeBindings are initially applied
+    this.setUnknownProperty = this._setUnknownProperty;
+  },
+
+  _setupAttributeBindingObservation: function(property, attributeName) {
+    var attributeValue, elem;
+
+    // Create an observer to add/remove/change the attribute if the
+    // JavaScript property changes.
+    var observer = function() {
+      elem = this.$();
+
+      attributeValue = get(this, property);
+
+      Ember.View.applyAttributeBindings(elem, attributeName, attributeValue);
+    };
+
+    this.registerObserver(this, property, observer);
+  },
+
+  /**
+    We're using setUnknownProperty as a hook to setup attributeBinding observers for
+    properties that aren't defined on a view at initialization time.
+
+    Note: setUnknownProperty will only be called once for each property.
+
+    @method setUnknownProperty
+    @param key
+    @param value
+    @private
+  */
+  setUnknownProperty: null, // Gets defined after initialization by _applyAttributeBindings
+
+  _setUnknownProperty: function(key, value) {
+    var attributeName = this._unspecifiedAttributeBindings && this._unspecifiedAttributeBindings[key];
+    if (attributeName) {
+      this._setupAttributeBindingObservation(key, attributeName);
+    }
+
+    defineProperty(this, key);
+    return set(this, key, value);
   },
 
   /**
@@ -40592,13 +42469,13 @@ Ember.View = Ember.CoreView.extend({
     @property element
     @type DOMElement
   */
-  element: Ember.computed(function(key, value) {
+  element: Ember.computed('_parentView', function(key, value) {
     if (value !== undefined) {
       return this.currentState.setElement(this, value);
     } else {
       return this.currentState.getElement(this);
     }
-  }).property('_parentView'),
+  }),
 
   /**
     Returns a jQuery object for this view's element. If you pass in a selector
@@ -41334,12 +43211,21 @@ Ember.View = Ember.CoreView.extend({
     @private
   */
   _isVisibleDidChange: Ember.observer('isVisible', function() {
+    if (this._isVisible === get(this, 'isVisible')) { return ; }
+    Ember.run.scheduleOnce('render', this, this._toggleVisibility);
+  }),
+
+  _toggleVisibility: function() {
     var $el = this.$();
     if (!$el) { return; }
 
     var isVisible = get(this, 'isVisible');
 
+    if (this._isVisible === isVisible) { return ; }
+
     $el.toggle(isVisible);
+
+    this._isVisible = isVisible;
 
     if (this._isAncestorHidden()) { return; }
 
@@ -41348,7 +43234,7 @@ Ember.View = Ember.CoreView.extend({
     } else {
       this._notifyBecameHidden();
     }
-  }),
+  },
 
   _notifyBecameVisible: function() {
     this.trigger('becameVisible');
@@ -41386,9 +43272,7 @@ Ember.View = Ember.CoreView.extend({
   },
 
   clearBuffer: function() {
-    this.invokeRecursively(function(view) {
-      view.buffer = null;
-    });
+    this.invokeRecursively(nullViewsBuffer);
   },
 
   transitionTo: function(state, children) {
@@ -41458,6 +43342,8 @@ Ember.View = Ember.CoreView.extend({
     element was destroyed, it is in the preRender state
   * inBuffer: once a view has been rendered, but before it has
     been inserted into the DOM, it is in the inBuffer state
+  * hasElement: the DOM representation of the view is created,
+    and is ready to be inserted
   * inDOM: once a view has been inserted into the DOM it is in
     the inDOM state. A view spends the vast majority of its
     existence in this state.
@@ -41665,15 +43551,12 @@ Ember.View.applyAttributeBindings = function(elem, name, value) {
       elem.attr(name, value);
     }
   } else if (name === 'value' || type === 'boolean') {
-    // We can't set properties to undefined or null
-    if (Ember.isNone(value)) { value = ''; }
-
-    if (!value) {
+    if (Ember.isNone(value) || value === false) {
+      // `null`, `undefined` or `false` should remove attribute
       elem.removeAttr(name);
-    }
-
-    if (value !== elem.prop(name)) {
-      // value and booleans should always be properties
+      elem.prop(name, '');
+    } else if (value !== elem.prop(name)) {
+      // value should always be properties
       elem.prop(name, value);
     }
   } else if (!value) {
@@ -41756,13 +43639,10 @@ Ember.merge(preRender, {
 
     // We transition to `inDOM` if the element exists in the DOM
     var element = view.get('element');
-    while (element = element.parentNode) {
-      if (element === document) {
-        viewCollection.transitionTo('inDOM', false);
-        viewCollection.trigger('didInsertElement');
-      }
+    if (document.body.contains(element)) {
+      viewCollection.transitionTo('inDOM', false);
+      viewCollection.trigger('didInsertElement');
     }
-
   },
 
   renderToBufferIfNeeded: function(view, buffer) {
@@ -41961,7 +43841,17 @@ Ember.merge(hasElement, {
     observer.call(target);
   }
 });
+})();
 
+
+
+(function() {
+/**
+@module ember
+@submodule ember-views
+*/
+
+var hasElement = Ember.View.states.hasElement;
 var inDOM = Ember.View.states.inDOM = Ember.create(hasElement);
 
 Ember.merge(inDOM, {
@@ -42525,7 +44415,7 @@ var get = Ember.get, set = Ember.set, fmt = Ember.String.fmt;
   Given an empty `<body>` and the following code:
 
   ```javascript
-  anUndorderedListView = Ember.CollectionView.create({
+  anUnorderedListView = Ember.CollectionView.create({
     tagName: 'ul',
     content: ['A','B','C'],
     itemViewClass: Ember.View.extend({
@@ -42533,7 +44423,7 @@ var get = Ember.get, set = Ember.set, fmt = Ember.String.fmt;
     })
   });
 
-  anUndorderedListView.appendTo('body');
+  anUnorderedListView.appendTo('body');
   ```
 
   Will result in the following HTML structure
@@ -42795,7 +44685,9 @@ Ember.CollectionView = Ember.ContainerView.extend({
         itemViewClass = get(itemViewClass) || itemViewClass;
       }
 
-      Ember.assert(fmt("itemViewClass must be a subclass of Ember.View, not %@", [itemViewClass]), 'string' === typeof itemViewClass || Ember.View.detect(itemViewClass));
+      Ember.assert(fmt("itemViewClass must be a subclass of Ember.View, not %@",
+                       [itemViewClass]),
+                       'string' === typeof itemViewClass || Ember.View.detect(itemViewClass));
 
       for (idx = start; idx < start+added; idx++) {
         item = content.objectAt(idx);
@@ -42883,6 +44775,72 @@ Ember.CollectionView.CONTAINER_MAP = {
 
 
 (function() {
+var get = Ember.get;
+
+/**
+  The ComponentTemplateDeprecation mixin is used to provide a useful
+  deprecation warning when using either `template` or `templateName` with
+  a component. The `template` and `templateName` properties specified at
+  extend time are moved to `layout` and `layoutName` respectively.
+
+  `Ember.ComponentTemplateDeprecation` is used internally by Ember in
+  `Ember.Component`.
+
+  @class ComponentTemplateDeprecation
+  @namespace Ember
+*/
+Ember.ComponentTemplateDeprecation = Ember.Mixin.create({
+  /**
+    @private
+
+    Moves `templateName` to `layoutName` and `template` to `layout` at extend
+    time if a layout is not also specified.
+
+    Note that this currently modifies the mixin themselves, which is technically
+    dubious but is practically of little consequence. This may change in the
+    future.
+
+    @method willMergeMixin
+  */
+  willMergeMixin: function(props) {
+    // must call _super here to ensure that the ActionHandler
+    // mixin is setup properly (moves actions -> _actions)
+    //
+    // Calling super is only OK here since we KNOW that
+    // there is another Mixin loaded first.
+    this._super.apply(this, arguments);
+
+    var deprecatedProperty, replacementProperty,
+        layoutSpecified = (props.layoutName || props.layout || get(this, 'layoutName'));
+
+    if (props.templateName && !layoutSpecified) {
+      deprecatedProperty = 'templateName';
+      replacementProperty = 'layoutName';
+
+      props.layoutName = props.templateName;
+      delete props['templateName'];
+    }
+
+    if (props.template && !layoutSpecified) {
+      deprecatedProperty = 'template';
+      replacementProperty = 'layout';
+
+      props.layout = props.template;
+      delete props['template'];
+    }
+
+    if (deprecatedProperty) {
+      Ember.deprecate('Do not specify ' + deprecatedProperty + ' on a Component, use ' + replacementProperty + ' instead.', false);
+    }
+  }
+});
+
+
+})();
+
+
+
+(function() {
 var get = Ember.get, set = Ember.set, isNone = Ember.isNone,
     a_slice = Array.prototype.slice;
 
@@ -42906,11 +44864,11 @@ var get = Ember.get, set = Ember.set, isNone = Ember.isNone,
   `{{my-foo}}` in other templates, which will make
   an instance of the isolated component.
 
-  ```html
+  ```handlebars
   {{app-profile person=currentUser}}
   ```
 
-  ```html
+  ```handlebars
   <!-- app-profile template -->
   <h1>{{person.title}}</h1>
   <img {{bind-attr src=person.avatar}}>
@@ -42925,7 +44883,7 @@ var get = Ember.get, set = Ember.set, isNone = Ember.isNone,
   ```handlebars
   {{#app-profile person=currentUser}}
     <p>Admin mode</p>
-    {{! Executed in the controllers context. }}
+    {{! Executed in the controller's context. }}
   {{/app-profile}}
   ```
 
@@ -42957,7 +44915,7 @@ var get = Ember.get, set = Ember.set, isNone = Ember.isNone,
 
   And then use it in the component's template:
 
-  ```html
+  ```handlebars
   <!-- app-profile template -->
 
   <h1>{{person.title}}</h1>
@@ -42977,17 +44935,55 @@ var get = Ember.get, set = Ember.set, isNone = Ember.isNone,
   @namespace Ember
   @extends Ember.View
 */
-Ember.Component = Ember.View.extend(Ember.TargetActionSupport, {
+Ember.Component = Ember.View.extend(Ember.TargetActionSupport, Ember.ComponentTemplateDeprecation, {
   init: function() {
     this._super();
     set(this, 'context', this);
     set(this, 'controller', this);
   },
 
-  defaultLayout: function(options){
-    options.data = {view: options._context};
-    Ember.Handlebars.helpers['yield'].apply(this, [options]);
+  defaultLayout: function(context, options){
+    Ember.Handlebars.helpers['yield'].call(context, options);
   },
+
+  /**
+  A components template property is set by passing a block
+  during its invocation. It is executed within the parent context.
+
+  Example:
+
+  ```handlebars
+  {{#my-component}}
+    // something that is run in the context
+    // of the parent context
+  {{/my-component}}
+  ```
+
+  Specifying a template directly to a component is deprecated without
+  also specifying the layout property.
+
+  @deprecated
+  @property template
+  */
+  template: Ember.computed(function(key, value) {
+    if (value !== undefined) { return value; }
+
+    var templateName = get(this, 'templateName'),
+        template = this.templateForName(templateName, 'template');
+
+    Ember.assert("You specified the templateName " + templateName + " for " + this + ", but it did not exist.", !templateName || template);
+
+    return template || get(this, 'defaultTemplate');
+  }).property('templateName'),
+
+  /**
+  Specifying a components `templateName` is deprecated without also
+  providing the `layout` or `layoutName` properties.
+
+  @deprecated
+  @property templateName
+  */
+  templateName: null,
 
   // during render, isolate keywords
   cloneKeywords: function() {
@@ -43043,9 +45039,9 @@ Ember.Component = Ember.View.extend(Ember.TargetActionSupport, {
     App.PlayButtonComponent = Ember.Component.extend({
       click: function(){
         if (this.get('isPlaying')) {
-          this.triggerAction('play');
+          this.sendAction('play');
         } else {
-          this.triggerAction('stop');
+          this.sendAction('stop');
         }
       }
     });
@@ -43246,12 +45242,12 @@ define("metamorph",
         })(),
 
         // Feature-detect the W3C range API, the extended check is for IE9 which only partially supports ranges
-        supportsRange = (!disableRange) && document && ('createRange' in document) && (typeof Range !== 'undefined') && Range.prototype.createContextualFragment,
+        supportsRange = (!disableRange) && typeof document !== 'undefined' && ('createRange' in document) && (typeof Range !== 'undefined') && Range.prototype.createContextualFragment,
 
         // Internet Explorer prior to 9 does not allow setting innerHTML if the first element
         // is a "zero-scope" element. This problem can be worked around by making
         // the first node an invisible text node. We, like Modernizr, use &shy;
-        needsShy = document && (function() {
+        needsShy = typeof document !== 'undefined' && (function() {
           var testEl = document.createElement('div');
           testEl.innerHTML = "<div></div>";
           testEl.firstChild.innerHTML = "<script></script>";
@@ -43819,7 +45815,7 @@ Ember.Handlebars.helper = function(name, value) {
   involving helper/component registration.
 
   @private
-  @method helper
+  @method makeViewHelper
   @for Ember.Handlebars
   @param {Function} ViewClass view class constructor
 */
@@ -43909,7 +45905,7 @@ Ember.Handlebars.JavaScriptCompiler.stringifyLastBlockHelperMissingInvocation = 
       matches = INVOCATION_SPLITTING_REGEX.exec(helperInvocation);
 
   source[source.length - 1] = matches[1] + "'" + helperName + "'" + matches[3];
-}
+};
 var stringifyBlockHelperMissing = Ember.Handlebars.JavaScriptCompiler.stringifyLastBlockHelperMissingInvocation;
 
 var originalBlockValue = Ember.Handlebars.JavaScriptCompiler.prototype.blockValue;
@@ -43924,8 +45920,6 @@ Ember.Handlebars.JavaScriptCompiler.prototype.ambiguousBlockValue = function() {
   stringifyBlockHelperMissing(this.source);
 };
 
-var prefix = "ember" + (+new Date()), incr = 1;
-
 /**
   Rewrite simple mustaches from `{{foo}}` to `{{bind "foo"}}`. This means that
   all simple mustaches in Ember's Handlebars will also set up an observer to
@@ -43937,12 +45931,7 @@ var prefix = "ember" + (+new Date()), incr = 1;
   @param mustache
 */
 Ember.Handlebars.Compiler.prototype.mustache = function(mustache) {
-  if (mustache.isHelper && mustache.id.string === 'control') {
-    mustache.hash = mustache.hash || new Handlebars.AST.HashNode([]);
-    mustache.hash.pairs.push(["controlID", new Handlebars.AST.StringNode(prefix + incr++)]);
-  } else if (mustache.params.length || mustache.hash) {
-    // no changes required
-  } else {
+  if (!(mustache.params.length || mustache.hash)) {
     var id = new Handlebars.AST.IdNode([{ part: '_triageMustache' }]);
 
     // Update the mustache node to include a hash value indicating whether the original node
@@ -45014,6 +47003,8 @@ Ember._HandlebarsBoundView = Ember._MetamorphView.extend({
         preserveContext = get(this, 'preserveContext'),
         context = get(this, 'previousContext');
 
+    var _contextController = get(this, '_contextController');
+
     var inverseTemplate = get(this, 'inverseTemplate'),
         displayTemplate = get(this, 'displayTemplate');
 
@@ -45033,6 +47024,10 @@ Ember._HandlebarsBoundView = Ember._MetamorphView.extend({
       // Otherwise, determine if this is a block bind or not.
       // If so, pass the specified object to the template
         if (displayTemplate) {
+          if (_contextController) {
+            set(_contextController, 'content', result);
+            result = _contextController;
+          }
           set(this, '_context', result);
         } else {
         // This is not a bind block, just push the result of the
@@ -45134,6 +47129,14 @@ function bind(property, options, preserveContext, shouldDisplay, valueNormalizer
         templateData: options.data
       });
 
+      if (options.hash.controller) {
+        bindView.set('_contextController', this.container.lookupFactory('controller:'+options.hash.controller).create({
+          container: currentContext.container,
+          parentController: currentContext,
+          target: currentContext
+        }));
+      }
+
       view.appendChild(bindView);
 
       observer = function() {
@@ -45205,6 +47208,17 @@ function simpleBind(currentContext, property, options) {
     // be done with it.
     output = handlebarsGetEscaped(currentContext, property, options);
     data.buffer.push(output);
+  }
+}
+
+function shouldDisplayIfHelperContent(result) {
+  var truthy = result && get(result, 'isTruthy');
+  if (typeof truthy === 'boolean') { return truthy; }
+
+  if (Ember.isArray(result)) {
+    return get(result, 'length') !== 0;
+  } else {
+    return !!result;
   }
 }
 
@@ -45312,18 +47326,43 @@ EmberHandlebars.registerHelper('bind', function bindHelper(property, options) {
 */
 EmberHandlebars.registerHelper('boundIf', function boundIfHelper(property, fn) {
   var context = (fn.contexts && fn.contexts.length) ? fn.contexts[0] : this;
-  var func = function(result) {
-    var truthy = result && get(result, 'isTruthy');
-    if (typeof truthy === 'boolean') { return truthy; }
 
-    if (Ember.isArray(result)) {
-      return get(result, 'length') !== 0;
-    } else {
-      return !!result;
-    }
-  };
+  return bind.call(context, property, fn, true, shouldDisplayIfHelperContent, shouldDisplayIfHelperContent, ['isTruthy', 'length']);
+});
 
-  return bind.call(context, property, fn, true, func, func, ['isTruthy', 'length']);
+
+/**
+  @private
+
+  Use the `unboundIf` helper to create a conditional that evaluates once.
+
+  ```handlebars
+  {{#unboundIf "content.shouldDisplayTitle"}}
+    {{content.title}}
+  {{/unboundIf}}
+  ```
+
+  @method unboundIf
+  @for Ember.Handlebars.helpers
+  @param {String} property Property to bind
+  @param {Function} fn Context to provide for rendering
+  @return {String} HTML string
+*/
+EmberHandlebars.registerHelper('unboundIf', function unboundIfHelper(property, fn) {
+  var context = (fn.contexts && fn.contexts.length) ? fn.contexts[0] : this,
+      data = fn.data,
+      template = fn.fn,
+      inverse = fn.inverse,
+      normalized, propertyValue, result;
+
+  normalized = normalizePath(context, property, data);
+  propertyValue = handlebarsGet(context, property, fn);
+
+  if (!shouldDisplayIfHelperContent(propertyValue)) {
+    template = inverse;
+  }
+
+  template(context, { data: data });
 });
 
 /**
@@ -45377,6 +47416,27 @@ EmberHandlebars.registerHelper('boundIf', function boundIfHelper(property, fn) {
 
   Without the `as` operator, it would be impossible to reference `user.name` in the example above.
 
+  NOTE: The alias should not reuse a name from the bound property path.
+  For example: `{{#with foo.bar as foo}}` is not supported because it attempts to alias using
+  the first part of the property path, `foo`. Instead, use `{{#with foo.bar as baz}}`.
+
+  ### `controller` option
+
+  Adding `controller='something'` instructs the `{{with}}` helper to create and use an instance of
+  the specified controller with the new context as its content.
+
+  This is very similar to using an `itemController` option with the `{{each}}` helper.
+
+  ```handlebars
+  {{#with users.posts controller='userBlogPosts'}}
+    {{!- The current context is wrapped in our controller instance }}
+  {{/with}}
+  ```
+
+  In the above example, the template provided to the `{{with}}` block is now wrapped in the
+  `userBlogPost` controller, which provides a very elegant way to decorate the context with custom
+  functions/properties.
+
   @method with
   @for Ember.Handlebars.helpers
   @param {Function} context
@@ -45426,6 +47486,7 @@ EmberHandlebars.registerHelper('with', function withHelper(context, options) {
 
 /**
   See [boundIf](/api/classes/Ember.Handlebars.helpers.html#method_boundIf)
+  and [unboundIf](/api/classes/Ember.Handlebars.helpers.html#method_unboundIf)
 
   @method if
   @for Ember.Handlebars.helpers
@@ -45436,8 +47497,11 @@ EmberHandlebars.registerHelper('with', function withHelper(context, options) {
 EmberHandlebars.registerHelper('if', function ifHelper(context, options) {
   Ember.assert("You must pass exactly one argument to the if helper", arguments.length === 2);
   Ember.assert("You must pass a block to the if helper", options.fn && options.fn !== Handlebars.VM.noop);
-
-  return helpers.boundIf.call(options.contexts[0], context, options);
+  if (options.data.isUnbound) {
+    return helpers.unboundIf.call(options.contexts[0], context, options);
+  } else {
+    return helpers.boundIf.call(options.contexts[0], context, options);
+  }
 });
 
 /**
@@ -45456,7 +47520,11 @@ EmberHandlebars.registerHelper('unless', function unlessHelper(context, options)
   options.fn = inverse;
   options.inverse = fn;
 
-  return helpers.boundIf.call(options.contexts[0], context, options);
+  if (options.data.isUnbound) {
+    return helpers.unboundIf.call(options.contexts[0], context, options);
+  } else {
+    return helpers.boundIf.call(options.contexts[0], context, options);
+  }
 });
 
 /**
@@ -46232,7 +48300,7 @@ var get = Ember.get, handlebarsGet = Ember.Handlebars.get, fmt = Ember.String.fm
   </div>
   ```
 
-  ### Blockless Use
+  ### Blockless use in a collection
 
   If you provide an `itemViewClass` option that has its own `template` you can
   omit the block.
@@ -46329,11 +48397,20 @@ Ember.Handlebars.registerHelper('collection', function collectionHelper(path, op
   var inverse = options.inverse;
   var view = options.data.view;
 
+
+  var controller, container;
   // If passed a path string, convert that into an object.
   // Otherwise, just default to the standard class.
   var collectionClass;
-  collectionClass = path ? handlebarsGet(this, path, options) : Ember.CollectionView;
-  Ember.assert(fmt("%@ #collection: Could not find collection class %@", [data.view, path]), !!collectionClass);
+  if (path) {
+    controller = data.keywords.controller;
+    container = controller && controller.container;
+    collectionClass = handlebarsGet(this, path, options) || container.lookupFactory('view:' + path); 
+    Ember.assert(fmt("%@ #collection: Could not find collection class %@", [data.view, path]), !!collectionClass);
+  }
+  else {
+    collectionClass = Ember.CollectionView;
+  }
 
   var hash = options.hash, itemHash = {}, match;
 
@@ -46342,15 +48419,15 @@ Ember.Handlebars.registerHelper('collection', function collectionHelper(path, op
       itemViewClass;
 
   if (hash.itemView) {
-    var controller = data.keywords.controller;
+    controller = data.keywords.controller;
     Ember.assert('You specified an itemView, but the current context has no ' +
                  'container to look the itemView up in. This probably means ' +
                  'that you created a view manually, instead of through the ' +
                  'container. Instead, use container.lookup("view:viewName"), ' +
                  'which will properly instantiate your view.',
                  controller && controller.container);
-    var container = controller.container;
-    itemViewClass = container.resolve('view:' + hash.itemView);
+    container = controller.container;
+    itemViewClass = container.lookupFactory('view:' + hash.itemView);
     Ember.assert('You specified the itemView ' + hash.itemView + ", but it was " +
                  "not found at " + container.describe("view:" + hash.itemView) +
                  " (and it was not registered in the container)", !!itemViewClass);
@@ -46469,27 +48546,51 @@ Ember.Handlebars.registerHelper('unbound', function unboundHelper(property, fn) 
 @submodule ember-handlebars
 */
 
-var get = Ember.get, handlebarsGet = Ember.Handlebars.get, normalizePath = Ember.Handlebars.normalizePath;
+var get = Ember.get;
+var handlebarsGet = Ember.Handlebars.get, normalizePath = Ember.Handlebars.normalizePath;
+var a_slice = [].slice;
 
 /**
-  `log` allows you to output the value of a variable in the current rendering
-  context.
+  `log` allows you to output the value of variables in the current rendering
+  context. `log` also accepts primitive types such as strings or numbers.
 
   ```handlebars
-  {{log myVariable}}
+  {{log "myVariable:" myVariable }}
   ```
 
   @method log
   @for Ember.Handlebars.helpers
   @param {String} property
 */
-Ember.Handlebars.registerHelper('log', function logHelper(property, options) {
-  var context = (options.contexts && options.contexts.length) ? options.contexts[0] : this,
-      normalized = normalizePath(context, property, options.data),
-      pathRoot = normalized.root,
-      path = normalized.path,
-      value = (path === 'this') ? pathRoot : handlebarsGet(pathRoot, path, options);
-  Ember.Logger.log(value);
+Ember.Handlebars.registerHelper('log', function logHelper() {
+  var params = a_slice.call(arguments, 0, -1),
+      options = arguments[arguments.length - 1],
+      logger = Ember.Logger.log,
+      values = [],
+      allowPrimitives = false;
+
+  
+    allowPrimitives = true;
+  
+
+  for (var i = 0; i < params.length; i++) {
+    var type = options.types[i];
+
+    if (type === 'ID' || !allowPrimitives) {
+      var context = (options.contexts && options.contexts[i]) || this,
+          normalized = normalizePath(context, params[i], options.data);
+
+      if (normalized.path === 'this') {
+        values.push(normalized.root);
+      } else {
+        values.push(handlebarsGet(normalized.root, normalized.path, options));
+      }
+    } else {
+      values.push(params[i]);
+    }
+  }
+
+  logger.apply(logger, values);
 });
 
 /**
@@ -46548,6 +48649,7 @@ Ember.Handlebars.registerHelper('debugger', function debuggerHelper(options) {
 */
 
 var get = Ember.get, set = Ember.set;
+var fmt = Ember.String.fmt;
 
 Ember.Handlebars.EachView = Ember.CollectionView.extend(Ember._Metamorph, {
   init: function() {
@@ -46556,6 +48658,7 @@ Ember.Handlebars.EachView = Ember.CollectionView.extend(Ember._Metamorph, {
 
     if (itemController) {
       var controller = get(this, 'controller.container').lookupFactory('controller:array').create({
+        _isVirtual: true,
         parentController: get(this, 'controller'),
         itemController: itemController,
         target: get(this, 'controller'),
@@ -46580,8 +48683,13 @@ Ember.Handlebars.EachView = Ember.CollectionView.extend(Ember._Metamorph, {
   },
 
   _assertArrayLike: function(content) {
-    Ember.assert("The value that #each loops over must be an Array. You passed " + content.constructor + ", but it should have been an ArrayController", !Ember.ControllerMixin.detect(content) || (content && content.isGenerated) || content instanceof Ember.ArrayController);
-    Ember.assert("The value that #each loops over must be an Array. You passed " + ((Ember.ControllerMixin.detect(content) && content.get('model') !== undefined) ? ("" + content.get('model') + " (wrapped in " + content + ")") : ("" + content)), Ember.Array.detect(content));
+    Ember.assert(fmt("The value that #each loops over must be an Array. You " +
+                     "passed %@, but it should have been an ArrayController",
+                     [content.constructor]),
+                     !Ember.ControllerMixin.detect(content) ||
+                       (content && content.isGenerated) ||
+                       content instanceof Ember.ArrayController);
+    Ember.assert(fmt("The value that #each loops over must be an Array. You passed %@", [(Ember.ControllerMixin.detect(content) && content.get('model') !== undefined) ? fmt("'%@' (wrapped in %@)", [content.get('model'), content]) : content]), Ember.Array.detect(content));
   },
 
   disableContentObservers: function(callback) {
@@ -46620,7 +48728,7 @@ Ember.Handlebars.EachView = Ember.CollectionView.extend(Ember._Metamorph, {
 
     // If {{#each}} is looping over an array of controllers,
     // point each child view at their respective controller.
-    if (content && get(content, 'isController')) {
+    if (content && content.isController) {
       set(view, 'controller', content);
     }
 
@@ -46638,6 +48746,24 @@ Ember.Handlebars.EachView = Ember.CollectionView.extend(Ember._Metamorph, {
 
     return this;
   }
+});
+
+// Defeatureify doesn't seem to like nested functions that need to be removed
+function _addMetamorphCheck() {
+  Ember.Handlebars.EachView.reopen({
+    _checkMetamorph: Ember.on('didInsertElement', function() {
+      Ember.assert("The metamorph tags, " +
+                   this.morph.start + " and " + this.morph.end +
+                   ", have different parents.\nThe browser has fixed your template to output valid HTML (for example, check that you have properly closed all tags and have used a TBODY tag when creating a table with '{{#each}}')",
+        document.getElementById( this.morph.start ).parentNode ===
+        document.getElementById( this.morph.end ).parentNode
+      );
+    })
+  });
+}
+
+Ember.runInDebug( function() {
+  _addMetamorphCheck();
 });
 
 var GroupedEach = Ember.Handlebars.GroupedEach = function(context, path, options) {
@@ -47300,7 +49426,8 @@ Ember.Checkbox = Ember.View.extend({
 
   tagName: 'input',
 
-  attributeBindings: ['type', 'checked', 'indeterminate', 'disabled', 'tabindex', 'name'],
+  attributeBindings: ['type', 'checked', 'indeterminate', 'disabled', 'tabindex', 'name',
+                      'autofocus', 'form'],
 
   type: "checkbox",
   checked: false,
@@ -47339,12 +49466,15 @@ var get = Ember.get, set = Ember.set;
 
   @class TextSupport
   @namespace Ember
+  @uses Ember.TargetActionSupport
+  @extends Ember.Mixin
   @private
 */
-Ember.TextSupport = Ember.Mixin.create({
+Ember.TextSupport = Ember.Mixin.create(Ember.TargetActionSupport, {
   value: "",
 
-  attributeBindings: ['placeholder', 'disabled', 'maxlength', 'tabindex', 'readonly'],
+  attributeBindings: ['placeholder', 'disabled', 'maxlength', 'tabindex', 'readonly',
+                      'autofocus', 'form', 'selectionDirection', 'spellcheck', 'required'],
   placeholder: null,
   disabled: false,
   maxlength: null,
@@ -47540,7 +49670,11 @@ Ember.TextField = Ember.Component.extend(Ember.TextSupport, {
 
   classNames: ['ember-text-field'],
   tagName: "input",
-  attributeBindings: ['type', 'value', 'size', 'pattern', 'name'],
+  attributeBindings: ['type', 'value', 'size', 'pattern', 'name', 'min', 'max',
+                      'accept', 'autocomplete', 'autosave', 'formaction',
+                      'formenctype', 'formmethod', 'formnovalidate', 'formtarget',
+                      'height', 'inputmode', 'list', 'multiple', 'pattern', 'step',
+                      'width'],
 
   /**
     The `value` attribute of the input element. As the user inputs text, this
@@ -47571,141 +49705,31 @@ Ember.TextField = Ember.Component.extend(Ember.TextSupport, {
   size: null,
 
   /**
-    The `pattern` the pattern attribute of input element.
+    The `pattern` attribute of input element.
 
     @property pattern
     @type String
     @default null
   */
-  pattern: null
-});
+  pattern: null,
 
-})();
+  /**
+    The `min` attribute of input element used with `type="number"` or `type="range"`.
 
-
-
-(function() {
-/*
-@module ember
-@submodule ember-handlebars
-*/
-
-var get = Ember.get, set = Ember.set;
-
-/*
-  @class Button
-  @namespace Ember
-  @extends Ember.View
-  @uses Ember.TargetActionSupport
-  @deprecated
-*/
-Ember.Button = Ember.View.extend(Ember.TargetActionSupport, {
-  classNames: ['ember-button'],
-  classNameBindings: ['isActive'],
-
-  tagName: 'button',
-
-  propagateEvents: false,
-
-  attributeBindings: ['type', 'disabled', 'href', 'tabindex'],
-
-  /*
-    @private
-
-    Overrides `TargetActionSupport`'s `targetObject` computed
-    property to use Handlebars-specific path resolution.
-
-    @property targetObject
+    @property min 
+    @type String
+    @default null
   */
-  targetObject: Ember.computed(function() {
-    var target = get(this, 'target'),
-        root = get(this, 'context'),
-        data = get(this, 'templateData');
+  min: null,
 
-    if (typeof target !== 'string') { return target; }
+  /**
+    The `max` attribute of input element used with `type="number"` or `type="range"`.
 
-    return Ember.Handlebars.get(root, target, { data: data });
-  }).property('target'),
-
-  // Defaults to 'button' if tagName is 'input' or 'button'
-  type: Ember.computed(function(key) {
-    var tagName = this.tagName;
-    if (tagName === 'input' || tagName === 'button') { return 'button'; }
-  }),
-
-  disabled: false,
-
-  // Allow 'a' tags to act like buttons
-  href: Ember.computed(function() {
-    return this.tagName === 'a' ? '#' : null;
-  }),
-
-  mouseDown: function() {
-    if (!get(this, 'disabled')) {
-      set(this, 'isActive', true);
-      this._mouseDown = true;
-      this._mouseEntered = true;
-    }
-    return get(this, 'propagateEvents');
-  },
-
-  mouseLeave: function() {
-    if (this._mouseDown) {
-      set(this, 'isActive', false);
-      this._mouseEntered = false;
-    }
-  },
-
-  mouseEnter: function() {
-    if (this._mouseDown) {
-      set(this, 'isActive', true);
-      this._mouseEntered = true;
-    }
-  },
-
-  mouseUp: function(event) {
-    if (get(this, 'isActive')) {
-      // Actually invoke the button's target and action.
-      // This method comes from the Ember.TargetActionSupport mixin.
-      this.triggerAction();
-      set(this, 'isActive', false);
-    }
-
-    this._mouseDown = false;
-    this._mouseEntered = false;
-    return get(this, 'propagateEvents');
-  },
-
-  keyDown: function(event) {
-    // Handle space or enter
-    if (event.keyCode === 13 || event.keyCode === 32) {
-      this.mouseDown();
-    }
-  },
-
-  keyUp: function(event) {
-    // Handle space or enter
-    if (event.keyCode === 13 || event.keyCode === 32) {
-      this.mouseUp();
-    }
-  },
-
-  // TODO: Handle proper touch behavior. Including should make inactive when
-  // finger moves more than 20x outside of the edge of the button (vs mouse
-  // which goes inactive as soon as mouse goes out of edges.)
-
-  touchStart: function(touch) {
-    return this.mouseDown(touch);
-  },
-
-  touchEnd: function(touch) {
-    return this.mouseUp(touch);
-  },
-
-  init: function() {
-    Ember.deprecate("Ember.Button is deprecated and will be removed from future releases. Consider using the `{{action}}` helper.");
-    this._super();
-  }
+    @property max 
+    @type String
+    @default null
+  */
+  max: null
 });
 
 })();
@@ -47741,7 +49765,7 @@ Ember.TextArea = Ember.Component.extend(Ember.TextSupport, {
   classNames: ['ember-text-area'],
 
   tagName: "textarea",
-  attributeBindings: ['rows', 'cols', 'name'],
+  attributeBindings: ['rows', 'cols', 'name', 'selectionEnd', 'selectionStart', 'wrap'],
   rows: null,
   cols: null,
 
@@ -48097,15 +50121,13 @@ Ember.Select = Ember.View.extend({
   defaultTemplate: Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
-  var buffer = '', stack1, hashTypes, hashContexts, escapeExpression=this.escapeExpression, self=this;
+  var buffer = '', stack1, escapeExpression=this.escapeExpression, self=this;
 
 function program1(depth0,data) {
   
-  var buffer = '', stack1, hashTypes, hashContexts;
+  var buffer = '', stack1;
   data.buffer.push("<option value=\"\">");
-  hashTypes = {};
-  hashContexts = {};
-  stack1 = helpers._triageMustache.call(depth0, "view.prompt", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  stack1 = helpers._triageMustache.call(depth0, "view.prompt", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
   data.buffer.push("</option>");
   return buffer;
@@ -48113,55 +50135,44 @@ function program1(depth0,data) {
 
 function program3(depth0,data) {
   
-  var stack1, hashTypes, hashContexts;
-  hashTypes = {};
-  hashContexts = {};
-  stack1 = helpers.each.call(depth0, "view.groupedContent", {hash:{},inverse:self.noop,fn:self.program(4, program4, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  var stack1;
+  stack1 = helpers.each.call(depth0, "view.groupedContent", {hash:{},hashTypes:{},hashContexts:{},inverse:self.noop,fn:self.program(4, program4, data),contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
   else { data.buffer.push(''); }
   }
 function program4(depth0,data) {
   
-  var hashContexts, hashTypes;
-  hashContexts = {'content': depth0,'label': depth0};
-  hashTypes = {'content': "ID",'label': "ID"};
+  
   data.buffer.push(escapeExpression(helpers.view.call(depth0, "view.groupView", {hash:{
     'content': ("content"),
     'label': ("label")
-  },contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  },hashTypes:{'content': "ID",'label': "ID"},hashContexts:{'content': depth0,'label': depth0},contexts:[depth0],types:["ID"],data:data})));
   }
 
 function program6(depth0,data) {
   
-  var stack1, hashTypes, hashContexts;
-  hashTypes = {};
-  hashContexts = {};
-  stack1 = helpers.each.call(depth0, "view.content", {hash:{},inverse:self.noop,fn:self.program(7, program7, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  var stack1;
+  stack1 = helpers.each.call(depth0, "view.content", {hash:{},hashTypes:{},hashContexts:{},inverse:self.noop,fn:self.program(7, program7, data),contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
   else { data.buffer.push(''); }
   }
 function program7(depth0,data) {
   
-  var hashContexts, hashTypes;
-  hashContexts = {'content': depth0};
-  hashTypes = {'content': "ID"};
+  
   data.buffer.push(escapeExpression(helpers.view.call(depth0, "view.optionView", {hash:{
     'content': ("")
-  },contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  },hashTypes:{'content': "ID"},hashContexts:{'content': depth0},contexts:[depth0],types:["ID"],data:data})));
   }
 
-  hashTypes = {};
-  hashContexts = {};
-  stack1 = helpers['if'].call(depth0, "view.prompt", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  stack1 = helpers['if'].call(depth0, "view.prompt", {hash:{},hashTypes:{},hashContexts:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  hashTypes = {};
-  hashContexts = {};
-  stack1 = helpers['if'].call(depth0, "view.optionGroupPath", {hash:{},inverse:self.program(6, program6, data),fn:self.program(3, program3, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  stack1 = helpers['if'].call(depth0, "view.optionGroupPath", {hash:{},hashTypes:{},hashContexts:{},inverse:self.program(6, program6, data),fn:self.program(3, program3, data),contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
   return buffer;
   
 }),
-  attributeBindings: ['multiple', 'disabled', 'tabindex', 'name'],
+  attributeBindings: ['multiple', 'disabled', 'tabindex', 'name', 'required', 'autofocus',
+                      'form', 'size'],
 
   /**
     The `multiple` attribute of the select element. Indicates whether multiple
@@ -48182,6 +50193,16 @@ function program7(depth0,data) {
     @default false
   */
   disabled: false,
+
+  /**
+    The `required` attribute of the select element. Indicates whether
+    a selected option is required for form validation.
+
+    @property required
+    @type Boolean
+    @default false
+  */
+  required: false,
 
   /**
     The list of options.
@@ -48454,14 +50475,18 @@ function program7(depth0,data) {
   An `{{input}}` with no `type` or a `type` of `text` will render an HTML text input.
   The following HTML attributes can be set via the helper:
 
-* `value`
-* `size`
-* `name`
-* `pattern`
-* `placeholder`
-* `disabled`
-* `maxlength`
-* `tabindex`
+ <table>
+  <tr><td>`readonly`</td><td>`required`</td><td>`autofocus`</td></tr>
+  <tr><td>`value`</td><td>`placeholder`</td><td>`disabled`</td></tr>
+  <tr><td>`size`</td><td>`tabindex`</td><td>`maxlength`</td></tr>
+  <tr><td>`name`</td><td>`min`</td><td>`max`</td></tr>
+  <tr><td>`pattern`</td><td>`accept`</td><td>`autocomplete`</td></tr>
+  <tr><td>`autosave`</td><td>`formaction`</td><td>`formenctype`</td></tr>
+  <tr><td>`formmethod`</td><td>`formnovalidate`</td><td>`formtarget`</td></tr>
+  <tr><td>`height`</td><td>`inputmode`</td><td>`multiple`</td></tr>
+  <tr><td>`step`</td><td>`width`</td><td>`form`</td></tr>
+  <tr><td>`selectionDirection`</td><td>`spellcheck`</td><td>&nbsp;</td></tr>
+ </table>
 
 
   When set to a quoted string, these values will be directly applied to the HTML
@@ -48530,6 +50555,8 @@ function program7(depth0,data) {
 * `tabindex`
 * `indeterminate`
 * `name`
+* `autofocus`
+* `form`
 
 
   When set to a quoted string, these values will be directly applied to the HTML
@@ -48595,6 +50622,7 @@ Ember.Handlebars.registerHelper('input', function(options) {
   delete hash.on;
 
   if (inputType === 'checkbox') {
+    Ember.assert("{{input type='checkbox'}} does not support setting `value=someBooleanValue`; you must use `checked=someBooleanValue` instead.", options.hashTypes.value !== 'ID');
     return Ember.Handlebars.helpers.view.call(this, Ember.Checkbox, options);
   } else {
     if (inputType) { hash.type = inputType; }
@@ -48618,6 +50646,15 @@ Ember.Handlebars.registerHelper('input', function(options) {
     * `disabled`
     * `maxlength`
     * `tabindex`
+    * `selectionEnd`
+    * `selectionStart`
+    * `selectionDirection`
+    * `wrap`
+    * `readonly`
+    * `autofocus`
+    * `form`
+    * `spellcheck`
+    * `required`
 
   When set to a quoted string, these value will be directly applied to the HTML
   element. When left unquoted, these values will be bound to a property on the
@@ -48899,8 +50936,8 @@ Ember.runLoadHooks('Ember.Handlebars', Ember.Handlebars);
 
 (function() {
 define("route-recognizer",
-  [],
-  function() {
+  ["exports"],
+  function(__exports__) {
     "use strict";
     var specials = [
       '/', '.', '*', '+', '?', '|',
@@ -48908,6 +50945,10 @@ define("route-recognizer",
     ];
 
     var escapeRegex = new RegExp('(\\' + specials.join('|\\') + ')', 'g');
+
+    function isArray(test) {
+      return Object.prototype.toString.call(test) === "[object Array]";
+    }
 
     // A Segment represents a segment in the original route description.
     // Each Segment type provides an `eachChar` and `regex` method.
@@ -48929,11 +50970,11 @@ define("route-recognizer",
     function StaticSegment(string) { this.string = string; }
     StaticSegment.prototype = {
       eachChar: function(callback) {
-        var string = this.string, char;
+        var string = this.string, ch;
 
         for (var i=0, l=string.length; i<l; i++) {
-          char = string.charAt(i);
-          callback({ validChars: char });
+          ch = string.charAt(i);
+          callback({ validChars: ch });
         }
       },
 
@@ -49073,8 +51114,8 @@ define("route-recognizer",
       },
 
       // Find a list of child states matching the next character
-      match: function(char) {
-        // DEBUG "Processing `" + char + "`:"
+      match: function(ch) {
+        // DEBUG "Processing `" + ch + "`:"
         var nextStates = this.nextStates,
             child, charSpec, chars;
 
@@ -49087,9 +51128,9 @@ define("route-recognizer",
           charSpec = child.charSpec;
 
           if (typeof (chars = charSpec.validChars) !== 'undefined') {
-            if (chars.indexOf(char) !== -1) { returned.push(child); }
+            if (chars.indexOf(ch) !== -1) { returned.push(child); }
           } else if (typeof (chars = charSpec.invalidChars) !== 'undefined') {
-            if (chars.indexOf(char) === -1) { returned.push(child); }
+            if (chars.indexOf(ch) === -1) { returned.push(child); }
           }
         }
 
@@ -49127,10 +51168,24 @@ define("route-recognizer",
     END IF **/
 
     // This is a somewhat naive strategy, but should work in a lot of cases
-    // A better strategy would properly resolve /posts/:id/new and /posts/edit/:id
+    // A better strategy would properly resolve /posts/:id/new and /posts/edit/:id.
+    //
+    // This strategy generally prefers more static and less dynamic matching.
+    // Specifically, it
+    //
+    //  * prefers fewer stars to more, then
+    //  * prefers using stars for less of the match to more, then
+    //  * prefers fewer dynamic segments to more, then
+    //  * prefers more static segments to more
     function sortSolutions(states) {
       return states.sort(function(a, b) {
         if (a.types.stars !== b.types.stars) { return a.types.stars - b.types.stars; }
+
+        if (a.types.stars) {
+          if (a.types.statics !== b.types.statics) { return b.types.statics - a.types.statics; }
+          if (a.types.dynamics !== b.types.dynamics) { return b.types.dynamics - a.types.dynamics; }
+        }
+
         if (a.types.dynamics !== b.types.dynamics) { return a.types.dynamics - b.types.dynamics; }
         if (a.types.statics !== b.types.statics) { return b.types.statics - a.types.statics; }
 
@@ -49138,53 +51193,58 @@ define("route-recognizer",
       });
     }
 
-    function recognizeChar(states, char) {
+    function recognizeChar(states, ch) {
       var nextStates = [];
 
       for (var i=0, l=states.length; i<l; i++) {
         var state = states[i];
 
-        nextStates = nextStates.concat(state.match(char));
+        nextStates = nextStates.concat(state.match(ch));
       }
 
       return nextStates;
     }
 
+    var oCreate = Object.create || function(proto) {
+      function F() {}
+      F.prototype = proto;
+      return new F();
+    };
+
+    function RecognizeResults(queryParams) {
+      this.queryParams = queryParams || {};
+    }
+    RecognizeResults.prototype = oCreate({
+      splice: Array.prototype.splice,
+      slice:  Array.prototype.slice,
+      push:   Array.prototype.push,
+      length: 0,
+      queryParams: null
+    });
+
     function findHandler(state, path, queryParams) {
       var handlers = state.handlers, regex = state.regex;
       var captures = path.match(regex), currentCapture = 1;
-      var result = [];
+      var result = new RecognizeResults(queryParams);
 
       for (var i=0, l=handlers.length; i<l; i++) {
-        var handler = handlers[i], names = handler.names, params = {},
-          watchedQueryParams = handler.queryParams || [],
-          activeQueryParams = {},
-          j, m;
+        var handler = handlers[i], names = handler.names, params = {};
 
-        for (j=0, m=names.length; j<m; j++) {
+        for (var j=0, m=names.length; j<m; j++) {
           params[names[j]] = captures[currentCapture++];
         }
-        for (j=0, m=watchedQueryParams.length; j < m; j++) {
-          var key = watchedQueryParams[j];
-          if(queryParams[key]){
-            activeQueryParams[key] = queryParams[key];
-          }
-        }
-        var currentResult = { handler: handler.handler, params: params, isDynamic: !!names.length };
-        if(watchedQueryParams && watchedQueryParams.length > 0) {
-          currentResult.queryParams = activeQueryParams;
-        }
-        result.push(currentResult);
+
+        result.push({ handler: handler.handler, params: params, isDynamic: !!names.length });
       }
 
       return result;
     }
 
     function addSegment(currentState, segment) {
-      segment.eachChar(function(char) {
+      segment.eachChar(function(ch) {
         var state;
 
-        currentState = currentState.put(char);
+        currentState = currentState.put(ch);
       });
 
       return currentState;
@@ -49230,9 +51290,6 @@ define("route-recognizer",
           }
 
           var handler = { handler: route.handler, names: names };
-          if(route.queryParams) {
-            handler.queryParams = route.queryParams;
-          }
           handlers.push(handler);
         }
 
@@ -49293,23 +51350,31 @@ define("route-recognizer",
       },
 
       generateQueryString: function(params, handlers) {
-        var pairs = [], allowedParams = [];
-        for(var i=0; i < handlers.length; i++) {
-          var currentParamList = handlers[i].queryParams;
-          if(currentParamList) {
-            allowedParams.push.apply(allowedParams, currentParamList);
-          }
-        }
+        var pairs = [];
+        var keys = [];
         for(var key in params) {
           if (params.hasOwnProperty(key)) {
-            if(allowedParams.indexOf(key) === -1) {
-              throw 'Query param "' + key + '" is not specified as a valid param for this route';
+            keys.push(key);
+          }
+        }
+        keys.sort();
+        for (var i = 0, len = keys.length; i < len; i++) {
+          key = keys[i];
+          var value = params[key];
+          if (value === false || value == null) {
+            continue;
+          }
+          var pair = key;
+          if (isArray(value)) {
+            for (var j = 0, l = value.length; j < l; j++) {
+              var arrayPair = key + '[]' + '=' + encodeURIComponent(value[j]);
+              pairs.push(arrayPair);
             }
-            var value = params[key];
-            var pair = encodeURIComponent(key);
-            if(value !== true) {
-              pair += "=" + encodeURIComponent(value);
-            }
+          }
+          else if (value !== true) {
+            pair += "=" + encodeURIComponent(value);
+            pairs.push(pair);
+          } else {
             pairs.push(pair);
           }
         }
@@ -49324,15 +51389,38 @@ define("route-recognizer",
         for(var i=0; i < pairs.length; i++) {
           var pair      = pairs[i].split('='),
               key       = decodeURIComponent(pair[0]),
-              value     = pair[1] ? decodeURIComponent(pair[1]) : true;
-          queryParams[key] = value;
+              keyLength = key.length,
+              isArray = false,
+              value;
+          if (pair.length === 1) {
+            value = true;
+          } else {
+            //Handle arrays
+            if (keyLength > 2 && key.slice(keyLength -2) === '[]') {
+              isArray = true;
+              key = key.slice(0, keyLength - 2);
+              if(!queryParams[key]) {
+                queryParams[key] = [];
+              }
+            }
+            value = pair[1] ? decodeURIComponent(pair[1]) : '';
+          }
+          if (isArray) {
+            queryParams[key].push(value);
+          } else {
+            queryParams[key] = value;
+          }
+
         }
         return queryParams;
       },
 
       recognize: function(path) {
         var states = [ this.rootState ],
-            pathLen, i, l, queryStart, queryParams = {};
+            pathLen, i, l, queryStart, queryParams = {},
+            isSlashDropped = false;
+
+        path = decodeURI(path);
 
         queryStart = path.indexOf('?');
         if (queryStart !== -1) {
@@ -49348,6 +51436,7 @@ define("route-recognizer",
         pathLen = path.length;
         if (pathLen > 1 && path.charAt(pathLen - 1) === "/") {
           path = path.substr(0, pathLen - 1);
+          isSlashDropped = true;
         }
 
         for (i=0, l=path.length; i<l; i++) {
@@ -49367,10 +51456,17 @@ define("route-recognizer",
         var state = solutions[0];
 
         if (state && state.handlers) {
+          // if a trailing slash was dropped and a star segment is the last segment
+          // specified, put the trailing slash back
+          if (isSlashDropped && state.regex.source.slice(-5) === "(.+)$") {
+            path = path + "/";
+          }
           return findHandler(state, path, queryParams);
         }
       }
     };
+
+    __exports__["default"] = RouteRecognizer;
 
     function Target(path, matcher, delegate) {
       this.path = path;
@@ -49393,34 +51489,18 @@ define("route-recognizer",
           this.matcher.addChild(this.path, target, callback, this.delegate);
         }
         return this;
-      },
-
-      withQueryParams: function() {
-        if (arguments.length === 0) { throw new Error("you must provide arguments to the withQueryParams method"); }
-        for (var i = 0; i < arguments.length; i++) {
-          if (typeof arguments[i] !== "string") {
-            throw new Error('you should call withQueryParams with a list of strings, e.g. withQueryParams("foo", "bar")');
-          }
-        }
-        var queryParams = [].slice.call(arguments);
-        this.matcher.addQueryParams(this.path, queryParams);
       }
     };
 
     function Matcher(target) {
       this.routes = {};
       this.children = {};
-      this.queryParams = {};
       this.target = target;
     }
 
     Matcher.prototype = {
       add: function(path, handler) {
         this.routes[path] = handler;
-      },
-
-      addQueryParams: function(path, params) {
-        this.queryParams[path] = params;
       },
 
       addChild: function(path, target, callback, delegate) {
@@ -49449,7 +51529,7 @@ define("route-recognizer",
       };
     }
 
-    function addRoute(routeArray, path, handler, queryParams) {
+    function addRoute(routeArray, path, handler) {
       var len = 0;
       for (var i=0, l=routeArray.length; i<l; i++) {
         len += routeArray[i].path.length;
@@ -49457,18 +51537,16 @@ define("route-recognizer",
 
       path = path.substr(len);
       var route = { path: path, handler: handler };
-      if(queryParams) { route.queryParams = queryParams; }
       routeArray.push(route);
     }
 
     function eachRoute(baseRoute, matcher, callback, binding) {
       var routes = matcher.routes;
-      var queryParams = matcher.queryParams;
 
       for (var path in routes) {
         if (routes.hasOwnProperty(path)) {
           var routeArray = baseRoute.slice();
-          addRoute(routeArray, path, routes[path], queryParams[path]);
+          addRoute(routeArray, path, routes[path]);
 
           if (matcher.children[path]) {
             eachRoute(routeArray, matcher.children[path], callback, binding);
@@ -49489,7 +51567,6 @@ define("route-recognizer",
         else { this.add(route); }
       }, this);
     };
-    return RouteRecognizer;
   });
 
 })();
@@ -49497,207 +51574,253 @@ define("route-recognizer",
 
 
 (function() {
-define("router",
-  ["route-recognizer","rsvp","exports"],
+define("router/handler-info", 
+  ["./utils","rsvp","exports"],
   function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
-    /**
-      @private
+    var bind = __dependency1__.bind;
+    var merge = __dependency1__.merge;
+    var oCreate = __dependency1__.oCreate;
+    var serialize = __dependency1__.serialize;
+    var promiseLabel = __dependency1__.promiseLabel;
+    var resolve = __dependency2__.resolve;
 
-      This file references several internal structures:
-
-      ## `RecognizedHandler`
-
-      * `{String} handler`: A handler name
-      * `{Object} params`: A hash of recognized parameters
-
-      ## `HandlerInfo`
-
-      * `{Boolean} isDynamic`: whether a handler has any dynamic segments
-      * `{String} name`: the name of a handler
-      * `{Object} handler`: a handler object
-      * `{Object} context`: the active context for the handler
-    */
-
-    var RouteRecognizer = __dependency1__;
-    var RSVP = __dependency2__;
-
-    var slice = Array.prototype.slice;
-
-
-
-    /**
-      @private
-
-      A Transition is a thennable (a promise-like object) that represents
-      an attempt to transition to another route. It can be aborted, either
-      explicitly via `abort` or by attempting another transition while a
-      previous one is still underway. An aborted transition can also
-      be `retry()`d later.
-     */
-
-    function Transition(router, promise) {
-      this.router = router;
-      this.promise = promise;
-      this.data = {};
-      this.resolvedModels = {};
-      this.providedModels = {};
-      this.providedModelsArray = [];
-      this.sequence = ++Transition.currentSequence;
-      this.params = {};
+    function HandlerInfo(props) {
+      if (props) {
+        merge(this, props);
+      }
     }
 
-    Transition.currentSequence = 0;
-
-    Transition.prototype = {
-      targetName: null,
-      urlMethod: 'update',
-      providedModels: null,
-      resolvedModels: null,
+    HandlerInfo.prototype = {
+      name: null,
+      handler: null,
       params: null,
-      pivotHandler: null,
-      resolveIndex: 0,
-      handlerInfos: null,
+      context: null,
 
-      isActive: true,
-
-      /**
-        The Transition's internal promise. Calling `.then` on this property
-        is that same as calling `.then` on the Transition object itself, but
-        this property is exposed for when you want to pass around a
-        Transition's promise, but not the Transition object itself, since
-        Transition object can be externally `abort`ed, while the promise
-        cannot.
-       */
-      promise: null,
-
-      /**
-        Custom state can be stored on a Transition's `data` object.
-        This can be useful for decorating a Transition within an earlier
-        hook and shared with a later hook. Properties set on `data` will
-        be copied to new transitions generated by calling `retry` on this
-        transition.
-       */
-      data: null,
-
-      /**
-        A standard promise hook that resolves if the transition
-        succeeds and rejects if it fails/redirects/aborts.
-
-        Forwards to the internal `promise` property which you can
-        use in situations where you want to pass around a thennable,
-        but not the Transition itself.
-
-        @param {Function} success
-        @param {Function} failure
-       */
-      then: function(success, failure) {
-        return this.promise.then(success, failure);
-      },
-
-      /**
-        Aborts the Transition. Note you can also implicitly abort a transition
-        by initiating another transition while a previous one is underway.
-       */
-      abort: function() {
-        if (this.isAborted) { return this; }
-        log(this.router, this.sequence, this.targetName + ": transition was aborted");
-        this.isAborted = true;
-        this.isActive = false;
-        this.router.activeTransition = null;
-        return this;
-      },
-
-      /**
-        Retries a previously-aborted transition (making sure to abort the
-        transition if it's still active). Returns a new transition that
-        represents the new attempt to transition.
-       */
-      retry: function() {
-        this.abort();
-        var recogHandlers = this.router.recognizer.handlersFor(this.targetName),
-            handlerInfos  = generateHandlerInfosWithQueryParams(this.router, recogHandlers, this.queryParams),
-            newTransition = performTransition(this.router, handlerInfos, this.providedModelsArray, this.params, this.queryParams, this.data);
-
-        return newTransition;
-      },
-
-      /**
-        Sets the URL-changing method to be employed at the end of a
-        successful transition. By default, a new Transition will just
-        use `updateURL`, but passing 'replace' to this method will
-        cause the URL to update using 'replaceWith' instead. Omitting
-        a parameter will disable the URL change, allowing for transitions
-        that don't update the URL at completion (this is also used for
-        handleURL, since the URL has already changed before the
-        transition took place).
-
-        @param {String} method the type of URL-changing method to use
-          at the end of a transition. Accepted values are 'replace',
-          falsy values, or any other non-falsy value (which is
-          interpreted as an updateURL transition).
-
-        @return {Transition} this transition
-       */
-      method: function(method) {
-        this.urlMethod = method;
-        return this;
-      },
-
-      /**
-        Fires an event on the current list of resolved/resolving
-        handlers within this transition. Useful for firing events
-        on route hierarchies that haven't fully been entered yet.
-
-        @param {Boolean} ignoreFailure the name of the event to fire
-        @param {String} name the name of the event to fire
-       */
-      trigger: function(ignoreFailure) {
-        var args = slice.call(arguments);
-        if (typeof ignoreFailure === 'boolean') {
-          args.shift();
-        } else {
-          // Throw errors on unhandled trigger events by default
-          ignoreFailure = false;
+      log: function(payload, message) {
+        if (payload.log) {
+          payload.log(this.name + ': ' + message);
         }
-        trigger(this.router, this.handlerInfos.slice(0, this.resolveIndex + 1), ignoreFailure, args);
       },
 
-      toString: function() {
-        return "Transition (sequence " + this.sequence + ")";
+      promiseLabel: function(label) {
+        return promiseLabel("'" + this.name + "' " + label);
+      },
+
+      resolve: function(async, shouldContinue, payload) {
+        var checkForAbort  = bind(this.checkForAbort,      this, shouldContinue),
+            beforeModel    = bind(this.runBeforeModelHook, this, async, payload),
+            model          = bind(this.getModel,           this, async, payload),
+            afterModel     = bind(this.runAfterModelHook,  this, async, payload),
+            becomeResolved = bind(this.becomeResolved,     this, payload);
+
+        return resolve(undefined, this.promiseLabel("Start handler"))
+               .then(checkForAbort, null, this.promiseLabel("Check for abort"))
+               .then(beforeModel, null, this.promiseLabel("Before model"))
+               .then(checkForAbort, null, this.promiseLabel("Check if aborted during 'beforeModel' hook"))
+               .then(model, null, this.promiseLabel("Model"))
+               .then(checkForAbort, null, this.promiseLabel("Check if aborted in 'model' hook"))
+               .then(afterModel, null, this.promiseLabel("After model"))
+               .then(checkForAbort, null, this.promiseLabel("Check if aborted in 'afterModel' hook"))
+               .then(becomeResolved, null, this.promiseLabel("Become resolved"));
+      },
+
+      runBeforeModelHook: function(async, payload) {
+        if (payload.trigger) {
+          payload.trigger(true, 'willResolveModel', payload, this.handler);
+        }
+        return this.runSharedModelHook(async, payload, 'beforeModel', []);
+      },
+
+      runAfterModelHook: function(async, payload, resolvedModel) {
+        // Stash the resolved model on the payload.
+        // This makes it possible for users to swap out
+        // the resolved model in afterModel.
+        var name = this.name;
+        this.stashResolvedModel(payload, resolvedModel);
+
+        return this.runSharedModelHook(async, payload, 'afterModel', [resolvedModel])
+                   .then(function() {
+                     // Ignore the fulfilled value returned from afterModel.
+                     // Return the value stashed in resolvedModels, which
+                     // might have been swapped out in afterModel.
+                     return payload.resolvedModels[name];
+                   }, null, this.promiseLabel("Ignore fulfillment value and return model value"));
+      },
+
+      runSharedModelHook: function(async, payload, hookName, args) {
+        this.log(payload, "calling " + hookName + " hook");
+
+        if (this.queryParams) {
+          args.push(this.queryParams);
+        }
+        args.push(payload);
+
+        var handler = this.handler;
+        return async(function() {
+          return handler[hookName] && handler[hookName].apply(handler, args);
+        }, this.promiseLabel("Handle " + hookName));
+      },
+
+      getModel: function(payload) {
+        throw new Error("This should be overridden by a subclass of HandlerInfo");
+      },
+
+      checkForAbort: function(shouldContinue, promiseValue) {
+        return resolve(shouldContinue(), this.promiseLabel("Check for abort")).then(function() {
+          // We don't care about shouldContinue's resolve value;
+          // pass along the original value passed to this fn.
+          return promiseValue;
+        }, null, this.promiseLabel("Ignore fulfillment value and continue"));
+      },
+
+      stashResolvedModel: function(payload, resolvedModel) {
+        payload.resolvedModels = payload.resolvedModels || {};
+        payload.resolvedModels[this.name] = resolvedModel;
+      },
+
+      becomeResolved: function(payload, resolvedContext) {
+        var params = this.params || serialize(this.handler, resolvedContext, this.names);
+
+        if (payload) {
+          this.stashResolvedModel(payload, resolvedContext);
+          payload.params = payload.params || {};
+          payload.params[this.name] = params;
+        }
+
+        return new ResolvedHandlerInfo({
+          context: resolvedContext,
+          name: this.name,
+          handler: this.handler,
+          params: params
+        });
+      },
+
+      shouldSupercede: function(other) {
+        // Prefer this newer handlerInfo over `other` if:
+        // 1) The other one doesn't exist
+        // 2) The names don't match
+        // 3) This handler has a context that doesn't match
+        //    the other one (or the other one doesn't have one).
+        // 4) This handler has parameters that don't match the other.
+        if (!other) { return true; }
+
+        var contextsMatch = (other.context === this.context);
+        return other.name !== this.name ||
+               (this.hasOwnProperty('context') && !contextsMatch) ||
+               (this.hasOwnProperty('params') && !paramsMatch(this.params, other.params));
       }
     };
 
+    function ResolvedHandlerInfo(props) {
+      HandlerInfo.call(this, props);
+    }
+
+    ResolvedHandlerInfo.prototype = oCreate(HandlerInfo.prototype);
+    ResolvedHandlerInfo.prototype.resolve = function(async, shouldContinue, payload) {
+      // A ResolvedHandlerInfo just resolved with itself.
+      if (payload && payload.resolvedModels) {
+        payload.resolvedModels[this.name] = this.context;
+      }
+      return resolve(this, this.promiseLabel("Resolve"));
+    };
+
+    // These are generated by URL transitions and
+    // named transitions for non-dynamic route segments.
+    function UnresolvedHandlerInfoByParam(props) {
+      HandlerInfo.call(this, props);
+      this.params = this.params || {};
+    }
+
+    UnresolvedHandlerInfoByParam.prototype = oCreate(HandlerInfo.prototype);
+    UnresolvedHandlerInfoByParam.prototype.getModel = function(async, payload) {
+      var fullParams = this.params;
+      if (payload && payload.queryParams) {
+        fullParams = {};
+        merge(fullParams, this.params);
+        fullParams.queryParams = payload.queryParams;
+      }
+
+      var hookName = typeof this.handler.deserialize === 'function' ?
+                     'deserialize' : 'model';
+
+      return this.runSharedModelHook(async, payload, hookName, [fullParams]);
+    };
+
+
+    // These are generated only for named transitions
+    // with dynamic route segments.
+    function UnresolvedHandlerInfoByObject(props) {
+      HandlerInfo.call(this, props);
+    }
+
+    UnresolvedHandlerInfoByObject.prototype = oCreate(HandlerInfo.prototype);
+    UnresolvedHandlerInfoByObject.prototype.getModel = function(async, payload) {
+      this.log(payload, this.name + ": resolving provided model");
+      return resolve(this.context);
+    };
+
+    function paramsMatch(a, b) {
+      if ((!a) ^ (!b)) {
+        // Only one is null.
+        return false;
+      }
+
+      if (!a) {
+        // Both must be null.
+        return true;
+      }
+
+      // Note: this assumes that both params have the same
+      // number of keys, but since we're comparing the
+      // same handlers, they should.
+      for (var k in a) {
+        if (a.hasOwnProperty(k) && a[k] !== b[k]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    __exports__.HandlerInfo = HandlerInfo;
+    __exports__.ResolvedHandlerInfo = ResolvedHandlerInfo;
+    __exports__.UnresolvedHandlerInfoByParam = UnresolvedHandlerInfoByParam;
+    __exports__.UnresolvedHandlerInfoByObject = UnresolvedHandlerInfoByObject;
+  });
+define("router/router", 
+  ["route-recognizer","rsvp","./utils","./transition-state","./transition","./transition-intent/named-transition-intent","./transition-intent/url-transition-intent","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
+    "use strict";
+    var RouteRecognizer = __dependency1__["default"];
+    var resolve = __dependency2__.resolve;
+    var reject = __dependency2__.reject;
+    var async = __dependency2__.async;
+    var Promise = __dependency2__.Promise;
+    var trigger = __dependency3__.trigger;
+    var log = __dependency3__.log;
+    var slice = __dependency3__.slice;
+    var forEach = __dependency3__.forEach;
+    var merge = __dependency3__.merge;
+    var serialize = __dependency3__.serialize;
+    var extractQueryParams = __dependency3__.extractQueryParams;
+    var getChangelist = __dependency3__.getChangelist;
+    var promiseLabel = __dependency3__.promiseLabel;
+    var TransitionState = __dependency4__.TransitionState;
+    var logAbort = __dependency5__.logAbort;
+    var Transition = __dependency5__.Transition;
+    var TransitionAborted = __dependency5__.TransitionAborted;
+    var NamedTransitionIntent = __dependency6__.NamedTransitionIntent;
+    var URLTransitionIntent = __dependency7__.URLTransitionIntent;
+
+    var pop = Array.prototype.pop;
+
     function Router() {
       this.recognizer = new RouteRecognizer();
+      this.reset();
     }
-
-    // TODO: separate into module?
-    Router.Transition = Transition;
-
-    __exports__["default"] = Router;
-
-
-    /**
-      Promise reject reasons passed to promise rejection
-      handlers for failed transitions.
-     */
-    Router.UnrecognizedURLError = function(message) {
-      this.message = (message || "UnrecognizedURLError");
-      this.name = "UnrecognizedURLError";
-    };
-
-    Router.TransitionAborted = function(message) {
-      this.message = (message || "TransitionAborted");
-      this.name = "TransitionAborted";
-    };
-
-    function errorTransition(router, reason) {
-      return new Transition(router, RSVP.reject(reason));
-    }
-
 
     Router.prototype = {
+
       /**
         The main entry point into the router. The API is essentially
         the same as the `map` method in `route-recognizer`.
@@ -49710,15 +51833,106 @@ define("router",
       map: function(callback) {
         this.recognizer.delegate = this.delegate;
 
-        this.recognizer.map(callback, function(recognizer, route) {
-          var lastHandler = route[route.length - 1].handler;
-          var args = [route, { as: lastHandler }];
-          recognizer.add.apply(recognizer, args);
+        this.recognizer.map(callback, function(recognizer, routes) {
+          for (var i = routes.length - 1, proceed = true; i >= 0 && proceed; --i) {
+            var route = routes[i];
+            recognizer.add(routes, { as: route.handler });
+            proceed = route.path === '/' || route.path === '' || route.handler.slice(-6) === '.index';
+          }
         });
       },
 
       hasRoute: function(route) {
         return this.recognizer.hasRoute(route);
+      },
+
+      // NOTE: this doesn't really belong here, but here
+      // it shall remain until our ES6 transpiler can
+      // handle cyclical deps.
+      transitionByIntent: function(intent, isIntermediate) {
+
+        var wasTransitioning = !!this.activeTransition;
+        var oldState = wasTransitioning ? this.activeTransition.state : this.state;
+        var newTransition;
+        var router = this;
+
+        try {
+          var newState = intent.applyToState(oldState, this.recognizer, this.getHandler, isIntermediate);
+
+          if (handlerInfosEqual(newState.handlerInfos, oldState.handlerInfos)) {
+
+            // This is a no-op transition. See if query params changed.
+            var queryParamChangelist = getChangelist(oldState.queryParams, newState.queryParams);
+            if (queryParamChangelist) {
+
+              // This is a little hacky but we need some way of storing
+              // changed query params given that no activeTransition
+              // is guaranteed to have occurred.
+              this._changedQueryParams = queryParamChangelist.changed;
+              trigger(this, newState.handlerInfos, true, ['queryParamsDidChange', queryParamChangelist.changed, queryParamChangelist.all, queryParamChangelist.removed]);
+              this._changedQueryParams = null;
+
+              if (!wasTransitioning && this.activeTransition) {
+                // One of the handlers in queryParamsDidChange
+                // caused a transition. Just return that transition.
+                return this.activeTransition;
+              } else {
+                // Running queryParamsDidChange didn't change anything.
+                // Just update query params and be on our way.
+                oldState.queryParams = finalizeQueryParamChange(this, newState.handlerInfos, newState.queryParams);
+
+                // We have to return a noop transition that will
+                // perform a URL update at the end. This gives
+                // the user the ability to set the url update
+                // method (default is replaceState).
+                newTransition = new Transition(this);
+                newTransition.urlMethod = 'replace';
+                newTransition.promise = newTransition.promise.then(function(result) {
+                  updateURL(newTransition, oldState, true);
+                  if (router.didTransition) {
+                    router.didTransition(router.currentHandlerInfos);
+                  }
+                  return result;
+                }, null, promiseLabel("Transition complete"));
+                return newTransition;
+              }
+            }
+
+            // No-op. No need to create a new transition.
+            return new Transition(this);
+          }
+
+          if (isIntermediate) {
+            setupContexts(this, newState);
+            return;
+          }
+
+          // Create a new transition to the destination route.
+          newTransition = new Transition(this, intent, newState);
+
+          // Abort and usurp any previously active transition.
+          if (this.activeTransition) {
+            this.activeTransition.abort();
+          }
+          this.activeTransition = newTransition;
+
+          // Transition promises by default resolve with resolved state.
+          // For our purposes, swap out the promise to resolve
+          // after the transition has been finalized.
+          newTransition.promise = newTransition.promise.then(function(result) {
+            return router.async(function() {
+              return finalizeTransition(newTransition, result.state);
+            }, "Finalize transition");
+          }, null, promiseLabel("Settle transition promise when transition is finalized"));
+
+          if (!wasTransitioning) {
+            trigger(this, this.state.handlerInfos, true, ['willTransition', newTransition]);
+          }
+
+          return newTransition;
+        } catch(e) {
+          return new Transition(this, intent, null, e);
+        }
       },
 
       /**
@@ -49727,14 +51941,17 @@ define("router",
         its ancestors.
       */
       reset: function() {
-        eachHandler(this.currentHandlerInfos || [], function(handlerInfo) {
-          var handler = handlerInfo.handler;
-          if (handler.exit) {
-            handler.exit();
-          }
-        });
+        if (this.state) {
+          forEach(this.state.handlerInfos, function(handlerInfo) {
+            var handler = handlerInfo.handler;
+            if (handler.exit) {
+              handler.exit();
+            }
+          });
+        }
+
+        this.state = new TransitionState();
         this.currentHandlerInfos = null;
-        this.targetHandlerInfos = null;
       },
 
       activeTransition: null,
@@ -49756,7 +51973,8 @@ define("router",
         // the URL afterward, since it already happened.
         var args = slice.call(arguments);
         if (url.charAt(0) !== '/') { args[0] = '/' + url; }
-        return doTransition(this, args).method(null);
+
+        return doTransition(this, args).method('replaceQuery');
       },
 
       /**
@@ -49795,6 +52013,28 @@ define("router",
         doTransition(this, arguments, true);
       },
 
+      refresh: function(pivotHandler) {
+
+
+        var state = this.activeTransition ? this.activeTransition.state : this.state;
+        var handlerInfos = state.handlerInfos;
+        var params = {};
+        for (var i = 0, len = handlerInfos.length; i < len; ++i) {
+          var handlerInfo = handlerInfos[i];
+          params[handlerInfo.name] = handlerInfo.params || {};
+        }
+
+        log(this, "Starting a refresh transition");
+        var intent = new NamedTransitionIntent({
+          name: handlerInfos[handlerInfos.length - 1].name,
+          pivotHandler: pivotHandler || handlerInfos[0].handler,
+          contexts: [], // TODO collect contexts...?
+          queryParams: this._changedQueryParams || state.queryParams || {}
+        });
+
+        return this.transitionByIntent(intent, false);
+      },
+
       /**
         Identical to `transitionTo` except that the current URL will be replaced
         if possible.
@@ -49808,33 +52048,6 @@ define("router",
       },
 
       /**
-        @private
-
-        This method takes a handler name and a list of contexts and returns
-        a serialized parameter hash suitable to pass to `recognizer.generate()`.
-
-        @param {String} handlerName
-        @param {Array[Object]} contexts
-        @return {Object} a serialized parameter hash
-      */
-
-      paramsForHandler: function(handlerName, contexts) {
-        var partitionedArgs = extractQueryParams(slice.call(arguments, 1));
-        return paramsForHandler(this, handlerName, partitionedArgs[0], partitionedArgs[1]);
-      },
-
-      /**
-        This method takes a handler name and returns a list of query params
-        that are valid to pass to the handler or its parents
-
-        @param {String} handlerName
-        @return {Array[String]} a list of query parameters
-      */
-      queryParamsForHandler: function (handlerName) {
-        return queryParamsForHandler(this, handlerName);
-      },
-
-      /**
         Take a named route and context objects and generate a
         URL.
 
@@ -49845,81 +52058,100 @@ define("router",
         @return {String} a URL
       */
       generate: function(handlerName) {
+
         var partitionedArgs = extractQueryParams(slice.call(arguments, 1)),
           suppliedParams = partitionedArgs[0],
           queryParams = partitionedArgs[1];
 
-        var params = paramsForHandler(this, handlerName, suppliedParams, queryParams),
-          validQueryParams = queryParamsForHandler(this, handlerName);
+        // Construct a TransitionIntent with the provided params
+        // and apply it to the present state of the router.
+        var intent = new NamedTransitionIntent({ name: handlerName, contexts: suppliedParams });
+        var state = intent.applyToState(this.state, this.recognizer, this.getHandler);
+        var params = {};
 
-        var missingParams = [];
-
-        for (var key in queryParams) {
-          if (queryParams.hasOwnProperty(key) && !~validQueryParams.indexOf(key)) {
-            missingParams.push(key);
-          }
+        for (var i = 0, len = state.handlerInfos.length; i < len; ++i) {
+          var handlerInfo = state.handlerInfos[i];
+          var handlerParams = handlerInfo.params ||
+                              serialize(handlerInfo.handler, handlerInfo.context, handlerInfo.names);
+          merge(params, handlerParams);
         }
-
-        if (missingParams.length > 0) {
-          var err = 'You supplied the params ';
-          err += missingParams.map(function(param) {
-            return '"' + param + "=" + queryParams[param] + '"';
-          }).join(' and ');
-
-          err += ' which are not valid for the "' + handlerName + '" handler or its parents';
-
-          throw new Error(err);
-        }
+        params.queryParams = queryParams;
 
         return this.recognizer.generate(handlerName, params);
       },
 
       isActive: function(handlerName) {
+
         var partitionedArgs   = extractQueryParams(slice.call(arguments, 1)),
             contexts          = partitionedArgs[0],
             queryParams       = partitionedArgs[1],
-            activeQueryParams  = {},
-            effectiveQueryParams = {};
+            activeQueryParams  = this.state.queryParams;
 
-        var targetHandlerInfos = this.targetHandlerInfos,
-            found = false, names, object, handlerInfo, handlerObj;
+        var targetHandlerInfos = this.state.handlerInfos,
+            found = false, names, object, handlerInfo, handlerObj, i, len;
 
-        if (!targetHandlerInfos) { return false; }
+        if (!targetHandlerInfos.length) { return false; }
 
-        var recogHandlers = this.recognizer.handlersFor(targetHandlerInfos[targetHandlerInfos.length - 1].name);
-        for (var i=targetHandlerInfos.length-1; i>=0; i--) {
-          handlerInfo = targetHandlerInfos[i];
-          if (handlerInfo.name === handlerName) { found = true; }
+        var targetHandler = targetHandlerInfos[targetHandlerInfos.length - 1].name;
+        var recogHandlers = this.recognizer.handlersFor(targetHandler);
 
-          if (found) {
-            var recogHandler = recogHandlers[i];
+        var index = 0;
+        for (len = recogHandlers.length; index < len; ++index) {
+          handlerInfo = targetHandlerInfos[index];
+          if (handlerInfo.name === handlerName) { break; }
+        }
 
-            merge(activeQueryParams, handlerInfo.queryParams);
-            if (queryParams !== false) {
-              merge(effectiveQueryParams, handlerInfo.queryParams);
-              mergeSomeKeys(effectiveQueryParams, queryParams, recogHandler.queryParams);
-            }
+        if (index === recogHandlers.length) {
+          // The provided route name isn't even in the route hierarchy.
+          return false;
+        }
 
-            if (handlerInfo.isDynamic && contexts.length > 0) {
-              object = contexts.pop();
+        var state = new TransitionState();
+        state.handlerInfos = targetHandlerInfos.slice(0, index + 1);
+        recogHandlers = recogHandlers.slice(0, index + 1);
 
-              if (isParam(object)) {
-                var name = recogHandler.names[0];
-                if (!this.currentParams || "" + object !== this.currentParams[name]) { return false; }
-              } else if (handlerInfo.context !== object) {
-                return false;
-              }
-            }
+        var intent = new NamedTransitionIntent({
+          name: targetHandler,
+          contexts: contexts
+        });
+
+        var newState = intent.applyToHandlers(state, recogHandlers, this.getHandler, targetHandler, true, true);
+
+        // Get a hash of QPs that will still be active on new route
+        var activeQPsOnNewHandler = {};
+        merge(activeQPsOnNewHandler, queryParams);
+        for (var key in activeQueryParams) {
+          if (activeQueryParams.hasOwnProperty(key) &&
+              activeQPsOnNewHandler.hasOwnProperty(key)) {
+            activeQPsOnNewHandler[key] = activeQueryParams[key];
           }
         }
 
-
-        return contexts.length === 0 && found && queryParamsEqual(activeQueryParams, effectiveQueryParams);
+        return handlerInfosEqual(newState.handlerInfos, state.handlerInfos) &&
+               !getChangelist(activeQPsOnNewHandler, queryParams);
       },
 
       trigger: function(name) {
         var args = slice.call(arguments);
         trigger(this, this.currentHandlerInfos, false, args);
+      },
+
+      /**
+        @private
+
+        Pluggable hook for possibly running route hooks
+        in a try-catch escaping manner.
+
+        @param {Function} callback the callback that will
+                          be asynchronously called
+
+        @return {Promise} a promise that fulfills with the
+                          value returned from the callback
+       */
+      async: function(callback, label) {
+        return new Promise(function(resolve) {
+          resolve(callback());
+        }, label);
       },
 
       /**
@@ -49929,299 +52161,6 @@ define("router",
       */
       log: null
     };
-
-    /**
-      @private
-
-      Used internally for both URL and named transition to determine
-      a shared pivot parent route and other data necessary to perform
-      a transition.
-     */
-    function getMatchPoint(router, handlers, objects, inputParams, queryParams) {
-
-      var matchPoint = handlers.length,
-          providedModels = {}, i,
-          currentHandlerInfos = router.currentHandlerInfos || [],
-          params = {},
-          oldParams = router.currentParams || {},
-          activeTransition = router.activeTransition,
-          handlerParams = {},
-          obj;
-
-      objects = slice.call(objects);
-      merge(params, inputParams);
-
-      for (i = handlers.length - 1; i >= 0; i--) {
-        var handlerObj = handlers[i],
-            handlerName = handlerObj.handler,
-            oldHandlerInfo = currentHandlerInfos[i],
-            hasChanged = false;
-
-        // Check if handler names have changed.
-        if (!oldHandlerInfo || oldHandlerInfo.name !== handlerObj.handler) { hasChanged = true; }
-
-        if (handlerObj.isDynamic) {
-          // URL transition.
-
-          if (obj = getMatchPointObject(objects, handlerName, activeTransition, true, params)) {
-            hasChanged = true;
-            providedModels[handlerName] = obj;
-          } else {
-            handlerParams[handlerName] = {};
-            for (var prop in handlerObj.params) {
-              if (!handlerObj.params.hasOwnProperty(prop)) { continue; }
-              var newParam = handlerObj.params[prop];
-              if (oldParams[prop] !== newParam) { hasChanged = true; }
-              handlerParams[handlerName][prop] = params[prop] = newParam;
-            }
-          }
-        } else if (handlerObj.hasOwnProperty('names')) {
-          // Named transition.
-
-          if (objects.length) { hasChanged = true; }
-
-          if (obj = getMatchPointObject(objects, handlerName, activeTransition, handlerObj.names[0], params)) {
-            providedModels[handlerName] = obj;
-          } else {
-            var names = handlerObj.names;
-            handlerParams[handlerName] = {};
-            for (var j = 0, len = names.length; j < len; ++j) {
-              var name = names[j];
-              handlerParams[handlerName][name] = params[name] = params[name] || oldParams[name];
-            }
-          }
-        }
-
-        // If there is an old handler, see if query params are the same. If there isn't an old handler,
-        // hasChanged will already be true here
-        if(oldHandlerInfo && !queryParamsEqual(oldHandlerInfo.queryParams, handlerObj.queryParams)) {
-            hasChanged = true;
-        }
-
-        if (hasChanged) { matchPoint = i; }
-      }
-
-      if (objects.length > 0) {
-        throw new Error("More context objects were passed than there are dynamic segments for the route: " + handlers[handlers.length - 1].handler);
-      }
-
-      var pivotHandlerInfo = currentHandlerInfos[matchPoint - 1],
-          pivotHandler = pivotHandlerInfo && pivotHandlerInfo.handler;
-
-      return { matchPoint: matchPoint, providedModels: providedModels, params: params, handlerParams: handlerParams, pivotHandler: pivotHandler };
-    }
-
-    function getMatchPointObject(objects, handlerName, activeTransition, paramName, params) {
-
-      if (objects.length && paramName) {
-
-        var object = objects.pop();
-
-        // If provided object is string or number, treat as param.
-        if (isParam(object)) {
-          params[paramName] = object.toString();
-        } else {
-          return object;
-        }
-      } else if (activeTransition) {
-        // Use model from previous transition attempt, preferably the resolved one.
-        return activeTransition.resolvedModels[handlerName] ||
-               (paramName && activeTransition.providedModels[handlerName]);
-      }
-    }
-
-    function isParam(object) {
-      return (typeof object === "string" || object instanceof String || typeof object === "number" || object instanceof Number);
-    }
-
-
-
-    /**
-      @private
-
-      This method takes a handler name and returns a list of query params
-      that are valid to pass to the handler or its parents
-
-      @param {Router} router
-      @param {String} handlerName
-      @return {Array[String]} a list of query parameters
-    */
-    function queryParamsForHandler(router, handlerName) {
-      var handlers = router.recognizer.handlersFor(handlerName),
-        queryParams = [];
-
-      for (var i = 0; i < handlers.length; i++) {
-        queryParams.push.apply(queryParams, handlers[i].queryParams || []);
-      }
-
-      return queryParams;
-    }
-    /**
-      @private
-
-      This method takes a handler name and a list of contexts and returns
-      a serialized parameter hash suitable to pass to `recognizer.generate()`.
-
-      @param {Router} router
-      @param {String} handlerName
-      @param {Array[Object]} objects
-      @return {Object} a serialized parameter hash
-    */
-    function paramsForHandler(router, handlerName, objects, queryParams) {
-
-      var handlers = router.recognizer.handlersFor(handlerName),
-          params = {},
-          handlerInfos = generateHandlerInfosWithQueryParams(router, handlers, queryParams),
-          matchPoint = getMatchPoint(router, handlerInfos, objects).matchPoint,
-          mergedQueryParams = {},
-          object, handlerObj, handler, names, i;
-
-      params.queryParams = {};
-
-      for (i=0; i<handlers.length; i++) {
-        handlerObj = handlers[i];
-        handler = router.getHandler(handlerObj.handler);
-        names = handlerObj.names;
-
-        // If it's a dynamic segment
-        if (names.length) {
-          // If we have objects, use them
-          if (i >= matchPoint) {
-            object = objects.shift();
-          // Otherwise use existing context
-          } else {
-            object = handler.context;
-          }
-
-          // Serialize to generate params
-          merge(params, serialize(handler, object, names));
-        }
-        if (queryParams !== false) {
-          mergeSomeKeys(params.queryParams, router.currentQueryParams, handlerObj.queryParams);
-          mergeSomeKeys(params.queryParams, queryParams, handlerObj.queryParams);
-        }
-      }
-
-      if (queryParamsEqual(params.queryParams, {})) { delete params.queryParams; }
-      return params;
-    }
-
-    function merge(hash, other) {
-      for (var prop in other) {
-        if (other.hasOwnProperty(prop)) { hash[prop] = other[prop]; }
-      }
-    }
-
-    function mergeSomeKeys(hash, other, keys) {
-      if (!other || !keys) { return; }
-      for(var i = 0; i < keys.length; i++) {
-        var key = keys[i], value;
-        if(other.hasOwnProperty(key)) {
-          value = other[key];
-          if(value === null || value === false || typeof value === "undefined") {
-            delete hash[key];
-          } else {
-            hash[key] = other[key];
-          }
-        }
-      }
-    }
-
-    /**
-      @private
-    */
-
-    function generateHandlerInfosWithQueryParams(router, handlers, queryParams) {
-      var handlerInfos = [];
-
-      for (var i = 0; i < handlers.length; i++) {
-        var handler = handlers[i],
-          handlerInfo = { handler: handler.handler, names: handler.names, context: handler.context, isDynamic: handler.isDynamic },
-          activeQueryParams = {};
-
-        if (queryParams !== false) {
-          mergeSomeKeys(activeQueryParams, router.currentQueryParams, handler.queryParams);
-          mergeSomeKeys(activeQueryParams, queryParams, handler.queryParams);
-        }
-
-        if (handler.queryParams && handler.queryParams.length > 0) {
-          handlerInfo.queryParams = activeQueryParams;
-        }
-
-        handlerInfos.push(handlerInfo);
-      }
-
-      return handlerInfos;
-    }
-
-    /**
-      @private
-    */
-    function createQueryParamTransition(router, queryParams, isIntermediate) {
-      var currentHandlers = router.currentHandlerInfos,
-          currentHandler = currentHandlers[currentHandlers.length - 1],
-          name = currentHandler.name;
-
-      log(router, "Attempting query param transition");
-
-      return createNamedTransition(router, [name, queryParams], isIntermediate);
-    }
-
-    /**
-      @private
-    */
-    function createNamedTransition(router, args, isIntermediate) {
-      var partitionedArgs     = extractQueryParams(args),
-        pureArgs              = partitionedArgs[0],
-        queryParams           = partitionedArgs[1],
-        handlers              = router.recognizer.handlersFor(pureArgs[0]),
-        handlerInfos          = generateHandlerInfosWithQueryParams(router, handlers, queryParams);
-
-
-      log(router, "Attempting transition to " + pureArgs[0]);
-
-      return performTransition(router,
-                               handlerInfos,
-                               slice.call(pureArgs, 1),
-                               router.currentParams,
-                               queryParams,
-                               null,
-                               isIntermediate);
-    }
-
-    /**
-      @private
-    */
-    function createURLTransition(router, url, isIntermediate) {
-      var results = router.recognizer.recognize(url),
-          currentHandlerInfos = router.currentHandlerInfos,
-          queryParams = {},
-          i, len;
-
-      log(router, "Attempting URL transition to " + url);
-
-      if (results) {
-        // Make sure this route is actually accessible by URL.
-        for (i = 0, len = results.length; i < len; ++i) {
-
-          if (router.getHandler(results[i].handler).inaccessibleByURL) {
-            results = null;
-            break;
-          }
-        }
-      }
-
-      if (!results) {
-        return errorTransition(router, new Router.UnrecognizedURLError(url));
-      }
-
-      for(i = 0, len = results.length; i < len; i++) {
-        merge(queryParams, results[i].queryParams);
-      }
-
-      return performTransition(router, results, [], {}, queryParams, null, isIntermediate);
-    }
-
 
     /**
       @private
@@ -50261,32 +52200,39 @@ define("router",
          3. Triggers the `enter` callback on `about`
          4. Triggers the `setup` callback on `about`
 
-      @param {Transition} transition
-      @param {Array[HandlerInfo]} handlerInfos
+      @param {Router} transition
+      @param {TransitionState} newState
     */
-    function setupContexts(transition, handlerInfos) {
-      var router = transition.router,
-          partition = partitionHandlers(router.currentHandlerInfos || [], handlerInfos);
+    function setupContexts(router, newState, transition) {
+      var partition = partitionHandlers(router.state, newState);
 
-      router.targetHandlerInfos = handlerInfos;
-
-      eachHandler(partition.exited, function(handlerInfo) {
+      forEach(partition.exited, function(handlerInfo) {
         var handler = handlerInfo.handler;
         delete handler.context;
         if (handler.exit) { handler.exit(); }
       });
 
-      var currentHandlerInfos = partition.unchanged.slice();
-      router.currentHandlerInfos = currentHandlerInfos;
+      var oldState = router.oldState = router.state;
+      router.state = newState;
+      var currentHandlerInfos = router.currentHandlerInfos = partition.unchanged.slice();
 
-      eachHandler(partition.updatedContext, function(handlerInfo) {
-        handlerEnteredOrUpdated(transition, currentHandlerInfos, handlerInfo, false);
-      });
+      try {
+        forEach(partition.updatedContext, function(handlerInfo) {
+          return handlerEnteredOrUpdated(currentHandlerInfos, handlerInfo, false, transition);
+        });
 
-      eachHandler(partition.entered, function(handlerInfo) {
-        handlerEnteredOrUpdated(transition, currentHandlerInfos, handlerInfo, true);
-      });
+        forEach(partition.entered, function(handlerInfo) {
+          return handlerEnteredOrUpdated(currentHandlerInfos, handlerInfo, true, transition);
+        });
+      } catch(e) {
+        router.state = oldState;
+        router.currentHandlerInfos = oldState.handlerInfos;
+        throw e;
+      }
+
+      router.state.queryParams = finalizeQueryParamChange(router, currentHandlerInfos, newState.queryParams);
     }
+
 
     /**
       @private
@@ -50294,70 +52240,29 @@ define("router",
       Helper method used by setupContexts. Handles errors or redirects
       that may happen in enter/setup.
     */
-    function handlerEnteredOrUpdated(transition, currentHandlerInfos, handlerInfo, enter) {
+    function handlerEnteredOrUpdated(currentHandlerInfos, handlerInfo, enter, transition) {
+
       var handler = handlerInfo.handler,
           context = handlerInfo.context;
 
-      try {
-        if (enter && handler.enter) { handler.enter(); }
-        checkAbort(transition);
+      if (enter && handler.enter) { handler.enter(transition); }
+      if (transition && transition.isAborted) {
+        throw new TransitionAborted();
+      }
 
-        setContext(handler, context);
-        setQueryParams(handler, handlerInfo.queryParams);
+      handler.context = context;
+      if (handler.contextDidChange) { handler.contextDidChange(); }
 
-        if (handler.setup) { handler.setup(context, handlerInfo.queryParams); }
-        checkAbort(transition);
-      } catch(e) {
-        if (!(e instanceof Router.TransitionAborted)) {
-          // Trigger the `error` event starting from this failed handler.
-          transition.trigger(true, 'error', e, transition, handler);
-        }
-
-        // Propagate the error so that the transition promise will reject.
-        throw e;
+      if (handler.setup) { handler.setup(context, transition); }
+      if (transition && transition.isAborted) {
+        throw new TransitionAborted();
       }
 
       currentHandlerInfos.push(handlerInfo);
-    }
 
-
-    /**
-      @private
-
-      Iterates over an array of `HandlerInfo`s, passing the handler
-      and context into the callback.
-
-      @param {Array[HandlerInfo]} handlerInfos
-      @param {Function(Object, Object)} callback
-    */
-    function eachHandler(handlerInfos, callback) {
-      for (var i=0, l=handlerInfos.length; i<l; i++) {
-        callback(handlerInfos[i]);
-      }
-    }
-
-    /**
-      @private
-
-      determines if two queryparam objects are the same or not
-    **/
-    function queryParamsEqual(a, b) {
-      a = a || {};
-      b = b || {};
-      var checkedKeys = [], key;
-      for(key in a) {
-        if (!a.hasOwnProperty(key)) { continue; }
-        if(b[key] !== a[key]) { return false; }
-        checkedKeys.push(key);
-      }
-      for(key in b) {
-        if (!b.hasOwnProperty(key)) { continue; }
-        if (~checkedKeys.indexOf(key)) { continue; }
-        // b has a key not in a
-        return false;
-      }
       return true;
     }
+
 
     /**
       @private
@@ -50400,7 +52305,10 @@ define("router",
 
       @return {Partition}
     */
-    function partitionHandlers(oldHandlers, newHandlers) {
+    function partitionHandlers(oldState, newState) {
+      var oldHandlers = oldState.handlerInfos;
+      var newHandlers = newState.handlerInfos;
+
       var handlers = {
             updatedContext: [],
             exited: [],
@@ -50415,8 +52323,6 @@ define("router",
 
         if (!oldHandler || oldHandler.handler !== newHandler.handler) {
           handlerChanged = true;
-        } else if (!queryParamsEqual(oldHandler.queryParams, newHandler.queryParams)) {
-          queryParamsChanged = true;
         }
 
         if (handlerChanged) {
@@ -50435,6 +52341,965 @@ define("router",
       }
 
       return handlers;
+    }
+
+    function updateURL(transition, state, inputUrl) {
+      var urlMethod = transition.urlMethod;
+
+      if (!urlMethod) {
+        return;
+      }
+
+      var router = transition.router,
+          handlerInfos = state.handlerInfos,
+          handlerName = handlerInfos[handlerInfos.length - 1].name,
+          params = {};
+
+      for (var i = handlerInfos.length - 1; i >= 0; --i) {
+        var handlerInfo = handlerInfos[i];
+        merge(params, handlerInfo.params);
+        if (handlerInfo.handler.inaccessibleByURL) {
+          urlMethod = null;
+        }
+      }
+
+      if (urlMethod) {
+        params.queryParams = state.queryParams;
+        var url = router.recognizer.generate(handlerName, params);
+
+        if (urlMethod === 'replaceQuery') {
+          if (url !== inputUrl) {
+            router.replaceURL(url);
+          }
+        } else if (urlMethod === 'replace') {
+          router.replaceURL(url);
+        } else {
+          router.updateURL(url);
+        }
+      }
+    }
+
+    /**
+      @private
+
+      Updates the URL (if necessary) and calls `setupContexts`
+      to update the router's array of `currentHandlerInfos`.
+     */
+    function finalizeTransition(transition, newState) {
+
+      try {
+        log(transition.router, transition.sequence, "Resolved all models on destination route; finalizing transition.");
+
+        var router = transition.router,
+            handlerInfos = newState.handlerInfos,
+            seq = transition.sequence;
+
+        // Run all the necessary enter/setup/exit hooks
+        setupContexts(router, newState, transition);
+
+        // Check if a redirect occurred in enter/setup
+        if (transition.isAborted) {
+          // TODO: cleaner way? distinguish b/w targetHandlerInfos?
+          router.state.handlerInfos = router.currentHandlerInfos;
+          return reject(logAbort(transition));
+        }
+
+        updateURL(transition, newState, transition.intent.url);
+
+        transition.isActive = false;
+        router.activeTransition = null;
+
+        trigger(router, router.currentHandlerInfos, true, ['didTransition']);
+
+        if (router.didTransition) {
+          router.didTransition(router.currentHandlerInfos);
+        }
+
+        log(router, transition.sequence, "TRANSITION COMPLETE.");
+
+        // Resolve with the final handler.
+        return handlerInfos[handlerInfos.length - 1].handler;
+      } catch(e) {
+        if (!(e instanceof TransitionAborted)) {
+          //var erroneousHandler = handlerInfos.pop();
+          var infos = transition.state.handlerInfos;
+          transition.trigger(true, 'error', e, transition, infos[infos.length-1].handler);
+          transition.abort();
+        }
+
+        throw e;
+      }
+    }
+
+    /**
+      @private
+
+      Begins and returns a Transition based on the provided
+      arguments. Accepts arguments in the form of both URL
+      transitions and named transitions.
+
+      @param {Router} router
+      @param {Array[Object]} args arguments passed to transitionTo,
+        replaceWith, or handleURL
+    */
+    function doTransition(router, args, isIntermediate) {
+      // Normalize blank transitions to root URL transitions.
+      var name = args[0] || '/';
+
+      var lastArg = args[args.length-1];
+      var queryParams = {};
+      if (lastArg && lastArg.hasOwnProperty('queryParams')) {
+        queryParams = pop.call(args).queryParams;
+      }
+
+      var intent;
+      if (args.length === 0) {
+
+        log(router, "Updating query params");
+
+        // A query param update is really just a transition
+        // into the route you're already on.
+        var handlerInfos = router.state.handlerInfos;
+        intent = new NamedTransitionIntent({
+          name: handlerInfos[handlerInfos.length - 1].name,
+          contexts: [],
+          queryParams: queryParams
+        });
+
+      } else if (name.charAt(0) === '/') {
+
+        log(router, "Attempting URL transition to " + name);
+        intent = new URLTransitionIntent({ url: name });
+
+      } else {
+
+        log(router, "Attempting transition to " + name);
+        intent = new NamedTransitionIntent({
+          name: args[0],
+          contexts: slice.call(args, 1),
+          queryParams: queryParams
+        });
+      }
+
+      return router.transitionByIntent(intent, isIntermediate);
+    }
+
+    function handlerInfosEqual(handlerInfos, otherHandlerInfos) {
+      if (handlerInfos.length !== otherHandlerInfos.length) {
+        return false;
+      }
+
+      for (var i = 0, len = handlerInfos.length; i < len; ++i) {
+        if (handlerInfos[i] !== otherHandlerInfos[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function finalizeQueryParamChange(router, resolvedHandlers, newQueryParams) {
+      // We fire a finalizeQueryParamChange event which
+      // gives the new route hierarchy a chance to tell
+      // us which query params it's consuming and what
+      // their final values are. If a query param is
+      // no longer consumed in the final route hierarchy,
+      // its serialized segment will be removed
+      // from the URL.
+      var finalQueryParamsArray = [];
+      trigger(router, resolvedHandlers, true, ['finalizeQueryParamChange', newQueryParams, finalQueryParamsArray]);
+
+      var finalQueryParams = {};
+      for (var i = 0, len = finalQueryParamsArray.length; i < len; ++i) {
+        var qp = finalQueryParamsArray[i];
+        finalQueryParams[qp.key] = qp.value;
+      }
+      return finalQueryParams;
+    }
+
+    __exports__.Router = Router;
+  });
+define("router/transition-intent", 
+  ["./utils","exports"],
+  function(__dependency1__, __exports__) {
+    "use strict";
+    var merge = __dependency1__.merge;
+
+    function TransitionIntent(props) {
+      if (props) {
+        merge(this, props);
+      }
+      this.data = this.data || {};
+    }
+
+    TransitionIntent.prototype.applyToState = function(oldState) {
+      // Default TransitionIntent is a no-op.
+      return oldState;
+    };
+
+    __exports__.TransitionIntent = TransitionIntent;
+  });
+define("router/transition-intent/named-transition-intent", 
+  ["../transition-intent","../transition-state","../handler-info","../utils","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+    "use strict";
+    var TransitionIntent = __dependency1__.TransitionIntent;
+    var TransitionState = __dependency2__.TransitionState;
+    var UnresolvedHandlerInfoByParam = __dependency3__.UnresolvedHandlerInfoByParam;
+    var UnresolvedHandlerInfoByObject = __dependency3__.UnresolvedHandlerInfoByObject;
+    var isParam = __dependency4__.isParam;
+    var forEach = __dependency4__.forEach;
+    var extractQueryParams = __dependency4__.extractQueryParams;
+    var oCreate = __dependency4__.oCreate;
+    var merge = __dependency4__.merge;
+
+    function NamedTransitionIntent(props) {
+      TransitionIntent.call(this, props);
+    }
+
+    NamedTransitionIntent.prototype = oCreate(TransitionIntent.prototype);
+    NamedTransitionIntent.prototype.applyToState = function(oldState, recognizer, getHandler, isIntermediate) {
+
+      var partitionedArgs     = extractQueryParams([this.name].concat(this.contexts)),
+        pureArgs              = partitionedArgs[0],
+        queryParams           = partitionedArgs[1],
+        handlers              = recognizer.handlersFor(pureArgs[0]);
+
+      var targetRouteName = handlers[handlers.length-1].handler;
+
+      return this.applyToHandlers(oldState, handlers, getHandler, targetRouteName, isIntermediate);
+    };
+
+    NamedTransitionIntent.prototype.applyToHandlers = function(oldState, handlers, getHandler, targetRouteName, isIntermediate, checkingIfActive) {
+
+      var i;
+      var newState = new TransitionState();
+      var objects = this.contexts.slice(0);
+
+      var invalidateIndex = handlers.length;
+      var nonDynamicIndexes = [];
+
+      // Pivot handlers are provided for refresh transitions
+      if (this.pivotHandler) {
+        for (i = 0; i < handlers.length; ++i) {
+          if (getHandler(handlers[i].handler) === this.pivotHandler) {
+            invalidateIndex = i;
+            break;
+          }
+        }
+      }
+
+      var pivotHandlerFound = !this.pivotHandler;
+
+      for (i = handlers.length - 1; i >= 0; --i) {
+        var result = handlers[i];
+        var name = result.handler;
+        var handler = getHandler(name);
+
+        var oldHandlerInfo = oldState.handlerInfos[i];
+        var newHandlerInfo = null;
+
+        if (result.names.length > 0) {
+          if (i >= invalidateIndex) {
+            newHandlerInfo = this.createParamHandlerInfo(name, handler, result.names, objects, oldHandlerInfo);
+          } else {
+            newHandlerInfo = this.getHandlerInfoForDynamicSegment(name, handler, result.names, objects, oldHandlerInfo, targetRouteName);
+          }
+        } else {
+          // This route has no dynamic segment.
+          // Therefore treat as a param-based handlerInfo
+          // with empty params. This will cause the `model`
+          // hook to be called with empty params, which is desirable.
+          newHandlerInfo = this.createParamHandlerInfo(name, handler, result.names, objects, oldHandlerInfo);
+          nonDynamicIndexes.unshift(i);
+        }
+
+        if (checkingIfActive) {
+          // If we're performing an isActive check, we want to
+          // serialize URL params with the provided context, but
+          // ignore mismatches between old and new context.
+          newHandlerInfo = newHandlerInfo.becomeResolved(null, newHandlerInfo.context);
+          var oldContext = oldHandlerInfo && oldHandlerInfo.context;
+          if (result.names.length > 0 && newHandlerInfo.context === oldContext) {
+            // If contexts match in isActive test, assume params also match.
+            // This allows for flexibility in not requiring that every last
+            // handler provide a `serialize` method
+            newHandlerInfo.params = oldHandlerInfo && oldHandlerInfo.params;
+          }
+          newHandlerInfo.context = oldContext;
+        }
+
+        var handlerToUse = oldHandlerInfo;
+        if (i >= invalidateIndex || newHandlerInfo.shouldSupercede(oldHandlerInfo)) {
+          invalidateIndex = Math.min(i, invalidateIndex);
+          handlerToUse = newHandlerInfo;
+        }
+
+        if (isIntermediate && !checkingIfActive) {
+          handlerToUse = handlerToUse.becomeResolved(null, handlerToUse.context);
+        }
+
+        newState.handlerInfos.unshift(handlerToUse);
+      }
+
+      if (objects.length > 0) {
+        throw new Error("More context objects were passed than there are dynamic segments for the route: " + targetRouteName);
+      }
+
+      if (!isIntermediate) {
+        this.invalidateNonDynamicHandlers(newState.handlerInfos, nonDynamicIndexes, invalidateIndex);
+      }
+
+      merge(newState.queryParams, oldState.queryParams);
+      merge(newState.queryParams, this.queryParams || {});
+
+      return newState;
+    };
+
+    NamedTransitionIntent.prototype.invalidateNonDynamicHandlers = function(handlerInfos, indexes, invalidateIndex) {
+      forEach(indexes, function(i) {
+        if (i >= invalidateIndex) {
+          var handlerInfo = handlerInfos[i];
+          handlerInfos[i] = new UnresolvedHandlerInfoByParam({
+            name: handlerInfo.name,
+            handler: handlerInfo.handler,
+            params: {}
+          });
+        }
+      });
+    };
+
+    NamedTransitionIntent.prototype.getHandlerInfoForDynamicSegment = function(name, handler, names, objects, oldHandlerInfo, targetRouteName) {
+
+      var numNames = names.length;
+      var objectToUse;
+      if (objects.length > 0) {
+
+        // Use the objects provided for this transition.
+        objectToUse = objects[objects.length - 1];
+        if (isParam(objectToUse)) {
+          return this.createParamHandlerInfo(name, handler, names, objects, oldHandlerInfo);
+        } else {
+          objects.pop();
+        }
+      } else if (oldHandlerInfo && oldHandlerInfo.name === name) {
+        // Reuse the matching oldHandlerInfo
+        return oldHandlerInfo;
+      } else {
+        // Ideally we should throw this error to provide maximal
+        // information to the user that not enough context objects
+        // were provided, but this proves too cumbersome in Ember
+        // in cases where inner template helpers are evaluated
+        // before parent helpers un-render, in which cases this
+        // error somewhat prematurely fires.
+        //throw new Error("Not enough context objects were provided to complete a transition to " + targetRouteName + ". Specifically, the " + name + " route needs an object that can be serialized into its dynamic URL segments [" + names.join(', ') + "]");
+        return oldHandlerInfo;
+      }
+
+      return new UnresolvedHandlerInfoByObject({
+        name: name,
+        handler: handler,
+        context: objectToUse,
+        names: names
+      });
+    };
+
+    NamedTransitionIntent.prototype.createParamHandlerInfo = function(name, handler, names, objects, oldHandlerInfo) {
+      var params = {};
+
+      // Soak up all the provided string/numbers
+      var numNames = names.length;
+      while (numNames--) {
+
+        // Only use old params if the names match with the new handler
+        var oldParams = (oldHandlerInfo && name === oldHandlerInfo.name && oldHandlerInfo.params) || {};
+
+        var peek = objects[objects.length - 1];
+        var paramName = names[numNames];
+        if (isParam(peek)) {
+          params[paramName] = "" + objects.pop();
+        } else {
+          // If we're here, this means only some of the params
+          // were string/number params, so try and use a param
+          // value from a previous handler.
+          if (oldParams.hasOwnProperty(paramName)) {
+            params[paramName] = oldParams[paramName];
+          } else {
+            throw new Error("You didn't provide enough string/numeric parameters to satisfy all of the dynamic segments for route " + name);
+          }
+        }
+      }
+
+      return new UnresolvedHandlerInfoByParam({
+        name: name,
+        handler: handler,
+        params: params
+      });
+    };
+
+    __exports__.NamedTransitionIntent = NamedTransitionIntent;
+  });
+define("router/transition-intent/url-transition-intent", 
+  ["../transition-intent","../transition-state","../handler-info","../utils","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+    "use strict";
+    var TransitionIntent = __dependency1__.TransitionIntent;
+    var TransitionState = __dependency2__.TransitionState;
+    var UnresolvedHandlerInfoByParam = __dependency3__.UnresolvedHandlerInfoByParam;
+    var oCreate = __dependency4__.oCreate;
+    var merge = __dependency4__.merge;
+
+    function URLTransitionIntent(props) {
+      TransitionIntent.call(this, props);
+    }
+
+    URLTransitionIntent.prototype = oCreate(TransitionIntent.prototype);
+    URLTransitionIntent.prototype.applyToState = function(oldState, recognizer, getHandler) {
+      var newState = new TransitionState();
+
+      var results = recognizer.recognize(this.url),
+          queryParams = {},
+          i, len;
+
+      if (!results) {
+        throw new UnrecognizedURLError(this.url);
+      }
+
+      var statesDiffer = false;
+
+      for (i = 0, len = results.length; i < len; ++i) {
+        var result = results[i];
+        var name = result.handler;
+        var handler = getHandler(name);
+
+        if (handler.inaccessibleByURL) {
+          throw new UnrecognizedURLError(this.url);
+        }
+
+        var newHandlerInfo = new UnresolvedHandlerInfoByParam({
+          name: name,
+          handler: handler,
+          params: result.params
+        });
+
+        var oldHandlerInfo = oldState.handlerInfos[i];
+        if (statesDiffer || newHandlerInfo.shouldSupercede(oldHandlerInfo)) {
+          statesDiffer = true;
+          newState.handlerInfos[i] = newHandlerInfo;
+        } else {
+          newState.handlerInfos[i] = oldHandlerInfo;
+        }
+      }
+
+      merge(newState.queryParams, results.queryParams);
+
+      return newState;
+    };
+
+    /**
+      Promise reject reasons passed to promise rejection
+      handlers for failed transitions.
+     */
+    function UnrecognizedURLError(message) {
+      this.message = (message || "UnrecognizedURLError");
+      this.name = "UnrecognizedURLError";
+    }
+
+    __exports__.URLTransitionIntent = URLTransitionIntent;
+  });
+define("router/transition-state", 
+  ["./handler-info","./utils","rsvp","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+    "use strict";
+    var ResolvedHandlerInfo = __dependency1__.ResolvedHandlerInfo;
+    var forEach = __dependency2__.forEach;
+    var promiseLabel = __dependency2__.promiseLabel;
+    var resolve = __dependency3__.resolve;
+    var reject = __dependency3__.reject;
+
+    function TransitionState(other) {
+      this.handlerInfos = [];
+      this.queryParams = {};
+      this.params = {};
+    }
+
+    TransitionState.prototype = {
+      handlerInfos: null,
+      queryParams: null,
+      params: null,
+
+      promiseLabel: function(label) {
+        var targetName = '';
+        forEach(this.handlerInfos, function(handlerInfo) {
+          if (targetName !== '') {
+            targetName += '.';
+          }
+          targetName += handlerInfo.name;
+        });
+        return promiseLabel("'" + targetName + "': " + label);
+      },
+
+      resolve: function(async, shouldContinue, payload) {
+        var self = this;
+        // First, calculate params for this state. This is useful
+        // information to provide to the various route hooks.
+        var params = this.params;
+        forEach(this.handlerInfos, function(handlerInfo) {
+          params[handlerInfo.name] = handlerInfo.params || {};
+        });
+
+        payload = payload || {};
+        payload.resolveIndex = 0;
+
+        var currentState = this;
+        var wasAborted = false;
+
+        // The prelude RSVP.resolve() asyncs us into the promise land.
+        return resolve(null, this.promiseLabel("Start transition"))
+        .then(resolveOneHandlerInfo, null, this.promiseLabel('Resolve handler'))['catch'](handleError, this.promiseLabel('Handle error'));
+
+        function innerShouldContinue() {
+          return resolve(shouldContinue(), promiseLabel("Check if should continue"))['catch'](function(reason) {
+            // We distinguish between errors that occurred
+            // during resolution (e.g. beforeModel/model/afterModel),
+            // and aborts due to a rejecting promise from shouldContinue().
+            wasAborted = true;
+            return reject(reason);
+          }, promiseLabel("Handle abort"));
+        }
+
+        function handleError(error) {
+          // This is the only possible
+          // reject value of TransitionState#resolve
+          var handlerInfos = currentState.handlerInfos;
+          var errorHandlerIndex = payload.resolveIndex >= handlerInfos.length ?
+                                  handlerInfos.length - 1 : payload.resolveIndex;
+          return reject({
+            error: error,
+            handlerWithError: currentState.handlerInfos[errorHandlerIndex].handler,
+            wasAborted: wasAborted,
+            state: currentState
+          });
+        }
+
+        function proceed(resolvedHandlerInfo) {
+          // Swap the previously unresolved handlerInfo with
+          // the resolved handlerInfo
+          currentState.handlerInfos[payload.resolveIndex++] = resolvedHandlerInfo;
+
+          // Call the redirect hook. The reason we call it here
+          // vs. afterModel is so that redirects into child
+          // routes don't re-run the model hooks for this
+          // already-resolved route.
+          var handler = resolvedHandlerInfo.handler;
+          if (handler && handler.redirect) {
+            handler.redirect(resolvedHandlerInfo.context, payload);
+          }
+
+          // Proceed after ensuring that the redirect hook
+          // didn't abort this transition by transitioning elsewhere.
+          return innerShouldContinue().then(resolveOneHandlerInfo, null, promiseLabel('Resolve handler'));
+        }
+
+        function resolveOneHandlerInfo() {
+          if (payload.resolveIndex === currentState.handlerInfos.length) {
+            // This is is the only possible
+            // fulfill value of TransitionState#resolve
+            return {
+              error: null,
+              state: currentState
+            };
+          }
+
+          var handlerInfo = currentState.handlerInfos[payload.resolveIndex];
+
+          return handlerInfo.resolve(async, innerShouldContinue, payload)
+                            .then(proceed, null, promiseLabel('Proceed'));
+        }
+      }
+    };
+
+    __exports__.TransitionState = TransitionState;
+  });
+define("router/transition", 
+  ["rsvp","./handler-info","./utils","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+    "use strict";
+    var reject = __dependency1__.reject;
+    var resolve = __dependency1__.resolve;
+    var ResolvedHandlerInfo = __dependency2__.ResolvedHandlerInfo;
+    var trigger = __dependency3__.trigger;
+    var slice = __dependency3__.slice;
+    var log = __dependency3__.log;
+    var promiseLabel = __dependency3__.promiseLabel;
+
+    /**
+      @private
+
+      A Transition is a thennable (a promise-like object) that represents
+      an attempt to transition to another route. It can be aborted, either
+      explicitly via `abort` or by attempting another transition while a
+      previous one is still underway. An aborted transition can also
+      be `retry()`d later.
+     */
+    function Transition(router, intent, state, error) {
+      var transition = this;
+      this.state = state || router.state;
+      this.intent = intent;
+      this.router = router;
+      this.data = this.intent && this.intent.data || {};
+      this.resolvedModels = {};
+      this.queryParams = {};
+
+      if (error) {
+        this.promise = reject(error);
+        return;
+      }
+
+      if (state) {
+        this.params = state.params;
+        this.queryParams = state.queryParams;
+
+        var len = state.handlerInfos.length;
+        if (len) {
+          this.targetName = state.handlerInfos[state.handlerInfos.length-1].name;
+        }
+
+        for (var i = 0; i < len; ++i) {
+          var handlerInfo = state.handlerInfos[i];
+          if (!(handlerInfo instanceof ResolvedHandlerInfo)) {
+            break;
+          }
+          this.pivotHandler = handlerInfo.handler;
+        }
+
+        this.sequence = Transition.currentSequence++;
+        this.promise = state.resolve(router.async, checkForAbort, this)['catch'](function(result) {
+          if (result.wasAborted) {
+            return reject(logAbort(transition));
+          } else {
+            transition.trigger('error', result.error, transition, result.handlerWithError);
+            transition.abort();
+            return reject(result.error);
+          }
+        }, promiseLabel('Handle Abort'));
+      } else {
+        this.promise = resolve(this.state);
+        this.params = {};
+      }
+
+      function checkForAbort() {
+        if (transition.isAborted) {
+          return reject(undefined, promiseLabel("Transition aborted - reject"));
+        }
+      }
+    }
+
+    Transition.currentSequence = 0;
+
+    Transition.prototype = {
+      targetName: null,
+      urlMethod: 'update',
+      intent: null,
+      params: null,
+      pivotHandler: null,
+      resolveIndex: 0,
+      handlerInfos: null,
+      resolvedModels: null,
+      isActive: true,
+      state: null,
+
+      /**
+        @public
+
+        The Transition's internal promise. Calling `.then` on this property
+        is that same as calling `.then` on the Transition object itself, but
+        this property is exposed for when you want to pass around a
+        Transition's promise, but not the Transition object itself, since
+        Transition object can be externally `abort`ed, while the promise
+        cannot.
+       */
+      promise: null,
+
+      /**
+        @public
+
+        Custom state can be stored on a Transition's `data` object.
+        This can be useful for decorating a Transition within an earlier
+        hook and shared with a later hook. Properties set on `data` will
+        be copied to new transitions generated by calling `retry` on this
+        transition.
+       */
+      data: null,
+
+      /**
+        @public
+
+        A standard promise hook that resolves if the transition
+        succeeds and rejects if it fails/redirects/aborts.
+
+        Forwards to the internal `promise` property which you can
+        use in situations where you want to pass around a thennable,
+        but not the Transition itself.
+
+        @param {Function} success
+        @param {Function} failure
+       */
+      then: function(success, failure) {
+        return this.promise.then(success, failure);
+      },
+
+      /**
+        @public
+
+        Aborts the Transition. Note you can also implicitly abort a transition
+        by initiating another transition while a previous one is underway.
+       */
+      abort: function() {
+        if (this.isAborted) { return this; }
+        log(this.router, this.sequence, this.targetName + ": transition was aborted");
+        this.isAborted = true;
+        this.isActive = false;
+        this.router.activeTransition = null;
+        return this;
+      },
+
+      /**
+        @public
+
+        Retries a previously-aborted transition (making sure to abort the
+        transition if it's still active). Returns a new transition that
+        represents the new attempt to transition.
+       */
+      retry: function() {
+        // TODO: add tests for merged state retry()s
+        this.abort();
+        return this.router.transitionByIntent(this.intent, false);
+      },
+
+      /**
+        @public
+
+        Sets the URL-changing method to be employed at the end of a
+        successful transition. By default, a new Transition will just
+        use `updateURL`, but passing 'replace' to this method will
+        cause the URL to update using 'replaceWith' instead. Omitting
+        a parameter will disable the URL change, allowing for transitions
+        that don't update the URL at completion (this is also used for
+        handleURL, since the URL has already changed before the
+        transition took place).
+
+        @param {String} method the type of URL-changing method to use
+          at the end of a transition. Accepted values are 'replace',
+          falsy values, or any other non-falsy value (which is
+          interpreted as an updateURL transition).
+
+        @return {Transition} this transition
+       */
+      method: function(method) {
+        this.urlMethod = method;
+        return this;
+      },
+
+      /**
+        @public
+
+        Fires an event on the current list of resolved/resolving
+        handlers within this transition. Useful for firing events
+        on route hierarchies that haven't fully been entered yet.
+
+        Note: This method is also aliased as `send`
+
+        @param {Boolean} [ignoreFailure=false] a boolean specifying whether unhandled events throw an error
+        @param {String} name the name of the event to fire
+       */
+      trigger: function (ignoreFailure) {
+        var args = slice.call(arguments);
+        if (typeof ignoreFailure === 'boolean') {
+          args.shift();
+        } else {
+          // Throw errors on unhandled trigger events by default
+          ignoreFailure = false;
+        }
+        trigger(this.router, this.state.handlerInfos.slice(0, this.resolveIndex + 1), ignoreFailure, args);
+      },
+
+      /**
+        @public
+
+        Transitions are aborted and their promises rejected
+        when redirects occur; this method returns a promise
+        that will follow any redirects that occur and fulfill
+        with the value fulfilled by any redirecting transitions
+        that occur.
+
+        @return {Promise} a promise that fulfills with the same
+          value that the final redirecting transition fulfills with
+       */
+      followRedirects: function() {
+        var router = this.router;
+        return this.promise['catch'](function(reason) {
+          if (router.activeTransition) {
+            return router.activeTransition.followRedirects();
+          }
+          return reject(reason);
+        });
+      },
+
+      toString: function() {
+        return "Transition (sequence " + this.sequence + ")";
+      },
+
+      /**
+        @private
+       */
+      log: function(message) {
+        log(this.router, this.sequence, message);
+      }
+    };
+
+    // Alias 'trigger' as 'send'
+    Transition.prototype.send = Transition.prototype.trigger;
+
+    /**
+      @private
+
+      Logs and returns a TransitionAborted error.
+     */
+    function logAbort(transition) {
+      log(transition.router, transition.sequence, "detected abort.");
+      return new TransitionAborted();
+    }
+
+    function TransitionAborted(message) {
+      this.message = (message || "TransitionAborted");
+      this.name = "TransitionAborted";
+    }
+
+    __exports__.Transition = Transition;
+    __exports__.logAbort = logAbort;
+    __exports__.TransitionAborted = TransitionAborted;
+  });
+define("router/utils", 
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    var slice = Array.prototype.slice;
+
+    function isArray(test) {
+      return Object.prototype.toString.call(test) === "[object Array]";
+    }
+
+    function merge(hash, other) {
+      for (var prop in other) {
+        if (other.hasOwnProperty(prop)) { hash[prop] = other[prop]; }
+      }
+    }
+
+    var oCreate = Object.create || function(proto) {
+      function F() {}
+      F.prototype = proto;
+      return new F();
+    };
+
+    /**
+      @private
+
+      Extracts query params from the end of an array
+    **/
+    function extractQueryParams(array) {
+      var len = (array && array.length), head, queryParams;
+
+      if(len && len > 0 && array[len - 1] && array[len - 1].hasOwnProperty('queryParams')) {
+        queryParams = array[len - 1].queryParams;
+        head = slice.call(array, 0, len - 1);
+        return [head, queryParams];
+      } else {
+        return [array, null];
+      }
+    }
+
+    /**
+      @private
+
+      Coerces query param properties and array elements into strings.
+    **/
+    function coerceQueryParamsToString(queryParams) {
+      for (var key in queryParams) {
+        if (typeof queryParams[key] === 'number') {
+          queryParams[key] = '' + queryParams[key];
+        } else if (isArray(queryParams[key])) {
+          for (var i = 0, l = queryParams[key].length; i < l; i++) {
+            queryParams[key][i] = '' + queryParams[key][i];
+          }
+        }
+      }
+    }
+    /**
+      @private
+     */
+    function log(router, sequence, msg) {
+      if (!router.log) { return; }
+
+      if (arguments.length === 3) {
+        router.log("Transition #" + sequence + ": " + msg);
+      } else {
+        msg = sequence;
+        router.log(msg);
+      }
+    }
+
+    function bind(fn, context) {
+      var boundArgs = arguments;
+      return function(value) {
+        var args = slice.call(boundArgs, 2);
+        args.push(value);
+        return fn.apply(context, args);
+      };
+    }
+
+    function isParam(object) {
+      return (typeof object === "string" || object instanceof String || typeof object === "number" || object instanceof Number);
+    }
+
+
+    function forEach(array, callback) {
+      for (var i=0, l=array.length; i<l && false !== callback(array[i]); i++) { }
+    }
+
+    /**
+      @private
+
+      Serializes a handler using its custom `serialize` method or
+      by a default that looks up the expected property name from
+      the dynamic segment.
+
+      @param {Object} handler a router handler
+      @param {Object} model the model to be serialized for this handler
+      @param {Array[Object]} names the names array attached to an
+        handler object returned from router.recognizer.handlersFor()
+    */
+    function serialize(handler, model, names) {
+      var object = {};
+      if (isParam(model)) {
+        object[names[0]] = model;
+        return object;
+      }
+
+      // Use custom serialize if it exists.
+      if (handler.serialize) {
+        return handler.serialize(model, names);
+      }
+
+      if (names.length !== 1) { return; }
+
+      var name = names[0];
+
+      if (/_id$/.test(name)) {
+        object[name] = model.id;
+      } else {
+        object[name] = model;
+      }
+      return object;
     }
 
     function trigger(router, handlerInfos, ignoreFailure, args) {
@@ -50470,485 +53335,84 @@ define("router",
       }
     }
 
-    function setContext(handler, context) {
-      handler.context = context;
-      if (handler.contextDidChange) { handler.contextDidChange(); }
-    }
-
-    function setQueryParams(handler, queryParams) {
-      handler.queryParams = queryParams;
-      if (handler.queryParamsDidChange) { handler.queryParamsDidChange(); }
-    }
-
-
-    /**
-      @private
-
-      Extracts query params from the end of an array
-    **/
-
-    function extractQueryParams(array) {
-      var len = (array && array.length), head, queryParams;
-
-      if(len && len > 0 && array[len - 1] && array[len - 1].hasOwnProperty('queryParams')) {
-        queryParams = array[len - 1].queryParams;
-        head = slice.call(array, 0, len - 1);
-        return [head, queryParams];
-      } else {
-        return [array, null];
-      }
-    }
-
-    function performIntermediateTransition(router, recogHandlers, matchPointResults) {
-
-      var handlerInfos = generateHandlerInfos(router, recogHandlers);
-      for (var i = 0; i < handlerInfos.length; ++i) {
-        var handlerInfo = handlerInfos[i];
-        handlerInfo.context = matchPointResults.providedModels[handlerInfo.name];
-      }
-
-      var stubbedTransition = {
-        router: router,
-        isAborted: false
+    function getChangelist(oldObject, newObject) {
+      var key;
+      var results = {
+        all: {},
+        changed: {},
+        removed: {}
       };
 
-      setupContexts(stubbedTransition, handlerInfos);
-    }
+      merge(results.all, newObject);
 
-    /**
-      @private
+      var didChange = false;
+      coerceQueryParamsToString(oldObject);
+      coerceQueryParamsToString(newObject);
 
-      Creates, begins, and returns a Transition.
-     */
-    function performTransition(router, recogHandlers, providedModelsArray, params, queryParams, data, isIntermediate) {
-
-      var matchPointResults = getMatchPoint(router, recogHandlers, providedModelsArray, params, queryParams),
-          targetName = recogHandlers[recogHandlers.length - 1].handler,
-          wasTransitioning = false,
-          currentHandlerInfos = router.currentHandlerInfos;
-
-      if (isIntermediate) {
-        return performIntermediateTransition(router, recogHandlers, matchPointResults);
-      }
-
-      // Check if there's already a transition underway.
-      if (router.activeTransition) {
-        if (transitionsIdentical(router.activeTransition, targetName, providedModelsArray, queryParams)) {
-          return router.activeTransition;
-        }
-        router.activeTransition.abort();
-        wasTransitioning = true;
-      }
-
-      var deferred = RSVP.defer(),
-          transition = new Transition(router, deferred.promise);
-
-      transition.targetName = targetName;
-      transition.providedModels = matchPointResults.providedModels;
-      transition.providedModelsArray = providedModelsArray;
-      transition.params = matchPointResults.params;
-      transition.data = data || {};
-      transition.queryParams = queryParams;
-      transition.pivotHandler = matchPointResults.pivotHandler;
-      router.activeTransition = transition;
-
-      var handlerInfos = generateHandlerInfos(router, recogHandlers);
-      transition.handlerInfos = handlerInfos;
-
-      // Fire 'willTransition' event on current handlers, but don't fire it
-      // if a transition was already underway.
-      if (!wasTransitioning) {
-        trigger(router, currentHandlerInfos, true, ['willTransition', transition]);
-      }
-
-      log(router, transition.sequence, "Beginning validation for transition to " + transition.targetName);
-      validateEntry(transition, matchPointResults.matchPoint, matchPointResults.handlerParams)
-                   .then(transitionSuccess, transitionFailure);
-
-      return transition;
-
-      function transitionSuccess() {
-        checkAbort(transition);
-
-        try {
-          finalizeTransition(transition, handlerInfos);
-
-          // currentHandlerInfos was updated in finalizeTransition
-          trigger(router, router.currentHandlerInfos, true, ['didTransition']);
-
-          if (router.didTransition) {
-            router.didTransition(handlerInfos);
+      // Calculate removals
+      for (key in oldObject) {
+        if (oldObject.hasOwnProperty(key)) {
+          if (!newObject.hasOwnProperty(key)) {
+            didChange = true;
+            results.removed[key] = oldObject[key];
           }
-
-          log(router, transition.sequence, "TRANSITION COMPLETE.");
-
-          // Resolve with the final handler.
-          transition.isActive = false;
-          deferred.resolve(handlerInfos[handlerInfos.length - 1].handler);
-        } catch(e) {
-          deferred.reject(e);
-        }
-
-        // Don't nullify if another transition is underway (meaning
-        // there was a transition initiated with enter/setup).
-        if (!transition.isAborted) {
-          router.activeTransition = null;
         }
       }
 
-      function transitionFailure(reason) {
-        deferred.reject(reason);
-      }
-    }
-
-    /**
-      @private
-
-      Accepts handlers in Recognizer format, either returned from
-      recognize() or handlersFor(), and returns unified
-      `HandlerInfo`s.
-     */
-    function generateHandlerInfos(router, recogHandlers) {
-      var handlerInfos = [];
-      for (var i = 0, len = recogHandlers.length; i < len; ++i) {
-        var handlerObj = recogHandlers[i],
-            isDynamic = handlerObj.isDynamic || (handlerObj.names && handlerObj.names.length);
-
-        var handlerInfo = {
-          isDynamic: !!isDynamic,
-          name: handlerObj.handler,
-          handler: router.getHandler(handlerObj.handler)
-        };
-        if(handlerObj.queryParams) {
-          handlerInfo.queryParams = handlerObj.queryParams;
-        }
-        handlerInfos.push(handlerInfo);
-      }
-      return handlerInfos;
-    }
-
-    /**
-      @private
-     */
-    function transitionsIdentical(oldTransition, targetName, providedModelsArray, queryParams) {
-
-      if (oldTransition.targetName !== targetName) { return false; }
-
-      var oldModels = oldTransition.providedModelsArray;
-      if (oldModels.length !== providedModelsArray.length) { return false; }
-
-      for (var i = 0, len = oldModels.length; i < len; ++i) {
-        if (oldModels[i] !== providedModelsArray[i]) { return false; }
-      }
-
-      if(!queryParamsEqual(oldTransition.queryParams, queryParams)) {
-        return false;
-      }
-
-      return true;
-    }
-
-    /**
-      @private
-
-      Updates the URL (if necessary) and calls `setupContexts`
-      to update the router's array of `currentHandlerInfos`.
-     */
-    function finalizeTransition(transition, handlerInfos) {
-
-      log(transition.router, transition.sequence, "Validation succeeded, finalizing transition;");
-
-      var router = transition.router,
-          seq = transition.sequence,
-          handlerName = handlerInfos[handlerInfos.length - 1].name,
-          urlMethod = transition.urlMethod,
-          i;
-
-      // Collect params for URL.
-      var objects = [], providedModels = transition.providedModelsArray.slice();
-      for (i = handlerInfos.length - 1; i>=0; --i) {
-        var handlerInfo = handlerInfos[i];
-        if (handlerInfo.isDynamic) {
-          var providedModel = providedModels.pop();
-          objects.unshift(isParam(providedModel) ? providedModel.toString() : handlerInfo.context);
-        }
-
-        if (handlerInfo.handler.inaccessibleByURL) {
-          urlMethod = null;
+      // Calculate changes
+      for (key in newObject) {
+        if (newObject.hasOwnProperty(key)) {
+          if (isArray(oldObject[key]) && isArray(newObject[key])) {
+            if (oldObject[key].length !== newObject[key].length) {
+              results.changed[key] = newObject[key];
+              didChange = true;
+            } else {
+              for (var i = 0, l = oldObject[key].length; i < l; i++) {
+                if (oldObject[key][i] !== newObject[key][i]) {
+                  results.changed[key] = newObject[key];
+                  didChange = true;
+                }
+              }
+            }
+          }
+          else {
+            if (oldObject[key] !== newObject[key]) {
+              results.changed[key] = newObject[key];
+              didChange = true;
+            }
+          }
         }
       }
 
-      var newQueryParams = {};
-      for (i = handlerInfos.length - 1; i>=0; --i) {
-        merge(newQueryParams, handlerInfos[i].queryParams);
-      }
-      router.currentQueryParams = newQueryParams;
-
-
-      var params = paramsForHandler(router, handlerName, objects, transition.queryParams);
-
-      router.currentParams = params;
-
-      if (urlMethod) {
-        var url = router.recognizer.generate(handlerName, params);
-
-        if (urlMethod === 'replace') {
-          router.replaceURL(url);
-        } else {
-          // Assume everything else is just a URL update for now.
-          router.updateURL(url);
-        }
-      }
-
-      setupContexts(transition, handlerInfos);
+      return didChange && results;
     }
 
-    /**
-      @private
-
-      Internal function used to construct the chain of promises used
-      to validate a transition. Wraps calls to `beforeModel`, `model`,
-      and `afterModel` in promises, and checks for redirects/aborts
-      between each.
-     */
-    function validateEntry(transition, matchPoint, handlerParams) {
-
-      var handlerInfos = transition.handlerInfos,
-          index = transition.resolveIndex;
-
-      if (index === handlerInfos.length) {
-        // No more contexts to resolve.
-        return RSVP.resolve(transition.resolvedModels);
-      }
-
-      var router = transition.router,
-          handlerInfo = handlerInfos[index],
-          handler = handlerInfo.handler,
-          handlerName = handlerInfo.name,
-          seq = transition.sequence;
-
-      if (index < matchPoint) {
-        log(router, seq, handlerName + ": using context from already-active handler");
-
-        // We're before the match point, so don't run any hooks,
-        // just use the already resolved context from the handler.
-        transition.resolvedModels[handlerInfo.name] =
-          transition.providedModels[handlerInfo.name] ||
-          handlerInfo.handler.context;
-        return proceed();
-      }
-
-      transition.trigger(true, 'willResolveModel', transition, handler);
-
-      return RSVP.resolve().then(handleAbort)
-                           .then(beforeModel)
-                           .then(handleAbort)
-                           .then(model)
-                           .then(handleAbort)
-                           .then(afterModel)
-                           .then(handleAbort)
-                           .then(null, handleError)
-                           .then(proceed);
-
-      function handleAbort(result) {
-        if (transition.isAborted) {
-          log(transition.router, transition.sequence, "detected abort.");
-          return RSVP.reject(new Router.TransitionAborted());
-        }
-
-        return result;
-      }
-
-      function handleError(reason) {
-        if (reason instanceof Router.TransitionAborted || transition.isAborted) {
-          // if the transition was aborted and *no additional* error was thrown,
-          // reject with the Router.TransitionAborted instance
-          return RSVP.reject(reason);
-        }
-
-        // otherwise, we're here because of a different error
-        transition.abort();
-
-        log(router, seq, handlerName + ": handling error: " + reason);
-
-        // An error was thrown / promise rejected, so fire an
-        // `error` event from this handler info up to root.
-        transition.trigger(true, 'error', reason, transition, handlerInfo.handler);
-
-        // Propagate the original error.
-        return RSVP.reject(reason);
-      }
-
-      function beforeModel() {
-
-        log(router, seq, handlerName + ": calling beforeModel hook");
-
-        var args;
-
-        if (handlerInfo.queryParams) {
-          args = [handlerInfo.queryParams, transition];
-        } else {
-          args = [transition];
-        }
-
-        var p = handler.beforeModel && handler.beforeModel.apply(handler, args);
-        return (p instanceof Transition) ? null : p;
-      }
-
-      function model() {
-        log(router, seq, handlerName + ": resolving model");
-        var p = getModel(handlerInfo, transition, handlerParams[handlerName], index >= matchPoint);
-        return (p instanceof Transition) ? null : p;
-      }
-
-      function afterModel(context) {
-
-        log(router, seq, handlerName + ": calling afterModel hook");
-
-        // Pass the context and resolved parent contexts to afterModel, but we don't
-        // want to use the value returned from `afterModel` in any way, but rather
-        // always resolve with the original `context` object.
-
-        transition.resolvedModels[handlerInfo.name] = context;
-
-        var args;
-
-        if (handlerInfo.queryParams) {
-          args = [context, handlerInfo.queryParams, transition];
-        } else {
-          args = [context, transition];
-        }
-
-        var p = handler.afterModel && handler.afterModel.apply(handler, args);
-        return (p instanceof Transition) ? null : p;
-      }
-
-      function proceed() {
-        log(router, seq, handlerName + ": validation succeeded, proceeding");
-
-        handlerInfo.context = transition.resolvedModels[handlerInfo.name];
-        transition.resolveIndex++;
-        return validateEntry(transition, matchPoint, handlerParams);
-      }
+    function promiseLabel(label) {
+      return 'Router: ' + label;
     }
 
-    /**
-      @private
-
-      Throws a TransitionAborted if the provided transition has been aborted.
-     */
-    function checkAbort(transition) {
-      if (transition.isAborted) {
-        log(transition.router, transition.sequence, "detected abort.");
-        throw new Router.TransitionAborted();
-      }
-    }
-
-    /**
-      @private
-
-      Encapsulates the logic for whether to call `model` on a route,
-      or use one of the models provided to `transitionTo`.
-     */
-    function getModel(handlerInfo, transition, handlerParams, needsUpdate) {
-      var handler = handlerInfo.handler,
-          handlerName = handlerInfo.name, args;
-
-      if (!needsUpdate && handler.hasOwnProperty('context')) {
-        return handler.context;
-      }
-
-      if (transition.providedModels.hasOwnProperty(handlerName)) {
-        var providedModel = transition.providedModels[handlerName];
-        return typeof providedModel === 'function' ? providedModel() : providedModel;
-      }
-
-      if (handlerInfo.queryParams) {
-        args = [handlerParams || {}, handlerInfo.queryParams, transition];
-      } else {
-        args = [handlerParams || {}, transition, handlerInfo.queryParams];
-      }
-
-      return handler.model && handler.model.apply(handler, args);
-    }
-
-    /**
-      @private
-     */
-    function log(router, sequence, msg) {
-
-      if (!router.log) { return; }
-
-      if (arguments.length === 3) {
-        router.log("Transition #" + sequence + ": " + msg);
-      } else {
-        msg = sequence;
-        router.log(msg);
-      }
-    }
-
-    /**
-      @private
-
-      Begins and returns a Transition based on the provided
-      arguments. Accepts arguments in the form of both URL
-      transitions and named transitions.
-
-      @param {Router} router
-      @param {Array[Object]} args arguments passed to transitionTo,
-        replaceWith, or handleURL
-    */
-    function doTransition(router, args, isIntermediate) {
-      // Normalize blank transitions to root URL transitions.
-      var name = args[0] || '/';
-
-      if(args.length === 1 && args[0].hasOwnProperty('queryParams')) {
-        return createQueryParamTransition(router, args[0], isIntermediate);
-      } else if (name.charAt(0) === '/') {
-        return createURLTransition(router, name, isIntermediate);
-      } else {
-        return createNamedTransition(router, slice.call(args), isIntermediate);
-      }
-    }
-
-    /**
-      @private
-
-      Serializes a handler using its custom `serialize` method or
-      by a default that looks up the expected property name from
-      the dynamic segment.
-
-      @param {Object} handler a router handler
-      @param {Object} model the model to be serialized for this handler
-      @param {Array[Object]} names the names array attached to an
-        handler object returned from router.recognizer.handlersFor()
-    */
-    function serialize(handler, model, names) {
-
-      var object = {};
-      if (isParam(model)) {
-        object[names[0]] = model;
-        return object;
-      }
-
-      // Use custom serialize if it exists.
-      if (handler.serialize) {
-        return handler.serialize(model, names);
-      }
-
-      if (names.length !== 1) { return; }
-
-      var name = names[0];
-
-      if (/_id$/.test(name)) {
-        object[name] = model.id;
-      } else {
-        object[name] = model;
-      }
-      return object;
-    }
+    __exports__.trigger = trigger;
+    __exports__.log = log;
+    __exports__.oCreate = oCreate;
+    __exports__.merge = merge;
+    __exports__.extractQueryParams = extractQueryParams;
+    __exports__.bind = bind;
+    __exports__.isParam = isParam;
+    __exports__.forEach = forEach;
+    __exports__.slice = slice;
+    __exports__.serialize = serialize;
+    __exports__.getChangelist = getChangelist;
+    __exports__.coerceQueryParamsToString = coerceQueryParamsToString;
+    __exports__.promiseLabel = promiseLabel;
   });
+define("router", 
+  ["./router/router","exports"],
+  function(__dependency1__, __exports__) {
+    "use strict";
+    var Router = __dependency1__.Router;
 
+    __exports__.Router = Router;
+  });
 })();
 
 
@@ -50966,6 +53430,8 @@ function DSL(name) {
 
 DSL.prototype = {
   resource: function(name, options, callback) {
+    Ember.assert("'basic' cannot be used as a resource name.", name !== 'basic');
+
     if (arguments.length === 2 && typeof options === 'function') {
       callback = options;
       options = {};
@@ -50984,22 +53450,24 @@ DSL.prototype = {
       route(dsl, 'loading');
       route(dsl, 'error', { path: "/_unused_dummy_error_path_route_" + name + "/:error" });
       callback.call(dsl);
-      this.push(options.path, name, dsl.generate(), options.queryParams);
+      this.push(options.path, name, dsl.generate());
     } else {
-      this.push(options.path, name, null, options.queryParams);
+      this.push(options.path, name, null);
     }
 
 
       },
 
-  push: function(url, name, callback, queryParams) {
+  push: function(url, name, callback) {
     var parts = name.split('.');
     if (url === "" || url === "/" || parts[parts.length-1] === "index") { this.explicitIndex = true; }
 
-    this.matches.push([url, name, callback, queryParams]);
+    this.matches.push([url, name, callback]);
   },
 
   route: function(name, options) {
+    Ember.assert("'basic' cannot be used as a route name.", name !== 'basic');
+
     route(this, name, options);
       },
 
@@ -51014,7 +53482,7 @@ DSL.prototype = {
       for (var i=0, l=dslMatches.length; i<l; i++) {
         var dslMatch = dslMatches[i];
         var matchObj = match(dslMatch[0]).to(dslMatch[1], dslMatch[2]);
-              }
+      }
     };
   }
 };
@@ -51032,7 +53500,7 @@ function route(dsl, name, options) {
     name = dsl.parent + "." + name;
   }
 
-  dsl.push(options.path, name, null, options.queryParams);
+  dsl.push(options.path, name, null);
 }
 
 DSL.map = function(callback) {
@@ -51143,10 +53611,13 @@ Ember.generateController = function(container, controllerName, context) {
 @submodule ember-routing
 */
 
-var Router = requireModule("router")['default'];
-var get = Ember.get, set = Ember.set;
+var routerJsModule = requireModule("router");
+var Router = routerJsModule.Router;
+var Transition = routerJsModule.Transition;
+var get = Ember.get, set = Ember.set, fmt = Ember.String.fmt;
 var defineProperty = Ember.defineProperty;
 var slice = Array.prototype.slice;
+var forEach = Ember.EnumerableUtils.forEach;
 
 var DefaultView = Ember._MetamorphView;
 /**
@@ -51198,6 +53669,9 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
     Initializes the current router instance and sets up the change handling
     event listeners used by the instances `location` implementation.
 
+    A property named `initialURL` will be used to determine the initial URL.
+    If no value is found `/` will be used.
+
     @method startRouting
     @private
   */
@@ -51207,7 +53681,16 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
     var router = this.router,
         location = get(this, 'location'),
         container = this.container,
-        self = this;
+        self = this,
+        initialURL = get(this, 'initialURL');
+
+    
+      // Allow the Location class to cancel the router setup while it refreshes
+      // the page
+      if (get(location, 'cancelRouterSetup')) {
+        return;
+      }
+    
 
     this._setupRouter(router, location);
 
@@ -51218,7 +53701,11 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
       self.handleURL(url);
     });
 
-    this.handleURL(location.getURL());
+    if (typeof initialURL === "undefined") {
+      initialURL = location.getURL();
+    }
+
+    this.handleURL(initialURL);
   },
 
   /**
@@ -51313,13 +53800,6 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
     this.router.reset();
   },
 
-  willDestroy: function(){
-    var location = get(this, 'location');
-    location.destroy();
-
-    this._super.apply(this, arguments);
-  },
-
   _lookupActiveView: function(templateName) {
     var active = this._activeViews[templateName];
     return active && active[0];
@@ -51342,16 +53822,23 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
 
   _setupLocation: function() {
     var location = get(this, 'location'),
-        rootURL = get(this, 'rootURL'),
-        options = {};
+        rootURL = get(this, 'rootURL');
 
-    if (typeof rootURL === 'string') {
-      options.rootURL = rootURL;
+    if ('string' === typeof location && this.container) {
+      var resolvedLocation = this.container.lookup('location:' + location);
+
+      if ('undefined' !== typeof resolvedLocation) {
+        location = set(this, 'location', resolvedLocation);
+      } else {
+        // Allow for deprecated registration of custom location API's
+        var options = {implementation: location};
+
+        location = set(this, 'location', Ember.Location.create(options));
+      }
     }
 
-    if ('string' === typeof location) {
-      options.implementation = location;
-      location = set(this, 'location', Ember.Location.create(options));
+    if (typeof rootURL === 'string') {
+      location.rootURL = rootURL;
     }
 
     // ensure that initState is called AFTER the rootURL is set on
@@ -51421,26 +53908,50 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
     args = slice.call(args);
     args[0] = args[0] || '/';
 
-    var passedName = args[0], name, self = this,
-      isQueryParamsOnly = false;
+    var name = args[0], self = this,
+      isQueryParamsOnly = false, queryParams;
 
     
-    if (!isQueryParamsOnly && passedName.charAt(0) === '/') {
-      name = passedName;
-    } else if (!isQueryParamsOnly) {
-      if (!this.router.hasRoute(passedName)) {
-        name = args[0] = passedName + '.index';
-      } else {
-        name = passedName;
+    if (!isQueryParamsOnly && name.charAt(0) !== '/') {
+      Ember.assert("The route " + name + " was not found", this.router.hasRoute(name));
+    }
+
+    if (queryParams) {
+      // router.js expects queryParams to be passed in in
+      // their final serialized form, so we need to translate.
+
+      if (!name) {
+        // Need to determine destination route name.
+        var handlerInfos = this.router.activeTransition ?
+                           this.router.activeTransition.state.handlerInfos :
+                           this.router.state.handlerInfos;
+        name = handlerInfos[handlerInfos.length - 1].name;
+        args.unshift(name);
       }
 
-      Ember.assert("The route " + passedName + " was not found", this.router.hasRoute(name));
+      var qpMappings = this._queryParamNamesFor(name);
+
+
+      Ember.Router._translateQueryParams(queryParams, qpMappings.translations, name);
+      var value;
+      for (var key in queryParams) {
+        var descopedParam = Ember.Router._descopeQueryParam(key);
+        if (key in qpMappings.queryParams) {
+          value = queryParams[key];
+          delete queryParams[key];
+          queryParams[qpMappings.queryParams[key]] = value;
+        } else if (descopedParam in qpMappings.validQueryParams) {
+          value = queryParams[key];
+          delete queryParams[key];
+          queryParams[descopedParam] = value;
+        }
+      }
     }
 
     var transitionPromise = this.router[method].apply(this.router, args);
 
     transitionPromise.then(null, function(error) {
-      if (error.name === "UnrecognizedURLError") {
+      if (error && error.name === "UnrecognizedURLError") {
         Ember.assert("The URL '" + error.message + "' did not match any routes in your application");
       }
     }, 'Ember: Check for Router unrecognized URL error');
@@ -51471,8 +53982,146 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
       Ember.run.cancel(this._loadingStateTimer);
     }
     this._loadingStateTimer = null;
+  },
+
+  _queryParamNamesFor: function(routeName) {
+
+    // TODO: add caching
+
+    var handlerInfos = this.router.recognizer.handlersFor(routeName);
+    var result = { queryParams: Ember.create(null), translations: Ember.create(null), validQueryParams: Ember.create(null) };
+    var routerjs = this.router;
+    forEach(handlerInfos, function(recogHandler) {
+      var route = routerjs.getHandler(recogHandler.handler);
+      getQueryParamsForRoute(route, result);
+    });
+
+    descopeQueryParams(result.queryParams);
+
+    for (var k in result.queryParams) {
+      result.validQueryParams[result.queryParams[k]] = true;
+    }
+    return result;
+  },
+
+  _queryParamNamesForSingle: function(routeName) {
+
+    // TODO: add caching
+
+    var result = { queryParams: Ember.create(null), translations: Ember.create(null) };
+    var route = this.router.getHandler(routeName);
+
+    getQueryParamsForRoute(route, result);
+
+    // Descope non duplicate params.
+    if (routeName !== 'application') {
+      var allParams = this._queryParamNamesFor(routeName);
+      for (var k in result.queryParams) {
+        result.queryParams[k] = allParams.queryParams[k];
+      }
+    }
+
+    return result;
+  },
+
+  /**
+    @private
+
+    Utility function for fetching all the current query params
+    values from a controller.
+   */
+  _queryParamOverrides: function(results, queryParams, callback) {
+    for (var name in queryParams) {
+      var parts = name.split(':');
+
+      var controller = controllerOrProtoFor(parts[0], this.container);
+      Ember.assert(fmt("Could not lookup controller '%@' while setting up query params", [controller]), controller);
+
+      // Now assign the final URL-serialized key-value pair,
+      // e.g. "foo[propName]": "value"
+      results[queryParams[name]] = get(controller, parts[1]);
+
+      if (callback) {
+        // Give callback a chance to override.
+        callback(name, queryParams[name], name);
+      }
+    }
   }
 });
+
+/**
+  @private
+ */
+function getQueryParamsForRoute(route, result) {
+  var controllerName = route.controllerName || route.routeName,
+      controller = controllerOrProtoFor(controllerName, route.container),
+      queryParams = get(controller, 'queryParams');
+
+  if (queryParams) {
+    forEach(queryParams, function(propName) {
+
+      var parts = propName.split(':');
+
+      var urlKeyName;
+      if (parts.length > 1) {
+        urlKeyName = parts[1];
+      } else {
+        // TODO: use _queryParamScope here?
+        if (controllerName !== 'application') {
+          urlKeyName = controllerName + '[' + propName + ']';
+        } else {
+          urlKeyName = propName;
+        }
+      }
+
+      var controllerFullname = controllerName + ':' + propName;
+
+      result.queryParams[controllerFullname] = urlKeyName;
+      result.translations[parts[0]] = controllerFullname;
+    });
+  }
+}
+
+function controllerOrProtoFor(controllerName, container) {
+  var fullName = 'controller:' + controllerName;
+  if (container.cache.has(fullName)) {
+    return container.lookup(fullName);
+  } else {
+    // Controller hasn't been instantiated yet; just return its proto.
+    var controllerClass = container.lookupFactory(fullName);
+    if (controllerClass && typeof controllerClass.proto === 'function') {
+      return controllerClass.proto();
+    } else {
+      return {};
+    }
+  }
+}
+
+function descopeQueryParams(params) {
+  var paramCounts = {},
+      descopedParam,
+      k;
+
+  // Loop through params and count the occurance of descoped param
+  for (k in params) {
+    descopedParam = Ember.Router._descopeQueryParam(params[k]);
+
+    if (!paramCounts[descopedParam]) {
+      paramCounts[descopedParam] = 1;
+    } else {
+      paramCounts[descopedParam] = paramCounts[descopedParam] + 1;
+    }
+  }
+
+  // Loop through again descoping params if the descoped key only occurs once
+  for (k in params) {
+    descopedParam = Ember.Router._descopeQueryParam(params[k]);
+
+    if (paramCounts[descopedParam] === 1) {
+      params[k] = descopedParam;
+    }
+  }
+}
 
 /**
   Helper function for iterating root-ward, starting
@@ -51484,7 +54133,7 @@ Ember.Router = Ember.Object.extend(Ember.Evented, {
   @private
  */
 function forEachRouteAbove(originRoute, transition, callback) {
-  var handlerInfos = transition.handlerInfos,
+  var handlerInfos = transition.state.handlerInfos,
       originRouteFound = false;
 
   for (var i = handlerInfos.length - 1; i >= 0; --i) {
@@ -51537,7 +54186,7 @@ var defaultActionHandlers = {
       return;
     }
 
-    Ember.Logger.error('Error while loading route: ' + error.stack);
+    Ember.Logger.error('Error while loading route: ' + (error && error.stack));
   },
 
   loading: function(transition, originRoute) {
@@ -51704,10 +54353,34 @@ Ember.Router.reopenClass({
     }
 
     return path.join(".");
+  },
+
+  _translateQueryParams: function(queryParams, translations, routeName) {
+    for (var name in queryParams) {
+      if (!queryParams.hasOwnProperty(name)) { continue; }
+
+      if (name in translations) {
+        queryParams[translations[name]] = queryParams[name];
+        delete queryParams[name];
+      } else {
+        Ember.assert(fmt("You supplied an unknown query param controller property '%@' for route '%@'. Only the following query param properties can be set for this route: %@", [name, routeName, Ember.keys(translations)]), name in queryParams);
+      }
+    }
+  },
+
+  _descopeQueryParam: function(param) {
+    var regex = /\[(.+)\]/,
+        result = param.match(regex);
+
+    if (!result) {
+      result = param;
+    } else {
+      result = result[1];
+    }
+
+    return result;
   }
 });
-
-Router.Transition.prototype.send = Router.Transition.prototype.trigger;
 
 
 
@@ -51746,7 +54419,7 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     @method exit
   */
   exit: function() {
-    this.deactivate();
+        this.deactivate();
     this.teardownViews();
   },
 
@@ -51758,6 +54431,74 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
   enter: function() {
     this.activate();
   },
+
+  /**
+    The name of the view to use by default when rendering this routes template.
+
+    When rendering a template, the route will, by default, determine the
+    template and view to use from the name of the route itself. If you need to
+    define a specific view, set this property.
+
+    This is useful when multiple routes would benefit from using the same view
+    because it doesn't require a custom `renderTemplate` method. For example,
+    the following routes will all render using the `App.PostsListView` view:
+
+    ```js
+    var PostsList = Ember.Route.extend({
+      viewName: 'postsList',
+    });
+
+    App.PostsIndexRoute = PostsList.extend();
+    App.PostsArchivedRoute = PostsList.extend();
+    ```
+
+    @property viewName
+    @type String
+    @default null
+  */
+  viewName: null,
+
+  /**
+    The name of the template to use by default when rendering this routes
+    template.
+
+    This is similar with `viewName`, but is useful when you just want a custom
+    template without a view.
+
+    ```js
+    var PostsList = Ember.Route.extend({
+      templateName: 'posts/list'
+    });
+
+    App.PostsIndexRoute = PostsList.extend();
+    App.PostsArchivedRoute = PostsList.extend();
+    ```
+
+    @property templateName
+    @type String
+    @default null
+  */
+  templateName: null,
+
+  /**
+    The name of the controller to associate with this route.
+
+    By default, Ember will lookup a route's controller that matches the name
+    of the route (i.e. `App.PostController` for `App.PostRoute`). However,
+    if you would like to define a specific controller to use, you can do so
+    using this property.
+
+    This is useful in many ways, as the controller specified will be:
+
+    * passed to the `setupController` method.
+    * used as the controller for the view being rendered by the route.
+    * returned from a call to `controllerFor` for the route.
+
+    @property controllerName
+    @type String
+    @default null
+  */
+  controllerName: null,
 
   /**
     The collection of functions, keyed by name, available on this route as
@@ -51998,11 +54739,54 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
   activate: Ember.K,
 
   /**
-    Transition into another route. Optionally supply model(s) for the
-    route in question. If multiple models are supplied they will be applied
-    last to first recursively up the resource tree (see Multiple Models Example
-    below). The model(s) will be serialized into the URL using the appropriate
-    route's `serialize` hook. See also 'replaceWith'.
+    Transition the application into another route. The route may
+    be either a single route or route path:
+
+    ```javascript
+    this.transitionTo('blogPosts');
+    this.transitionTo('blogPosts.recentEntries');
+    ```
+
+    Optionally supply a model for the route in question. The model
+    will be serialized into the URL using the `serialize` hook of
+    the route:
+
+    ```javascript
+    this.transitionTo('blogPost', aPost);
+    ```
+
+    If a literal is passed (such as a number or a string), it will
+    be treated as an identifier instead. In this case, the `model`
+    hook of the route will be triggered:
+
+    ```javascript
+    this.transitionTo('blogPost', 1);
+    ```
+
+    Multiple models will be applied last to first recursively up the
+    resource tree.
+
+    ```javascript
+    App.Router.map(function() {
+      this.resource('blogPost', {path:':blogPostId'}, function(){
+        this.resource('blogComment', {path: ':blogCommentId'});
+      });
+    });
+    
+    this.transitionTo('blogComment', aPost, aComment);
+    this.transitionTo('blogComment', 1, 13);
+    ```
+
+    It is also possible to pass a URL (a string that starts with a
+    `/`). This is intended for testing and debugging purposes and
+    should rarely be used in production code.
+
+    ```javascript
+    this.transitionTo('/');
+    this.transitionTo('/blog/post/1/comment/13');
+    ```
+
+    See also 'replaceWith'.
 
     Simple Transition Example
 
@@ -52025,23 +54809,23 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     });
     ```
 
-   Transition to a nested route
+    Transition to a nested route
 
-   ```javascript
-   App.Router.map(function() {
-     this.resource('articles', { path: '/articles' }, function() {
-       this.route('new');
-     });
-   });
+    ```javascript
+    App.Router.map(function() {
+      this.resource('articles', { path: '/articles' }, function() {
+        this.route('new');
+      });
+    });
 
-   App.IndexRoute = Ember.Route.extend({
-     actions: {
-       transitionToNewArticle: function() {
-         this.transitionTo('articles.new');
-       }
-     }
-   });
-   ```
+    App.IndexRoute = Ember.Route.extend({
+      actions: {
+        transitionToNewArticle: function() {
+          this.transitionTo('articles.new');
+        }
+      }
+    });
+    ```
 
     Multiple Models Example
 
@@ -52063,11 +54847,14 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
         }
       }
     });
+    ```
 
     @method transitionTo
-    @param {String} name the name of the route
-    @param {...Object} models the model(s) to be used while transitioning
-    to the route.
+    @param {String} name the name of the route or a URL
+    @param {...Object} models the model(s) or identifier(s) to be used while
+      transitioning to the route.
+    @return {Transition} the transition object associated with this
+      attempted transition
   */
   transitionTo: function(name, context) {
     var router = this.router;
@@ -52075,7 +54862,7 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
   },
 
   /**
-    Perform a synchronous transition into another route with out attempting
+    Perform a synchronous transition into another route without attempting
     to resolve promises, update the URL, or abort any currently active
     asynchronous transitions (i.e. regular transitions caused by
     `transitionTo` or URL changes).
@@ -52092,6 +54879,30 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
   intermediateTransitionTo: function() {
     var router = this.router;
     router.intermediateTransitionTo.apply(router, arguments);
+  },
+
+  /**
+    Refresh the model on this route and any child routes, firing the
+    `beforeModel`, `model`, and `afterModel` hooks in a similar fashion
+    to how routes are entered when transitioning in from other route.
+    The current route params (e.g. `article_id`) will be passed in
+    to the respective model hooks, and if a different model is returned,
+    `setupController` and associated route hooks will re-fire as well.
+
+    An example usage of this method is re-querying the server for the
+    latest information using the same parameters as when the route
+    was first entered.
+
+    Note that this will cause `model` hooks to fire even on routes
+    that were provided a model object when the route was initially
+    entered.
+
+    @method refresh
+    @return {Transition} the transition object associated with this
+      attempted transition
+   */
+  refresh: function() {
+    return this.router.router.refresh(this).method('replace');
   },
 
   /**
@@ -52118,9 +54929,11 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     ```
 
     @method replaceWith
-    @param {String} name the name of the route
-    @param {...Object} models the model(s) to be used while transitioning
-    to the route.
+    @param {String} name the name of the route or a URL
+    @param {...Object} models the model(s) or identifier(s) to be used while
+      transitioning to the route.
+    @return {Transition} the transition object associated with this
+      attempted transition
   */
   replaceWith: function() {
     var router = this.router;
@@ -52171,7 +54984,7 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     @private
     @method setup
   */
-  setup: function(context, queryParams) {
+  setup: function(context, transition) {
     var controllerName = this.controllerName || this.routeName,
         controller = this.controllerFor(controllerName, true);
     if (!controller) {
@@ -52182,39 +54995,24 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     // referenced in action handlers
     this.controller = controller;
 
-    var args = [controller, context];
-
     
     if (this.setupControllers) {
       Ember.deprecate("Ember.Route.setupControllers is deprecated. Please use Ember.Route.setupController(controller, model) instead.");
       this.setupControllers(controller, context);
     } else {
-      this.setupController.apply(this, args);
+
+      
+        this.setupController(controller, context);
+      
     }
 
     if (this.renderTemplates) {
       Ember.deprecate("Ember.Route.renderTemplates is deprecated. Please use Ember.Route.renderTemplate(controller, model) instead.");
       this.renderTemplates(context);
     } else {
-      this.renderTemplate.apply(this, args);
+      this.renderTemplate(controller, context);
     }
   },
-
-  /**
-    A hook you can implement to optionally redirect to another route.
-
-    If you call `this.transitionTo` from inside of this hook, this route
-    will not be entered in favor of the other hook.
-
-    Note that this hook is called by the default implementation of
-    `afterModel`, so if you override `afterModel`, you must either
-    explicitly call `redirect` or just put your redirecting
-    `this.transitionTo()` call within `afterModel`.
-
-    @method redirect
-    @param {Object} model the model for this route
-  */
-  redirect: Ember.K,
 
   /**
     This hook is the first of the route entry validation hooks
@@ -52277,8 +55075,6 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
             // error so that it'd be handled by the `error`
             // hook, you would have to either
             return Ember.RSVP.reject(e);
-            // or
-            throw e;
           });
         }
       }
@@ -52327,10 +55123,32 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
       resolves. Otherwise, non-promise return values are not
       utilized in any way.
    */
-  afterModel: function(resolvedModel, transition, queryParams) {
-    this.redirect(resolvedModel, transition);
-  },
+  afterModel: Ember.K,
 
+  /**
+    A hook you can implement to optionally redirect to another route.
+
+    If you call `this.transitionTo` from inside of this hook, this route
+    will not be entered in favor of the other hook.
+
+    `redirect` and `afterModel` behave very similarly and are
+    called almost at the same time, but they have an important
+    distinction in the case that, from one of these hooks, a
+    redirect into a child route of this route occurs: redirects
+    from `afterModel` essentially invalidate the current attempt
+    to enter this route, and will result in this route's `beforeModel`,
+    `model`, and `afterModel` hooks being fired again within
+    the new, redirecting transition. Redirects that occur within
+    the `redirect` hook, on the other hand, will _not_ cause
+    these hooks to be fired again the second time around; in
+    other words, by the time the `redirect` hook has been called,
+    both the resolved model and attempted entry into this route
+    are considered to be fully validated.
+
+    @method redirect
+    @param {Object} model the model for this route
+  */
+  redirect: Ember.K,
 
   /**
     Called when the context is changed by router.js.
@@ -52396,6 +55214,8 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     var match, name, sawParams, value;
 
     for (var prop in params) {
+      if (prop === 'queryParams') { continue; }
+
       if (match = prop.match(/^(.*)_id$/)) {
         name = match[1];
         value = params[prop];
@@ -52403,10 +55223,28 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
       sawParams = true;
     }
 
-    if (!name && sawParams) { return params; }
-    else if (!name) { return; }
+    if (!name && sawParams) { return Ember.copy(params); }
+    else if (!name) {
+      
+        if (transition.resolveIndex !== transition.state.handlerInfos.length-1) { return; }
+
+        var parentModel = transition.state.handlerInfos[transition.resolveIndex-1].context;
+
+        return parentModel;
+          }
 
     return this.findModel(name, value);
+  },
+
+  /**
+    @private
+
+    Router.js hook.
+   */
+  deserialize: function(params, transition) {
+    
+      return this.model(params, transition);
+    
   },
 
   /**
@@ -52446,6 +55284,10 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
                      routeName + ", but " + namespace + "." + classify(name) +
                      " did not exist and you did not override your route's `model` " +
                      "hook.", modelClass);
+
+        if (!modelClass) { return; }
+
+        Ember.assert(classify(name) + ' has no method `find`.', typeof modelClass.find === 'function');
 
         return modelClass.find(value);
       }
@@ -52512,6 +55354,26 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     By default, the `setupController` hook sets the `content` property of
     the controller to the `model`.
 
+    If you implement the `setupController` hook in your Route, it will
+    prevent this default behavior. If you want to preserve that behavior
+    when implementing your `setupController` function, make sure to call
+    `_super`:
+
+    ```js
+    App.PhotosRoute = Ember.Route.extend({
+      model: function() {
+        return App.Photo.find();
+      },
+
+      setupController: function (controller, model) {
+        // Call _super for default behavior
+        this._super(controller, model);
+        // Implement your custom setup after
+        this.controllerFor('application').set('showingPhotos', true);
+      }
+    });
+    ```
+
     This means that your template will get a proxy for the model as its
     context, and you can act as though the model itself was the context.
 
@@ -52551,7 +55413,7 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     @param {Controller} controller instance
     @param {Object} model
   */
-  setupController: function(controller, context) {
+  setupController: function(controller, context, transition) {
     if (controller && (context !== undefined)) {
       set(controller, 'model', context);
     }
@@ -52837,16 +55699,30 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
     });
     ```
 
+    Alternatively, you can pass the `outlet` name directly as a string.
+
+    Example:
+
+    ```js
+    hideModal: function(evt) {
+      this.disconnectOutlet('modal');
+    }
+    ```
+
     @method disconnectOutlet
-    @param {Object} options the options
+    @param {Object|String} options the options hash or outlet name
   */
   disconnectOutlet: function(options) {
-    options = options || {};
+    if (!options || typeof options === "string") {
+      var outletName = options;
+      options = {};
+      options.outlet = outletName;
+    }
     options.parentView = options.parentView ? options.parentView.replace(/\//g, '.') : parentTemplate(this);
     options.outlet = options.outlet || 'main';
 
     var parentView = this.router._lookupActiveView(options.parentView);
-    parentView.disconnectOutlet(options.outlet);
+    if (parentView) { parentView.disconnectOutlet(options.outlet); }
   },
 
   willDestroy: function() {
@@ -52874,8 +55750,10 @@ Ember.Route = Ember.Object.extend(Ember.ActionHandler, {
   }
 });
 
+
+
 function parentRoute(route) {
-  var handlerInfos = route.router.router.targetHandlerInfos;
+  var handlerInfos = route.router.router.state.handlerInfos;
 
   if (!handlerInfos) { return; }
 
@@ -52921,7 +55799,11 @@ function normalizeOptions(route, name, template, options) {
   }
 
   if (typeof controller === 'string') {
-    controller = route.container.lookup('controller:' + controller);
+    var controllerName = controller;
+    controller = route.container.lookup('controller:' + controllerName);
+    if (!controller) {
+      throw new Ember.Error("You passed `controller: '" + controllerName + "'` into the `render` method, but no such controller could be found.");
+    }
   }
 
   options.controller = controller;
@@ -53047,25 +55929,30 @@ Ember.onLoad('Ember.Handlebars', function() {
 */
 
 var get = Ember.get, set = Ember.set, fmt = Ember.String.fmt;
+
+var slice = Array.prototype.slice;
+var numberOfContextsAcceptedByHandler = function(handler, handlerInfos) {
+  var req = 0;
+  for (var i = 0, l = handlerInfos.length; i < l; i++) {
+    req = req + handlerInfos[i].names.length;
+    if (handlerInfos[i].handler === handler)
+      break;
+  }
+
+  // query params adds an additional context
+    return req;
+};
+
 Ember.onLoad('Ember.Handlebars', function(Handlebars) {
 
+  var QueryParams = Ember.Object.extend({
+    values: null
+  });
+
   var resolveParams = Ember.Router.resolveParams,
+      translateQueryParams = Ember.Router._translateQueryParams,
       resolvePaths  = Ember.Router.resolvePaths,
       isSimpleClick = Ember.ViewUtils.isSimpleClick;
-
-  function fullRouteName(router, name) {
-    var nameWithIndex;
-    if (!router.hasRoute(name)) {
-      nameWithIndex = name + '.index';
-      Ember.assert(fmt("The attempt to link-to route '%@' failed (also tried '%@'). " +
-                       "The router did not find '%@' in its possible routes: '%@'",
-                       [name, nameWithIndex, name, Ember.keys(router.router.recognizer.names).join("', '")]),
-                       router.hasRoute(nameWithIndex));
-      name = nameWithIndex;
-    }
-
-    return name;
-  }
 
   function getResolvedPaths(options) {
 
@@ -53225,8 +56112,7 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
       // Map desired event name to invoke function
       var eventName = get(this, 'eventName'), i;
       this.on(eventName, this, this._invoke);
-
-          },
+    },
 
     /**
       This method is invoked by observers installed during `init` that fire
@@ -53267,22 +56153,28 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
         normalizedPath = Ember.Handlebars.normalizePath(helperParameters.context, path, helperParameters.options.data);
         this.registerObserver(normalizedPath.root, normalizedPath.path, this, this._paramsChanged);
       }
+
+      var queryParamsObject = this.queryParamsObject;
+      if (queryParamsObject) {
+        var values = queryParamsObject.values;
+
+        // Install observers for all of the hash options
+        // provided in the (query-params) subexpression.
+        for (var k in values) {
+          if (!values.hasOwnProperty(k)) { continue; }
+
+          if (queryParamsObject.types[k] === 'ID') {
+            normalizedPath = Ember.Handlebars.normalizePath(helperParameters.context, values[k], helperParameters.options.data);
+            this.registerObserver(normalizedPath.root, normalizedPath.path, this, this._paramsChanged);
+          }
+        }
+      }
     },
 
     afterRender: function(){
       this._super.apply(this, arguments);
       this._setupPathObservers();
     },
-
-    /**
-      This method is invoked by observers installed during `init` that fire
-      whenever the query params change
-      @private
-     */
-    _queryParamsChanged: function (object, path) {
-      this.notifyPropertyChange('queryParams');
-    },
-
 
     /**
       Even though this isn't a virtual view, we want to treat it as if it is
@@ -53326,13 +56218,18 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
           routeArgs = get(this, 'routeArgs'),
           contexts = routeArgs.slice(1),
           resolvedParams = get(this, 'resolvedParams'),
-          currentWhen = this.currentWhen || resolvedParams[0],
-          currentWithIndex = currentWhen + '.index',
-          isActive = router.isActive.apply(router, [currentWhen].concat(contexts)) ||
-                     router.isActive.apply(router, [currentWithIndex].concat(contexts));
+          currentWhen = this.currentWhen || routeArgs[0],
+          maximumContexts = numberOfContextsAcceptedByHandler(currentWhen, router.router.recognizer.handlersFor(currentWhen));
+
+      // if we don't have enough contexts revert back to full route name
+      // this is because the leaf route will use one of the contexts
+      if (contexts.length > maximumContexts)
+        currentWhen = routeArgs[0];
+      
+      var isActive = router.isActive.apply(router, [currentWhen].concat(contexts));
 
       if (isActive) { return get(this, 'activeClass'); }
-    }).property('resolvedParams', 'routeArgs', 'router.url'),
+    }).property('resolvedParams', 'routeArgs'),
 
     /**
       Accessed as a classname binding to apply the `LinkView`'s `loadingClass`
@@ -53382,15 +56279,65 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
       var router = get(this, 'router'),
           routeArgs = get(this, 'routeArgs');
 
+      var transition;
       if (get(this, 'replace')) {
-        router.replaceWith.apply(router, routeArgs);
+        transition = router.replaceWith.apply(router, routeArgs);
       } else {
-        router.transitionTo.apply(router, routeArgs);
+        transition = router.transitionTo.apply(router, routeArgs);
       }
+
+      // Schedule eager URL update, but after we've given the transition
+      // a chance to synchronously redirect.
+      
+        // We need to always generate the URL instead of using the href because
+        // the href will include any rootURL set, but the router expects a URL
+        // without it! Note that we don't use the first level router because it
+        // calls location.formatURL(), which also would add the rootURL!
+        var url = router.router.generate.apply(router.router, get(this, 'routeArgs'));
+        Ember.run.scheduleOnce('routerTransitions', this, this._eagerUpdateUrl, transition, url);
+      
     },
 
     /**
-      Computed property that returns the resolved parameters.
+      @private
+     */
+    _eagerUpdateUrl: function(transition, href) {
+      if (!transition.isActive || !transition.urlMethod) {
+        // transition was aborted, already ran to completion,
+        // or it has a null url-updated method.
+        return;
+      }
+
+      if (href.indexOf('#') === 0) {
+        href = href.slice(1);
+      }
+
+      // Re-use the routerjs hooks set up by the Ember router.
+      var routerjs = get(this, 'router.router');
+      if (transition.urlMethod === 'update') {
+        routerjs.updateURL(href);
+      } else if (transition.urlMethod === 'replace') {
+        routerjs.replaceURL(href);
+      }
+
+      // Prevent later update url refire.
+      transition.method(null);
+    },
+
+    /**
+      Computed property that returns an array of the
+      resolved parameters passed to the `link-to` helper,
+      e.g.:
+
+      ```hbs
+      {{link-to a b '123' c}}
+      ```
+
+      will generate a `resolvedParams` of:
+
+      ```js
+      [aObject, bObject, '123', cObject]
+      ```
 
       @private
       @property
@@ -53402,10 +56349,13 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
           types = options.types,
           data = options.data;
 
-      
-      // Original implementation if query params not enabled
-      return resolveParams(parameters.context, parameters.params, { types: types, data: data });
-    }).property(),
+      if (parameters.params.length === 0) {
+        var appController = this.container.lookup('controller:application');
+        return [get(appController, 'currentRouteName')];
+      } else {
+        return resolveParams(parameters.context, parameters.params, { types: types, data: data });
+      }
+    }).property('router.url'),
 
     /**
       Computed property that returns the current route name and
@@ -53422,8 +56372,19 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
 
       if (!namedRoute) { return; }
 
-      namedRoute = fullRouteName(router, namedRoute);
-      resolvedParams[0] = namedRoute;
+      Ember.assert(fmt("The attempt to link-to route '%@' failed. " +
+                       "The router did not find '%@' in its possible routes: '%@'",
+                       [namedRoute, namedRoute, Ember.keys(router.router.recognizer.names).join("', '")]),
+                       router.hasRoute(namedRoute));
+
+      //normalize route name
+      var handlers = router.router.recognizer.handlersFor(namedRoute);
+      var normalizedPath = handlers[handlers.length - 1].handler;
+      if (namedRoute !== normalizedPath) {
+        this.set('currentWhen', namedRoute);
+        namedRoute = handlers[handlers.length - 1].handler;
+        resolvedParams[0] = namedRoute;
+      }
 
       for (var i = 1, len = resolvedParams.length; i < len; ++i) {
         var param = resolvedParams[i];
@@ -53435,36 +56396,53 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
 
       
       return resolvedParams;
-    }).property('resolvedParams', 'queryParams', 'router.url'),
+    }).property('resolvedParams', 'queryParams'),
 
+    queryParamsObject: null,
+    queryParams: Ember.computed(function computeLinkViewQueryParams() {
 
-    _potentialQueryParams: Ember.computed(function () {
-      var namedRoute = get(this, 'resolvedParams')[0];
-      if (!namedRoute) { return null; }
-      var router          = get(this, 'router');
+      var queryParamsObject = get(this, 'queryParamsObject'),
+          suppliedParams = {};
 
-      namedRoute = fullRouteName(router, namedRoute);
+      if (queryParamsObject) {
+        Ember.merge(suppliedParams, queryParamsObject.values);
+      }
 
-      return router.router.queryParamsForHandler(namedRoute);
-    }).property('resolvedParams'),
+      var resolvedParams = get(this, 'resolvedParams'),
+          router = get(this, 'router'),
+          routeName = resolvedParams[0],
+          paramsForRoute = router._queryParamNamesFor(routeName),
+          queryParams = paramsForRoute.queryParams,
+          translations = paramsForRoute.translations,
+          paramsForRecognizer = {};
 
-    queryParams: Ember.computed(function () {
-      var self              = this,
-        queryParams         = null,
-        allowedQueryParams  = get(this, '_potentialQueryParams');
+      // Normalize supplied params into their long-form name
+      // e.g. 'foo' -> 'controllername:foo'
+      translateQueryParams(suppliedParams, translations, routeName);
 
-      if (!allowedQueryParams) { return null; }
-      allowedQueryParams.forEach(function (param) {
-        var value = get(self, param);
-        if (typeof value !== 'undefined') {
-          queryParams = queryParams || {};
-          queryParams[param] = value;
+      var helperParameters = this.parameters;
+      router._queryParamOverrides(paramsForRecognizer, queryParams, function(name, resultsName) {
+        if (!(name in suppliedParams)) { return; }
+
+        var parts = name.split(':');
+
+        var type = queryParamsObject.types[parts[1]];
+
+        var value;
+        if (type === 'ID') {
+          var normalizedPath = Ember.Handlebars.normalizePath(helperParameters.context, suppliedParams[name], helperParameters.options.data);
+          value = Ember.Handlebars.get(normalizedPath.root, normalizedPath.path, helperParameters.options);
+        } else {
+          value = suppliedParams[name];
         }
+
+        delete suppliedParams[name];
+
+        paramsForRecognizer[resultsName] = value;
       });
 
-
-      return queryParams;
-    }).property('_potentialQueryParams.[]'),
+      return paramsForRecognizer;
+    }).property('resolvedParams.[]'),
 
     /**
       Sets the element's `href` attribute to the url for
@@ -53760,9 +56738,13 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     @see {Ember.LinkView}
   */
   Ember.Handlebars.registerHelper('link-to', function linkToHelper(name) {
-    var options = [].slice.call(arguments, -1)[0],
-        params = [].slice.call(arguments, 0, -1),
+    var options = slice.call(arguments, -1)[0],
+        params = slice.call(arguments, 0, -1),
         hash = options.hash;
+
+    if (params[params.length - 1] instanceof QueryParams) {
+      hash.queryParamsObject = params.pop();
+    }
 
     hash.disabledBinding = hash.disabledWhen;
 
@@ -53791,6 +56773,8 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     return Ember.Handlebars.helpers.view.call(this, LinkView, options);
   });
 
+
+  
   /**
     See [link-to](/api/classes/Ember.Handlebars.helpers.html#method_link-to)
 
@@ -53969,7 +56953,7 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     ```handelbars
     <!-- application.hbs -->
     <h1>My great app</h1>
-    {{render navigation}}
+    {{render "navigation"}}
     ```
 
     ```html
@@ -54014,7 +56998,7 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
   */
   Ember.Handlebars.registerHelper('render', function renderHelper(name, contextString, options) {
     var length = arguments.length;
-    Ember.assert("You must pass a template to render", length >= 2);
+
     var contextProvided = length === 3,
         container, router, controller, view, context, lookupOptions;
 
@@ -54032,6 +57016,8 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     } else {
       throw Ember.Error("You must pass a templateName to render");
     }
+
+    Ember.deprecate("Using a quoteless parameter with {{render}} is deprecated. Please update to quoted usage '{{render \"" + name + "\"}}.", options.types[0] !== 'ID');
 
     // # legacy namespace
     name = name.replace(/\//g, '.');
@@ -54082,7 +57068,7 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     options.hash.viewName = Ember.String.camelize(name);
 
     var templateName = 'template:' + name;
-    Ember.assert("You used `{{render '" + name + "'}}`, but '" + name + "' can not be found as either a template or a view.", container.has("view:" + name) || container.has(templateName));
+    Ember.assert("You used `{{render '" + name + "'}}`, but '" + name + "' can not be found as either a template or a view.", container.has("view:" + name) || container.has(templateName) || options.fn);
     options.hash.template = container.lookup(templateName);
 
     options.hash.controller = controller;
@@ -54158,8 +57144,8 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     return allowed;
   };
 
-  ActionHelper.registerAction = function(actionName, options, allowedKeys) {
-    var actionId = (++Ember.uuid).toString();
+  ActionHelper.registerAction = function(actionNameOrPath, options, allowedKeys) {
+    var actionId = ++Ember.uuid;
 
     ActionHelper.registeredActions[actionId] = {
       eventName: options.eventName,
@@ -54174,12 +57160,27 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
           event.stopPropagation();
         }
 
-        var target = options.target;
+        var target = options.target,
+            actionName;
 
         if (target.target) {
           target = handlebarsGet(target.root, target.target, target.options);
         } else {
           target = target.root;
+        }
+
+        
+          if (options.boundProperty) {
+            actionName = handlebarsGet(target, actionNameOrPath, options.options);
+
+            if(typeof actionName === 'undefined' || typeof actionName === 'function') {
+              Ember.assert("You specified a quoteless path to the {{action}} helper '" + actionNameOrPath + "' which did not resolve to an actionName. Perhaps you meant to use a quoted actionName? (e.g. {{action '" + actionNameOrPath + "'}}).", true);
+              actionName = actionNameOrPath;
+            }
+          }
+        
+        if (!actionName) {
+          actionName = actionNameOrPath;
         }
 
         Ember.run(function runRegisteredAction() {
@@ -54209,7 +57210,8 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
     to the current route, and it bubbles up the route hierarchy from there.
 
     User interaction with that element will invoke the supplied action name on
-    the appropriate target.
+    the appropriate target. Specifying a non-quoted action name will result in
+    a bound property lookup at the time the event will be triggered.
 
     Given the following application Handlebars template on the page
 
@@ -54373,38 +57375,33 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
         contexts = a_slice.call(arguments, 1, -1);
 
     var hash = options.hash,
-        controller;
+        controller = options.data.keywords.controller;
 
     // create a hash to pass along to registerAction
     var action = {
-      eventName: hash.on || "click"
+      eventName: hash.on || "click",
+      parameters: {
+        context: this,
+        options: options,
+        params: contexts
+      },
+      view: options.data.view,
+      bubbles: hash.bubbles,
+      preventDefault: hash.preventDefault,
+      target: { options: options },
+      boundProperty: options.types[0] === "ID"
     };
-
-    action.parameters = {
-      context: this,
-      options: options,
-      params: contexts
-    };
-
-    action.view = options.data.view;
-
-    var root, target;
 
     if (hash.target) {
-      root = this;
-      target = hash.target;
-    } else if (controller = options.data.keywords.controller) {
-      root = controller;
+      action.target.root = this;
+      action.target.target = hash.target;
+    } else if (controller) {
+      action.target.root = controller;
     }
-
-    action.target = { root: root, target: target, options: options };
-    action.bubbles = hash.bubbles;
-    action.preventDefault = hash.preventDefault;
 
     var actionId = ActionHelper.registerAction(actionName, action, hash.allowedKeys);
     return new SafeString('data-ember-action="' + actionId + '"');
   });
-
 });
 
 })();
@@ -54423,7 +57420,10 @@ Ember.onLoad('Ember.Handlebars', function(Handlebars) {
 @submodule ember-routing
 */
 
-var get = Ember.get, set = Ember.set;
+var get = Ember.get, set = Ember.set,
+    map = Ember.EnumerableUtils.map;
+
+var queuedQueryParamChanges = {};
 
 Ember.ControllerMixin.reopen({
   /**
@@ -54443,22 +57443,42 @@ Ember.ControllerMixin.reopen({
     aController.transitionToRoute('blogPost', aPost);
     ```
 
+    If a literal is passed (such as a number or a string), it will
+    be treated as an identifier instead. In this case, the `model`
+    hook of the route will be triggered:
+
+    ```javascript
+    aController.transitionToRoute('blogPost', 1);
+    ```
+
     Multiple models will be applied last to first recursively up the
     resource tree.
 
     ```javascript
-    this.resource('blogPost', {path:':blogPostId'}, function(){
-      this.resource('blogComment', {path: ':blogCommentId'});
+    App.Router.map(function() {
+      this.resource('blogPost', {path:':blogPostId'}, function(){
+        this.resource('blogComment', {path: ':blogCommentId'});
+      });
     });
-
+    
     aController.transitionToRoute('blogComment', aPost, aComment);
+    aController.transitionToRoute('blogComment', 1, 13);
     ```
 
-    See also 'replaceRoute'.
+    It is also possible to pass a URL (a string that starts with a
+    `/`). This is intended for testing and debugging purposes and
+    should rarely be used in production code.
 
-    @param {String} name the name of the route
-    @param {...Object} models the model(s) to be used while transitioning
-    to the route.
+    ```javascript
+    aController.transitionToRoute('/');
+    aController.transitionToRoute('/blog/post/1/comment/13');
+    ```
+
+    See also [replaceRoute](/api/classes/Ember.ControllerMixin.html#method_replaceRoute).
+
+    @param {String} name the name of the route or a URL
+    @param {...Object} models the model(s) or identifier(s) to be used
+    while transitioning to the route.
     @for Ember.ControllerMixin
     @method transitionToRoute
   */
@@ -54481,7 +57501,7 @@ Ember.ControllerMixin.reopen({
 
   /**
     Transition into another route while replacing the current URL, if possible.
-    This will replace the current history entry instead of adding a new one. 
+    This will replace the current history entry instead of adding a new one.
     Beside that, it is identical to `transitionToRoute` in all other respects.
 
     ```javascript
@@ -54497,20 +57517,40 @@ Ember.ControllerMixin.reopen({
     aController.replaceRoute('blogPost', aPost);
     ```
 
+    If a literal is passed (such as a number or a string), it will
+    be treated as an identifier instead. In this case, the `model`
+    hook of the route will be triggered:
+
+    ```javascript
+    aController.replaceRoute('blogPost', 1);
+    ```
+
     Multiple models will be applied last to first recursively up the
     resource tree.
 
     ```javascript
-    this.resource('blogPost', {path:':blogPostId'}, function(){
-      this.resource('blogComment', {path: ':blogCommentId'});
+    App.Router.map(function() {
+      this.resource('blogPost', {path:':blogPostId'}, function(){
+        this.resource('blogComment', {path: ':blogCommentId'});
+      });
     });
-
+    
     aController.replaceRoute('blogComment', aPost, aComment);
+    aController.replaceRoute('blogComment', 1, 13);
     ```
 
-    @param {String} name the name of the route
-    @param {...Object} models the model(s) to be used while transitioning
-    to the route.
+    It is also possible to pass a URL (a string that starts with a
+    `/`). This is intended for testing and debugging purposes and
+    should rarely be used in production code.
+
+    ```javascript
+    aController.replaceRoute('/');
+    aController.replaceRoute('/blog/post/1/comment/13');
+    ```
+
+    @param {String} name the name of the route or a URL
+    @param {...Object} models the model(s) or identifier(s) to be used
+    while transitioning to the route.
     @for Ember.ControllerMixin
     @method replaceRoute
   */
@@ -54531,6 +57571,7 @@ Ember.ControllerMixin.reopen({
     return this.replaceRoute.apply(this, arguments);
   }
 });
+
 
 })();
 
@@ -54674,6 +57715,7 @@ Ember.View.reopen({
     @method _finishDisconnections
    */
   _finishDisconnections: function() {
+    if (this.isDestroyed) return; // _outlets will be gone anyway
     var outlets = get(this, '_outlets');
     var pendingDisconnections = this._pendingDisconnections;
     this._pendingDisconnections = null;
@@ -54767,6 +57809,43 @@ var get = Ember.get, set = Ember.set;
 
   This will result in a posts.new url of `/posts/new`.
 
+  Keep in mind that your server must serve the Ember app at all the routes you
+  define.
+
+  ### AutoLocation
+
+  Using `AutoLocation`, the router will use the best Location class supported by
+  the browser it is running in.
+
+  Browsers that support the `history` API will use `HistoryLocation`, those that
+  do not, but still support the `hashchange` event will use `HashLocation`, and
+  in the rare case neither is supported will use `NoneLocation`.
+
+  Example:
+
+  ```javascript
+  App.Router.map(function() {
+    this.resource('posts', function() {
+      this.route('new');
+    });
+  });
+
+  App.Router.reopen({
+    location: 'auto'
+  });
+  ```
+
+  This will result in a posts.new url of `/posts/new` for modern browsers that
+  support the `history` api or `/#/posts/new` for older ones, like Internet
+  Explorer 9 and below.
+
+  When a user visits a link to your application, they will be automatically
+  upgraded or downgraded to the appropriate `Location` class, with the URL
+  transformed accordingly, if needed.
+
+  Keep in mind that since some of your users will use `HistoryLocation`, your
+  server must serve the Ember app at all the routes you define.
+
   ### NoneLocation
 
   Using `NoneLocation` causes Ember to not store the applications URL state
@@ -54844,10 +57923,32 @@ Ember.Location = {
    container directly.
   */
   registerImplementation: function(name, implementation) {
+    Ember.deprecate('Using the Ember.Location.registerImplementation is no longer supported. Register your custom location implementation with the container instead.', false);
+
     this.implementations[name] = implementation;
   },
 
-  implementations: {}
+  implementations: {},
+
+  /**
+    Returns the current `location.hash` by parsing location.href since browsers
+    inconsistently URL-decode `location.hash`.
+  
+    https://bugzilla.mozilla.org/show_bug.cgi?id=483304
+
+    @private
+    @method getHash
+  */
+  getHash: function () {
+    var href = window.location.href,
+        hashIndex = href.indexOf('#');
+
+    if (hashIndex === -1) {
+      return '';
+    } else {
+      return href.substr(hashIndex);
+    }
+  }
 };
 
 })();
@@ -54873,6 +57974,7 @@ var get = Ember.get, set = Ember.set;
   @extends Ember.Object
 */
 Ember.NoneLocation = Ember.Object.extend({
+  implementation: 'none',
   path: '',
 
   /**
@@ -54943,8 +58045,6 @@ Ember.NoneLocation = Ember.Object.extend({
   }
 });
 
-Ember.Location.registerImplementation('none', Ember.NoneLocation);
-
 })();
 
 
@@ -54955,7 +58055,8 @@ Ember.Location.registerImplementation('none', Ember.NoneLocation);
 @submodule ember-routing
 */
 
-var get = Ember.get, set = Ember.set;
+var get = Ember.get, set = Ember.set,
+    getHash = Ember.Location.getHash;
 
 /**
   `Ember.HashLocation` implements the location API using the browser's
@@ -54967,6 +58068,7 @@ var get = Ember.get, set = Ember.set;
   @extends Ember.Object
 */
 Ember.HashLocation = Ember.Object.extend({
+  implementation: 'hash',
 
   init: function() {
     set(this, 'location', get(this, 'location') || window.location);
@@ -54979,8 +58081,7 @@ Ember.HashLocation = Ember.Object.extend({
     @method getURL
   */
   getURL: function() {
-        // Default implementation without feature flag enabled
-    return get(this, 'location').hash.substr(1);
+    return getHash().substr(1);
   },
 
   /**
@@ -55007,6 +58108,7 @@ Ember.HashLocation = Ember.Object.extend({
   */
   replaceURL: function(path) {
     get(this, 'location').replace('#' + path);
+    set(this, 'lastSetURL', path);
   },
 
   /**
@@ -55024,7 +58126,7 @@ Ember.HashLocation = Ember.Object.extend({
 
     Ember.$(window).on('hashchange.ember-location-'+guid, function() {
       Ember.run(function() {
-        var path = location.hash.substr(1);
+        var path = self.getURL();
         if (get(self, 'lastSetURL') === path) { return; }
 
         set(self, 'lastSetURL', null);
@@ -55062,8 +58164,6 @@ Ember.HashLocation = Ember.Object.extend({
   }
 });
 
-Ember.Location.registerImplementation('hash', Ember.HashLocation);
-
 })();
 
 
@@ -55087,9 +58187,11 @@ var supportsHistoryState = window.history && 'state' in window.history;
   @extends Ember.Object
 */
 Ember.HistoryLocation = Ember.Object.extend({
+  implementation: 'history',
 
   init: function() {
     set(this, 'location', get(this, 'location') || window.location);
+    set(this, 'baseURL', Ember.$('base').attr('href') || '');
   },
 
   /**
@@ -55121,10 +58223,12 @@ Ember.HistoryLocation = Ember.Object.extend({
   getURL: function() {
     var rootURL = get(this, 'rootURL'),
         location = get(this, 'location'),
-        path = location.pathname;
+        path = location.pathname,
+        baseURL = get(this, 'baseURL');
 
     rootURL = rootURL.replace(/\/$/, '');
-    var url = path.replace(rootURL, '');
+    baseURL = baseURL.replace(/\/$/, '');
+    var url = path.replace(baseURL, '').replace(rootURL, '');
 
     
     return url;
@@ -55249,13 +58353,17 @@ Ember.HistoryLocation = Ember.Object.extend({
     @return formatted url {String}
   */
   formatURL: function(url) {
-    var rootURL = get(this, 'rootURL');
+    var rootURL = get(this, 'rootURL'),
+        baseURL = get(this, 'baseURL');
 
     if (url !== '') {
       rootURL = rootURL.replace(/\/$/, '');
+      baseURL = baseURL.replace(/\/$/, '');
+    } else if(baseURL.match(/^\//) && rootURL.match(/^\//)) {
+      baseURL = baseURL.replace(/\/$/, '');
     }
 
-    return rootURL + url;
+    return baseURL + rootURL + url;
   },
 
   /**
@@ -55271,7 +58379,242 @@ Ember.HistoryLocation = Ember.Object.extend({
   }
 });
 
-Ember.Location.registerImplementation('history', Ember.HistoryLocation);
+})();
+
+
+
+(function() {
+
+  /**
+  @module ember
+  @submodule ember-routing
+  */
+
+  var get = Ember.get, set = Ember.set;
+  var documentMode = document.documentMode,
+      history = window.history,
+      location = window.location,
+      getHash = Ember.Location.getHash;
+
+  /**
+    Ember.AutoLocation will select the best location option based off browser
+    support with the priority order: history, hash, none.
+
+    Clean pushState paths accessed by hashchange-only browsers will be redirected
+    to the hash-equivalent and vice versa so future transitions are consistent.
+
+    Keep in mind that since some of your users will use `HistoryLocation`, your
+    server must serve the Ember app at all the routes you define.
+
+    @class AutoLocation
+    @namespace Ember
+    @static
+  */
+  var AutoLocation = Ember.AutoLocation = {
+
+    /**
+      Will be pre-pended to path upon state change.
+
+      @property rootURL
+      @default '/'
+    */
+    rootURL: '/',
+
+    /**
+      @private
+
+      Exposed for testing
+
+      @property location
+      @default window.location
+    */
+    _location: location,
+
+    /**
+      @private
+
+      Returns location.origin or builds it if device doesn't support it.
+
+      @method getOrigin
+    */
+    getOrigin: function () {
+      var location = this._location,
+          origin = location.origin;
+
+      // Older browsers, especially IE, don't have origin
+      if (!origin) {
+        origin = location.protocol + '//' + location.hostname;
+        
+        if (location.port) {
+          origin += ':' + location.port;
+        }
+      }
+
+      return origin;
+    },
+
+    /**
+      @private
+
+      We assume that if the history object has a pushState method, the host should
+      support HistoryLocation.
+
+      @property supportsHistory
+    */
+    supportsHistory: (function () {
+      // Boosted from Modernizr: https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
+      // The stock browser on Android 2.2 & 2.3 returns positive on history support
+      // Unfortunately support is really buggy and there is no clean way to detect
+      // these bugs, so we fall back to a user agent sniff :(
+      var userAgent = window.navigator.userAgent;
+
+      // We only want Android 2, stock browser, and not Chrome which identifies
+      // itself as 'Mobile Safari' as well
+      if (userAgent.indexOf('Android 2') !== -1 &&
+          userAgent.indexOf('Mobile Safari') !== -1 &&
+          userAgent.indexOf('Chrome') === -1) {
+        return false;
+      }
+
+      return !!(history && 'pushState' in history);
+    })(),
+
+    /**
+      @private
+
+      IE8 running in IE7 compatibility mode gives false positive, so we must also
+      check documentMode.
+
+      @property supportsHashChange
+    */
+    supportsHashChange: ('onhashchange' in window && (documentMode === undefined || documentMode > 7 )),
+
+    create: function (options) {
+      if (options && options.rootURL) {
+        this.rootURL = options.rootURL;
+      }
+
+      var implementationClass, historyPath, hashPath,
+          cancelRouterSetup = false,
+          currentPath = this.getFullPath();
+
+      if (this.supportsHistory) {
+        historyPath = this.getHistoryPath();
+
+        // Since we support history paths, let's be sure we're using them else 
+        // switch the location over to it.
+        if (currentPath === historyPath) {
+          implementationClass = Ember.HistoryLocation;
+        } else {
+          cancelRouterSetup = true;
+          this.replacePath(historyPath);
+        }
+
+      } else if (this.supportsHashChange) {
+        hashPath = this.getHashPath();
+
+        // Be sure we're using a hashed path, otherwise let's switch over it to so
+        // we start off clean and consistent.
+        if (currentPath === hashPath) {
+          implementationClass = Ember.HashLocation;
+        } else {
+          cancelRouterSetup = true;
+          this.replacePath(hashPath);
+        }
+      }
+
+      // If none has been set
+      if (!implementationClass) {
+        implementationClass = Ember.NoneLocation;
+      }
+
+      var implementation = implementationClass.create.apply(implementationClass, arguments);
+
+      if (cancelRouterSetup) {
+        set(implementation, 'cancelRouterSetup', true);
+      }
+      
+      return implementation;
+    },
+
+    /**
+      @private
+
+      Redirects the browser using location.replace, prepending the locatin.origin
+      to prevent phishing attempts
+
+      @method replacePath
+    */
+    replacePath: function (path) {
+      this._location.replace(this.getOrigin() + path);
+    },
+
+    /**
+      @private
+
+      Returns the current `location.pathname`, normalized for IE inconsistencies.
+
+      @method getPath
+    */
+    getPath: function () {
+      var pathname = location.pathname;
+      // Various versions of IE/Opera don't always return a leading slash
+      if (pathname.charAt(0) !== '/') {
+        pathname = '/' + pathname;
+      }
+
+      return pathname;
+    },
+
+    /**
+      @private
+
+      Returns the full pathname including the hash string.
+
+      @method getFullPath
+    */
+    getFullPath: function () {
+      return this.getPath() + getHash().substr(1);
+    },
+
+    /**
+      @private
+
+      Returns the current path as it should appear for HistoryLocation supported
+      browsers. This may very well differ from the real current path (e.g. if it 
+      starts off as a hashed URL)
+
+      @method getHistoryPath
+    */
+    getHistoryPath: function () {
+      var path = this.getPath(),  
+          hashPath = getHash().substr(1),
+          url = path + hashPath;
+
+      // Removes any stacked double stashes
+      return url.replace(/\/\//, '/');
+    },
+
+    /**
+      @private
+
+      Returns the current path as it should appear for HashLocation supported
+      browsers. This may very well differ from the real current path.
+
+      @method getHashPath
+    */
+    getHashPath: function () {
+      var historyPath = this.getHistoryPath(),
+          exp = new RegExp('(' + this.rootURL + ')(.+)'),
+          url = historyPath.replace(exp, '$1#/$2');
+
+      // Remove any stacked double stashes
+      url = url.replace(/\/\//, '/');
+
+      return url;
+    }
+
+  };
 
 })();
 
@@ -55414,16 +58757,46 @@ var get = Ember.get,
     capitalize = Ember.String.capitalize,
     decamelize = Ember.String.decamelize;
 
+Ember.Resolver = Ember.Object.extend({
+  /**
+    This will be set to the Application instance when it is
+    created.
+
+    @property namespace
+  */
+  namespace: null,
+  normalize: function(fullName) {
+    throw new Error("Invalid call to `resolver.normalize(fullName)`. Please override the 'normalize' method in subclass of `Ember.AbstractResolver` to prevent falling through to this error.");
+  },
+  resolve: function(fullName) {
+   throw new Error("Invalid call to `resolver.resolve(parsedName)`. Please override the 'resolve' method in subclass of `Ember.AbstractResolver` to prevent falling through to this error.");
+  },
+  parseName: function(parsedName) {
+   throw new Error("Invalid call to `resolver.resolveByType(parsedName)`. Please override the 'resolveByType' method in subclass of `Ember.AbstractResolver` to prevent falling through to this error.");
+  },
+  lookupDescription: function(fullName) {
+    throw new Error("Invalid call to `resolver.lookupDescription(fullName)`. Please override the 'lookupDescription' method in subclass of `Ember.AbstractResolver` to prevent falling through to this error.");
+  },
+  makeToString: function(factory, fullName) {
+    throw new Error("Invalid call to `resolver.makeToString(factory, fullName)`. Please override the 'makeToString' method in subclass of `Ember.AbstractResolver` to prevent falling through to this error.");
+  },
+  resolveOther: function(parsedName) {
+   throw new Error("Invalid call to `resolver.resolveDefault(parsedName)`. Please override the 'resolveDefault' method in subclass of `Ember.AbstractResolver` to prevent falling through to this error.");
+  }
+});
+
+
+
 /**
   The DefaultResolver defines the default lookup rules to resolve
   container lookups before consulting the container for registered
   items:
 
-* templates are looked up on `Ember.TEMPLATES`
-* other names are looked up on the application after converting
-  the name. For example, `controller:post` looks up
-  `App.PostController` by default.
-* there are some nuances (see examples below)
+  * templates are looked up on `Ember.TEMPLATES`
+  * other names are looked up on the application after converting
+    the name. For example, `controller:post` looks up
+    `App.PostController` by default.
+  * there are some nuances (see examples below)
 
   ### How Resolving Works
 
@@ -55498,10 +58871,7 @@ Ember.DefaultResolver = Ember.Object.extend({
         type = split[0],
         name = split[1];
 
-    Ember.assert("Tried to normalize a container name without a colon (:) in " +
-                 "it. You probably tried to lookup a name that did not contain " +
-                 "a type, a colon, and a name. A proper lookup name would be " +
-                 "`view:post`.", split.length === 2);
+    Ember.assert("Tried to normalize a container name without a colon (:) in it. You probably tried to lookup a name that did not contain a type, a colon, and a name. A proper lookup name would be `view:post`.", split.length === 2);
 
     if (type !== 'template') {
       var result = name;
@@ -55532,14 +58902,14 @@ Ember.DefaultResolver = Ember.Object.extend({
   */
   resolve: function(fullName) {
     var parsedName = this.parseName(fullName),
-        typeSpecificResolveMethod = this[parsedName.resolveMethodName];
+        resolveMethodName = parsedName.resolveMethodName;
 
-    if (!parsedName.name || !parsedName.type) {
+    if (!(parsedName.name && parsedName.type)) {
       throw new TypeError("Invalid fullName: `" + fullName + "`, must be of the form `type:name` ");
     }
 
-    if (typeSpecificResolveMethod) {
-      var resolved = typeSpecificResolveMethod.call(this, parsedName);
+    if (this[resolveMethodName]) {
+      var resolved = this[resolveMethodName](parsedName);
       if (resolved) { return resolved; }
     }
     return this.resolveOther(parsedName);
@@ -55578,110 +58948,6 @@ Ember.DefaultResolver = Ember.Object.extend({
       resolveMethodName: "resolve" + classify(type)
     };
   },
-  /**
-    Look up the template in Ember.TEMPLATES
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method resolveTemplate
-  */
-  resolveTemplate: function(parsedName) {
-    var templateName = parsedName.fullNameWithoutType.replace(/\./g, '/');
-
-    if (Ember.TEMPLATES[templateName]) {
-      return Ember.TEMPLATES[templateName];
-    }
-
-    templateName = decamelize(templateName);
-    if (Ember.TEMPLATES[templateName]) {
-      return Ember.TEMPLATES[templateName];
-    }
-  },
-  /**
-    Given a parseName object (output from `parseName`), apply
-    the conventions expected by `Ember.Router`
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method useRouterNaming
-  */
-  useRouterNaming: function(parsedName) {
-    parsedName.name = parsedName.name.replace(/\./g, '_');
-    if (parsedName.name === 'basic') {
-      parsedName.name = '';
-    }
-  },
-  /**
-    Lookup the controller using `resolveOther`
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method resolveController
-  */
-  resolveController: function(parsedName) {
-    this.useRouterNaming(parsedName);
-    return this.resolveOther(parsedName);
-  },
-  /**
-    Lookup the route using `resolveOther`
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method resolveRoute
-  */
-  resolveRoute: function(parsedName) {
-    this.useRouterNaming(parsedName);
-    return this.resolveOther(parsedName);
-  },
-  /**
-    Lookup the view using `resolveOther`
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method resolveView
-  */
-  resolveView: function(parsedName) {
-    this.useRouterNaming(parsedName);
-    return this.resolveOther(parsedName);
-  },
-
-  resolveHelper: function(parsedName) {
-    return this.resolveOther(parsedName) || Ember.Handlebars.helpers[parsedName.fullNameWithoutType];
-  },
-
-  /**
-    Lookup the model on the Application namespace
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method resolveModel
-  */
-  resolveModel: function(parsedName) {
-    var className = classify(parsedName.name),
-        factory = get(parsedName.root, className);
-
-     if (factory) { return factory; }
-  },
-  /**
-    Look up the specified object (from parsedName) on the appropriate
-    namespace (usually on the Application)
-
-    @protected
-    @param {Object} parsedName a parseName object with the parsed
-      fullName lookup string
-    @method resolveOther
-  */
-  resolveOther: function(parsedName) {
-    var className = classify(parsedName.name) + classify(parsedName.type),
-        factory = get(parsedName.root, className);
-    if (factory) { return factory; }
-  },
 
   /**
     Returns a human-readable description for a fullName. Used by the
@@ -55708,6 +58974,118 @@ Ember.DefaultResolver = Ember.Object.extend({
 
   makeToString: function(factory, fullName) {
     return factory.toString();
+  },
+  /**
+    Given a parseName object (output from `parseName`), apply
+    the conventions expected by `Ember.Router`
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method useRouterNaming
+  */
+  useRouterNaming: function(parsedName) {
+    parsedName.name = parsedName.name.replace(/\./g, '_');
+    if (parsedName.name === 'basic') {
+      parsedName.name = '';
+    }
+  },
+  /**
+    Look up the template in Ember.TEMPLATES
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveTemplate
+  */
+  resolveTemplate: function(parsedName) {
+    var templateName = parsedName.fullNameWithoutType.replace(/\./g, '/');
+
+    if (Ember.TEMPLATES[templateName]) {
+      return Ember.TEMPLATES[templateName];
+    }
+
+    templateName = decamelize(templateName);
+    if (Ember.TEMPLATES[templateName]) {
+      return Ember.TEMPLATES[templateName];
+    }
+  },
+  /**
+    Lookup the view using `resolveOther`
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveView
+  */
+  resolveView: function(parsedName) {
+    this.useRouterNaming(parsedName);
+    return this.resolveOther(parsedName);
+  },
+  /**
+    Lookup the controller using `resolveOther`
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveController
+  */
+  resolveController: function(parsedName) {
+    this.useRouterNaming(parsedName);
+    return this.resolveOther(parsedName);
+  },
+  /**
+    Lookup the route using `resolveOther`
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveRoute
+  */
+  resolveRoute: function(parsedName) {
+    this.useRouterNaming(parsedName);
+    return this.resolveOther(parsedName);
+  },
+
+  /**
+    Lookup the model on the Application namespace
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveModel
+  */
+  resolveModel: function(parsedName) {
+    var className = classify(parsedName.name),
+        factory = get(parsedName.root, className);
+
+     if (factory) { return factory; }
+  },
+  /**
+    Look up the specified object (from parsedName) on the appropriate
+    namespace (usually on the Application)
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveHelper
+  */
+  resolveHelper: function(parsedName) {
+    return this.resolveOther(parsedName) || Ember.Handlebars.helpers[parsedName.fullNameWithoutType];
+  },
+  /**
+    Look up the specified object (from parsedName) on the appropriate
+    namespace (usually on the Application)
+
+    @protected
+    @param {Object} parsedName a parseName object with the parsed
+      fullName lookup string
+    @method resolveOther
+  */
+  resolveOther: function(parsedName) {
+    var className = classify(parsedName.name) + classify(parsedName.type),
+        factory = get(parsedName.root, className);
+    if (factory) { return factory; }
   }
 });
 
@@ -55837,17 +59215,23 @@ DeprecatedContainer.prototype = {
 
   ### Initializers
 
-  Libraries on top of Ember can register additional initializers, like so:
+  Libraries on top of Ember can add initializers, like so:
 
   ```javascript
   Ember.Application.initializer({
-    name: "store",
+    name: 'api-adapter',
 
     initialize: function(container, application) {
-      container.register('store:main', application.Store);
+      application.register('api-adapter:main', ApiAdapter);
     }
   });
   ```
+
+  Initializers provide an opportunity to access the container, which
+  organizes the different components of an Ember application. Additionally
+  they provide a chance to access the instantiated application. Beyond
+  being used for libraries, initializers are also a great way to organize
+  dependency injection or setup in your own application.
 
   ### Routing
 
@@ -56093,17 +59477,50 @@ var Application = Ember.Application = Ember.Namespace.extend(Ember.DeferredMixin
   },
 
   /**
-    registers a factory for later injection
+    Registers a factory that can be used for dependency injection (with
+    `App.inject`) or for service lookup. Each factory is registered with
+    a full name including two parts: `type:name`.
 
-    Example:
+    A simple example:
 
     ```javascript
-    App = Ember.Application.create();
+    var App = Ember.Application.create();
+    App.Orange  = Ember.Object.extend();
+    App.register('fruit:favorite', App.Orange);
+    ```
 
-    App.Person  = Ember.Object.extend({});
-    App.Orange  = Ember.Object.extend({});
-    App.Email   = Ember.Object.extend({});
-    App.session = Ember.Object.create({});
+    Ember will resolve factories from the `App` namespace automatically.
+    For example `App.CarsController` will be discovered and returned if
+    an application requests `controller:cars`.
+
+    An example of registering a controller with a non-standard name:
+
+    ```javascript
+    var App = Ember.Application.create(),
+        Session  = Ember.Controller.extend();
+
+    App.register('controller:session', Session);
+
+    // The Session controller can now be treated like a normal controller,
+    // despite its non-standard name.
+    App.ApplicationController = Ember.Controller.extend({
+      needs: ['session']
+    });
+    ```
+
+    Registered factories are **instantiated** by having `create`
+    called on them. Additionally they are **singletons**, each time
+    they are looked up they return the same instance.
+
+    Some examples modifying that default behavior:
+
+    ```javascript
+    var App = Ember.Application.create();
+
+    App.Person  = Ember.Object.extend();
+    App.Orange  = Ember.Object.extend();
+    App.Email   = Ember.Object.extend();
+    App.session = Ember.Object.create();
 
     App.register('model:user', App.Person, {singleton: false });
     App.register('fruit:favorite', App.Orange);
@@ -56114,22 +59531,56 @@ var Application = Ember.Application = Ember.Namespace.extend(Ember.DeferredMixin
     @method register
     @param  fullName {String} type:name (e.g., 'model:user')
     @param  factory {Function} (e.g., App.Person)
-    @param  options {String} (optional)
+    @param  options {Object} (optional) disable instantiation or singleton usage
   **/
   register: function() {
     var container = this.__container__;
     container.register.apply(container, arguments);
   },
-  /**
-    defines an injection or typeInjection
 
-    Example:
+  /**
+    Define a dependency injection onto a specific factory or all factories
+    of a type.
+
+    When Ember instantiates a controller, view, or other framework component
+    it can attach a dependency to that component. This is often used to
+    provide services to a set of framework components.
+
+    An example of providing a session object to all controllers:
+
+    ```javascript
+    var App = Ember.Application.create(),
+        Session = Ember.Object.extend({ isAuthenticated: false });
+
+    // A factory must be registered before it can be injected
+    App.register('session:main', Session);
+
+    // Inject 'session:main' onto all factories of the type 'controller'
+    // with the name 'session'
+    App.inject('controller', 'session', 'session:main');
+
+    App.IndexController = Ember.Controller.extend({
+      isLoggedIn: Ember.computed.alias('session.isAuthenticated')
+    });
+    ```
+
+    Injections can also be performed on specific factories.
 
     ```javascript
     App.inject(<full_name or type>, <property name>, <full_name>)
-    App.inject('model:user', 'email', 'model:email')
-    App.inject('model', 'source', 'source:main')
+    App.inject('route', 'source', 'source:main')
+    App.inject('route:application', 'email', 'model:email')
     ```
+
+    It is important to note that injections can only be performed on
+    classes that are instantiated by Ember itself. Instantiating a class
+    directly (via `create` or `new`) bypasses the dependency injection
+    system.
+
+    Ember-Data instantiates its models in a unique manner, and consequently
+    injections onto models (or all models) will not work as expected. Injections
+    on models can be enabled by setting `Ember.MODEL_FACTORY_INJECTIONS`
+    to `true`.
 
     @method inject
     @param  factoryNameOrType {String}
@@ -56154,6 +59605,7 @@ var Application = Ember.Application = Ember.Namespace.extend(Ember.DeferredMixin
   initialize: function() {
     Ember.deprecate('Calling initialize manually is not supported. Please see Ember.Application#advanceReadiness and Ember.Application#deferReadiness');
   },
+
   /**
     Initialize the application. This happens automatically.
 
@@ -56378,6 +59830,8 @@ var Application = Ember.Application = Ember.Namespace.extend(Ember.DeferredMixin
 
   willDestroy: function() {
     Ember.BOOTED = false;
+    // Ensure deactivation of routes before objects are destroyed
+    this.__container__.lookup('router:main').reset();
 
     this.__container__.destroy();
   },
@@ -56459,10 +59913,25 @@ Ember.Application.reopenClass({
     container.register('router:main',  Ember.Router);
     container.injection('router:main', 'namespace', 'application:main');
 
+    
+      container.register('location:auto', Ember.AutoLocation);
+    
+
+    container.register('location:hash', Ember.HashLocation);
+    container.register('location:history', Ember.HistoryLocation);
+    container.register('location:none', Ember.NoneLocation);
+
     container.injection('controller', 'target', 'router:main');
     container.injection('controller', 'namespace', 'application:main');
 
     container.injection('route', 'router', 'router:main');
+
+    // DEBUGGING
+    container.register('resolver-for-debugging:main', container.resolver.__resolver__, { instantiate: false });
+    container.injection('container-debug-adapter:main', 'resolver', 'resolver-for-debugging:main');
+    container.injection('data-adapter:main', 'containerDebugAdapter', 'container-debug-adapter:main');
+    // Custom resolver authors may want to register their own ContainerDebugAdapter with this key
+    container.register('container-debug-adapter:main', Ember.ContainerDebugAdapter);
 
     return container;
   }
@@ -56514,6 +59983,8 @@ function resolverFor(namespace) {
       return fullName;
     }
   };
+
+  resolve.__resolver__ = resolver;
 
   return resolve;
 }
@@ -56721,6 +60192,111 @@ Ember Application
 @submodule ember-extension-support
 */
 /**
+  The `ContainerDebugAdapter` helps the container and resolver interface
+  with tools that debug Ember such as the
+  [Ember Extension](https://github.com/tildeio/ember-extension)
+  for Chrome and Firefox.
+
+  This class can be extended by a custom resolver implementer
+  to override some of the methods with library-specific code.
+
+  The methods likely to be overridden are:
+
+  * `canCatalogEntriesByType`
+  * `catalogEntriesByType`
+
+  The adapter will need to be registered
+  in the application's container as `container-debug-adapter:main`
+
+  Example:
+
+  ```javascript
+  Application.initializer({
+    name: "containerDebugAdapter",
+
+    initialize: function(container, application) {
+      application.register('container-debug-adapter:main', require('app/container-debug-adapter'));
+    }
+  });
+  ```
+
+  @class ContainerDebugAdapter
+  @namespace Ember
+  @extends Ember.Object
+*/
+Ember.ContainerDebugAdapter = Ember.Object.extend({
+  /**
+    The container of the application being debugged.
+    This property will be injected
+    on creation.
+
+    @property container
+    @default null
+  */
+  container: null,
+
+  /**
+    The resolver instance of the application
+    being debugged. This property will be injected
+    on creation.
+
+    @property resolver
+    @default null
+  */
+  resolver: null,
+
+  /**
+    Returns true if it is possible to catalog a list of available
+    classes in the resolver for a given type.
+
+    @method canCatalogEntriesByType
+    @param {string} type The type. e.g. "model", "controller", "route"
+    @return {boolean} whether a list is available for this type.
+  */
+  canCatalogEntriesByType: function(type) {
+    if (type === 'model' || type === 'template') return false;
+    return true;
+  },
+
+  /**
+    Returns the available classes a given type.
+
+    @method catalogEntriesByType
+    @param {string} type The type. e.g. "model", "controller", "route"
+    @return {Array} An array of strings.
+  */
+  catalogEntriesByType: function(type) {
+    var namespaces = Ember.A(Ember.Namespace.NAMESPACES), types = Ember.A(), self = this;
+    var typeSuffixRegex = new RegExp(Ember.String.classify(type) + "$");
+
+    namespaces.forEach(function(namespace) {
+      if (namespace !== Ember) {
+        for (var key in namespace) {
+          if (!namespace.hasOwnProperty(key)) { continue; }
+          if (typeSuffixRegex.test(key)) {
+            var klass = namespace[key];
+            if (Ember.typeOf(klass) === 'class') {
+              types.push(Ember.String.dasherize(key.replace(typeSuffixRegex, '')));
+            }
+          }
+        }
+      }
+    });
+    return types;
+  }
+});
+
+
+})();
+
+
+
+(function() {
+/**
+@module ember
+@submodule ember-extension-support
+*/
+/**
   The `DataAdapter` helps a data persistence library
   interface with tools that debug Ember such
   as the [Ember Extension](https://github.com/tildeio/ember-extension)
@@ -56749,10 +60325,10 @@ Ember Application
 
   ```javascript
   Application.initializer({
-    name: "dataAdapter",
+    name: "data-adapter",
 
     initialize: function(container, application) {
-      application.register('dataAdapter:main', DS.DataAdapter);
+      application.register('data-adapter:main', DS.DataAdapter);
     }
   });
   ```
@@ -56776,6 +60352,16 @@ Ember.DataAdapter = Ember.Object.extend({
     @default null
   */
   container: null,
+
+
+  /**
+    The container-debug-adapter which is used
+    to list all models.
+
+    @property containerDebugAdapter
+    @default undefined
+  **/
+  containerDebugAdapter: undefined,
 
   /**
     Number of attributes to send
@@ -56830,8 +60416,9 @@ Ember.DataAdapter = Ember.Object.extend({
         self = this, typesToSend, releaseMethods = Ember.A();
 
     typesToSend = modelTypes.map(function(type) {
-      var wrapped = self.wrapModelType(type);
-      releaseMethods.push(self.observeModelType(type, typesUpdated));
+      var klass = type.klass;
+      var wrapped = self.wrapModelType(klass, type.name);
+      releaseMethods.push(self.observeModelType(klass, typesUpdated));
       return wrapped;
     });
 
@@ -56843,6 +60430,13 @@ Ember.DataAdapter = Ember.Object.extend({
     };
     this.releaseMethods.pushObject(release);
     return release;
+  },
+
+  _nameToClass: function(type) {
+    if (typeof type === 'string') {
+      type = this.container.lookupFactory('model:' + type);
+    }
+    return type;
   },
 
   /**
@@ -56987,7 +60581,7 @@ Ember.DataAdapter = Ember.Object.extend({
     @private
     @method wrapModelType
     @param {Class} type A model class
-    @param {Function} typesUpdated callback to call when the type changes
+    @param {String}  Optional name of the class
     @return {Object} contains the wrapped type and the function to remove observers
     Format:
       type: {Object} the wrapped type
@@ -56998,12 +60592,12 @@ Ember.DataAdapter = Ember.Object.extend({
           object: {Class} the actual Model type class
       release: {Function} The function to remove observers
   */
-  wrapModelType: function(type, typesUpdated) {
+  wrapModelType: function(type, name) {
     var release, records = this.getRecords(type),
         typeToSend, self = this;
 
     typeToSend = {
-      name: type.toString(),
+      name: name || type.toString(),
       count: Ember.get(records, 'length'),
       columns: this.columnsForType(type),
       object: type
@@ -57021,18 +60615,45 @@ Ember.DataAdapter = Ember.Object.extend({
     @method getModelTypes
     @return {Array} Array of model types
   */
-
- // TODO: Use the resolver instead of looping over namespaces.
   getModelTypes: function() {
-    var namespaces = Ember.A(Ember.Namespace.NAMESPACES), types = Ember.A(), self = this;
+    var types, self = this,
+        containerDebugAdapter = this.get('containerDebugAdapter');
+
+    if (containerDebugAdapter.canCatalogEntriesByType('model')) {
+      types = containerDebugAdapter.catalogEntriesByType('model');
+    } else {
+      types = this._getObjectsOnNamespaces();
+    }
+    // New adapters return strings instead of classes
+    return types.map(function(name) {
+      return {
+        klass: self._nameToClass(name),
+        name: name
+      };
+    }).filter(function(type) {
+      return self.detect(type.klass);
+    });
+  },
+
+  /**
+    Loops over all namespaces and all objects
+    attached to them
+
+    @private
+    @method _getObjectsOnNamespaces
+    @return {Array} Array of model type strings
+  */
+  _getObjectsOnNamespaces: function() {
+    var namespaces = Ember.A(Ember.Namespace.NAMESPACES), types = Ember.A();
 
     namespaces.forEach(function(namespace) {
       for (var key in namespace) {
         if (!namespace.hasOwnProperty(key)) { continue; }
-        var klass = namespace[key];
-        if (self.detect(klass)) {
-          types.push(klass);
+        var name = Ember.String.dasherize(key);
+        if (!(namespace instanceof Ember.Application) && namespace.toString()) {
+          name = namespace + '/' + name;
         }
+        types.push(name);
       }
     });
     return types;
@@ -57262,7 +60883,7 @@ Ember.Test = {
 
     Example:
 
-    ```
+    ```javascript
     Ember.Test.unregisterHelper('wait');
     ```
 
@@ -57282,13 +60903,14 @@ Ember.Test = {
     The callback will receive the current application as an argument.
 
     Example:
-    ```
+
+    ```javascript
     Ember.Test.onInjectHelpers(function() {
-      Ember.$(document).ajaxStart(function() {
+      Ember.$(document).ajaxSend(function() {
         Test.pendingAjaxRequests++;
       });
 
-      Ember.$(document).ajaxStop(function() {
+      Ember.$(document).ajaxComplete(function() {
         Test.pendingAjaxRequests--;
       });
     });
@@ -57325,7 +60947,7 @@ Ember.Test = {
 
    Example:
 
-   ```
+   ```javascript
    Ember.Test.adapter = MyCustomAdapter.create()
    ```
 
@@ -57359,18 +60981,21 @@ Ember.Test = {
      transition or an IndexDB transaction.
 
      For example:
+
      ```javascript
      Ember.Test.registerWaiter(function() {
-     return myPendingTransactions() == 0;
+       return myPendingTransactions() == 0;
      });
      ```
      The `context` argument allows you to optionally specify the `this`
      with which your callback will be invoked.
 
      For example:
+
      ```javascript
      Ember.Test.registerWaiter(MyDB, MyDB.hasPendingTransactions);
      ```
+
      @public
      @method registerWaiter
      @param {Object} context (optional)
@@ -57506,20 +61131,14 @@ Ember.Application.reopen({
     @method setupForTesting
   */
   setupForTesting: function() {
-    Ember.testing = true;
+    Ember.setupForTesting();
 
     this.testing = true;
 
     this.Router.reopen({
       location: 'none'
     });
-
-    // if adapter is not manually set default to QUnit
-    if (!Ember.Test.adapter) {
-       Ember.Test.adapter = Ember.Test.QUnitAdapter.create();
-    }
-
-      },
+  },
 
   /**
     This will be used as the container to inject the test helpers into. By
@@ -57631,7 +61250,7 @@ function isolate(fn, val) {
   // Reset lastPromise for nested helpers
   Ember.Test.lastPromise = null;
 
-  value = fn.call(null, val);
+  value = fn(val);
 
   lastPromise = Ember.Test.lastPromise;
 
@@ -57655,6 +61274,53 @@ function isolate(fn, val) {
 
 
 (function() {
+var Test = Ember.Test;
+
+function incrementAjaxPendingRequests(){
+  Test.pendingAjaxRequests++;
+}
+
+function decrementAjaxPendingRequests(){
+  Ember.assert("An ajaxComplete event which would cause the number of pending AJAX " +
+               "requests to be negative has been triggered. This is most likely " +
+               "caused by AJAX events that were started before calling " +
+               "`injectTestHelpers()`.", Test.pendingAjaxRequests !== 0);
+  Test.pendingAjaxRequests--;
+}
+
+/**
+  Sets Ember up for testing. This is useful to perform
+  basic setup steps in order to unit test.
+
+  Use `App.setupForTesting` to perform integration tests (full
+  application testing).
+
+  @method setupForTesting
+  @namespace Ember
+*/
+Ember.setupForTesting = function() {
+  Ember.testing = true;
+
+  // if adapter is not manually set default to QUnit
+  if (!Ember.Test.adapter) {
+    Ember.Test.adapter = Ember.Test.QUnitAdapter.create();
+  }
+
+  if (!Test.pendingAjaxRequests) {
+    Test.pendingAjaxRequests = 0;
+  }
+
+  Ember.$(document).off('ajaxSend', incrementAjaxPendingRequests);
+  Ember.$(document).off('ajaxComplete', decrementAjaxPendingRequests);
+  Ember.$(document).on('ajaxSend', incrementAjaxPendingRequests);
+  Ember.$(document).on('ajaxComplete', decrementAjaxPendingRequests);
+};
+
+})();
+
+
+
+(function() {
 Ember.onLoad('Ember.Application', function(Application) {
   Application.initializer({
     name: 'deferReadiness in `testing` mode',
@@ -57665,8 +61331,7 @@ Ember.onLoad('Ember.Application', function(Application) {
       }
     }
   });
-
-  });
+});
 
 })();
 
@@ -57823,22 +61488,6 @@ var get = Ember.get,
     asyncHelper = Test.registerAsyncHelper,
     countAsync = 0;
 
-Test.pendingAjaxRequests = 0;
-
-Test.onInjectHelpers(function() {
-  Ember.$(document).ajaxStart(function() {
-    Test.pendingAjaxRequests++;
-  });
-
-  Ember.$(document).ajaxStop(function() {
-    Ember.assert("An ajaxStop event which would cause the number of pending AJAX " +
-                 "requests to be negative has been triggered. This is most likely " +
-                 "caused by AJAX events that were started before calling " +
-                 "`injectTestHelpers()`.", Test.pendingAjaxRequests !== 0);
-    Test.pendingAjaxRequests--;
-  });
-});
-
 function currentRouteName(app){
   var appController = app.__container__.lookup('controller:application');
 
@@ -57858,10 +61507,17 @@ function currentURL(app){
 }
 
 function visit(app, url) {
-  Ember.run(app, 'advanceReadiness');
+  var router = app.__container__.lookup('router:main');
+  router.location.setURL(url);
 
-  app.__container__.lookup('router:main').location.setURL(url);
-  Ember.run(app, app.handleURL, url);
+  if (app._readinessDeferrals > 0) {
+    router['initialURL'] = url;
+    Ember.run(app, 'advanceReadiness');
+    delete router['initialURL'];
+  } else {
+    Ember.run(app, app.handleURL, url);
+  }
+
   return wait(app);
 }
 
@@ -57891,13 +61547,19 @@ function click(app, selector, context) {
   return wait(app);
 }
 
-function triggerEvent(app, selector, context, event){
-  if (typeof method === 'undefined') {
-    event = context;
+function triggerEvent(app, selector, context, type, options){
+  if (arguments.length === 3) {
+    type = context;
     context = null;
   }
 
+  if (typeof options === 'undefined') {
+    options = {};
+  }
+
   var $el = findWithAssert(app, selector, context);
+
+  var event = Ember.$.Event(type, options);
 
   Ember.run($el, 'trigger', event);
 
@@ -57905,16 +61567,13 @@ function triggerEvent(app, selector, context, event){
 }
 
 function keyEvent(app, selector, context, type, keyCode) {
-  var $el;
   if (typeof keyCode === 'undefined') {
     keyCode = type;
     type = context;
     context = null;
   }
-  $el = findWithAssert(app, selector, context);
-  var event = Ember.$.Event(type, { keyCode: keyCode });
-  Ember.run($el, 'trigger', event);
-  return wait(app);
+
+  return triggerEvent(app, selector, context, type, { keyCode: keyCode, which: keyCode });
 }
 
 function fillIn(app, selector, context, text) {
@@ -57960,7 +61619,7 @@ function wait(app, value) {
     // Every 10ms, poll for the async thing to have finished
     var watcher = setInterval(function() {
       // 1. If the router is loading, keep polling
-      var routerIsLoading = app.__container__.lookup('router:main').router.isLoading;
+      var routerIsLoading = !!app.__container__.lookup('router:main').router.activeTransition;
       if (routerIsLoading) { return; }
 
       // 2. If there are pending Ajax requests, keep polling
@@ -58016,7 +61675,7 @@ asyncHelper('visit', visit);
 *
 * ```javascript
 * click('.some-jQuery-selector').then(function() {
-*  // assert something
+*   // assert something
 * });
 * ```
 *
@@ -58039,8 +61698,8 @@ asyncHelper('click', click);
 *
 * @method keyEvent
 * @param {String} selector jQuery selector for finding element on the DOM
-* @param {String} the type of key event, e.g. `keypress`, `keydown`, `keyup`
-* @param {Number} the keyCode of the simulated key event
+* @param {String} type the type of key event, e.g. `keypress`, `keydown`, `keyup`
+* @param {Number} keyCode the keyCode of the simulated key event
 * @return {RSVP.Promise}
 */
 asyncHelper('keyEvent', keyEvent);
@@ -58071,7 +61730,7 @@ asyncHelper('fillIn', fillIn);
 * Example:
 *
 * ```javascript
-* var $el = find('.my-selector);
+* var $el = find('.my-selector');
 * ```
 *
 * @method find
@@ -58124,6 +61783,85 @@ asyncHelper('wait', wait);
 asyncHelper('andThen', andThen);
 
 
+
+  /**
+    Returns the currently active route name.
+
+    Example:
+
+    ```javascript
+    function validateRouteName(){
+      equal(currentRouteName(), 'some.path', "correct route was transitioned into.");
+    }
+
+    visit('/some/path').then(validateRouteName)
+    ```
+
+    @method currentRouteName
+    @return {Object} The name of the currently active route.
+  */
+  helper('currentRouteName', currentRouteName);
+
+  /**
+    Returns the current path.
+
+    Example:
+
+    ```javascript
+    function validateURL(){
+      equal(currentPath(), 'some.path.index', "correct path was transitioned into.");
+    }
+
+    click('#some-link-id').then(validateURL);
+    ```
+
+    @method currentPath
+    @return {Object} The currently active path.
+  */
+  helper('currentPath', currentPath);
+
+  /**
+    Returns the current URL.
+
+    Example:
+
+    ```javascript
+    function validateURL(){
+      equal(currentURL(), '/some/path', "correct URL was transitioned into.");
+    }
+
+    click('#some-link-id').then(validateURL);
+    ```
+
+    @method currentURL
+    @return {Object} The currently active URL.
+  */
+  helper('currentURL', currentURL);
+
+
+
+  /**
+    Triggers the given event on the element identified by the provided selector.
+
+    Example:
+
+    ```javascript
+    triggerEvent('#some-elem-id', 'blur');
+    ```
+
+    This is actually used internally by the `keyEvent` helper like so:
+
+    ```javascript
+    triggerEvent('#some-elem-id', 'keypress', { keyCode: 13 });
+    ```
+
+   @method triggerEvent
+   @param {String} selector jQuery selector for finding element on the DOM
+   @param {String} type The event type to be triggered.
+   @param {String} options The options to be passed to jQuery.Event.
+   @return {RSVP.Promise}
+  */
+  asyncHelper('triggerEvent', triggerEvent);
 
 
 })();

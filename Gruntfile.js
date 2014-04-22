@@ -51,7 +51,7 @@ module.exports = function (grunt) {
     concat:{
       vendor:{
         src:[
-          "bower_components/jquery/jquery.js",
+          "bower_components/jquery/dist/jquery.js",
           "bower_components/modernizr/modernizr.js",
           "bower_components/foundation/js/foundation.js",
           "bower_components/handlebars/handlebars.js",
