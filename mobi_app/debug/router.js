@@ -1,6 +1,14 @@
 (function() {
   App.Router.map(function() {
-    return this.route('/');
+    this.route('/');
+    this.route("about", {
+      path: "/about"
+    });
+    return this.resource('posts', {
+      path: '/posts'
+    }, function() {
+      return this.route('new');
+    });
   });
 
 }).call(this);
